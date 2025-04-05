@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  type: 1
+  description: MyString
+  frequency: 1
+  status: 1
+  start_date: 2025-04-05
+  end_date: 2025-04-05
+
+two:
+  type: 1
+  description: MyString
+  frequency: 1
+  status: 1
+  start_date: 2025-04-05
+  end_date: 2025-04-05

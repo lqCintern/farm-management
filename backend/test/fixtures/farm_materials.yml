@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  user_id: 1
+  material_id: 1
+  quantity: 9.99
+  last_updated: 2025-04-05 14:53:06
+
+two:
+  name: MyString
+  user_id: 1
+  material_id: 1
+  quantity: 9.99
+  last_updated: 2025-04-05 14:53:06
