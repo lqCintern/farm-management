@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_05_080143) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_06_035909) do
   create_table "crops_animals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "type", null: false
     t.string "name", null: false
@@ -113,5 +113,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_05_080143) do
     t.string "phone", limit: 20, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
   end
 end
