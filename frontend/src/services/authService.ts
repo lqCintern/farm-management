@@ -1,4 +1,4 @@
-import axiosInstance from "../utils/axiosConfig";
+import axiosInstance from "@/utils/axiosConfig"; // Ensure the file exists at this path or adjust the path accordingly
 
 // Hàm gọi API đăng ký
 export const registerUser = async (userData: any) => {
