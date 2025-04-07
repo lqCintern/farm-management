@@ -12,6 +12,13 @@ class User < ApplicationRecord
 
     validates :user_name, presence: true, length: { maximum: 255 }
     validates :email, presence: true, uniqueness: true, length: { maximum: 255 }
-    validates :password, presence: true, length: { minimum: 6 }
+    validates :password, presence: true, length: { minimum: 6 }, if: :password_required?
     validates :phone, presence: true, length: { maximum: 255 }
+
+    private
+
+    def password_required?
+    new_record? || password.present?
+    end
+    
 end

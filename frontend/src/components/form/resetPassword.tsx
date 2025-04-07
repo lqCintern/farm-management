@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { resetPassword } from "@/services/authService";
 import { toast } from "react-toastify";
 
-const ResetPassword = () => {
+const ResetPasswordForm = () => {
     const [password, setPassword] = useState("");
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token");
@@ -44,4 +44,4 @@ const ResetPassword = () => {
     );
 };
 
-export default ResetPassword;
+export default ResetPasswordForm;

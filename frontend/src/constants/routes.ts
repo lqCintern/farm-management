@@ -15,6 +15,9 @@ export const routes = {
 	forgotPassword: {
         index: "/forgot-password",
 	},
+	resetPassword: {
+        index: "/reset-password",
+	},
 	products: {
 		index: "/products",
 		details: "/products/:id",

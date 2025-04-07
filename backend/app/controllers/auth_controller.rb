@@ -26,16 +26,27 @@ class AuthController < ApplicationController
 
     # Quên mật khẩu
     def forgot_password
+      Rails.logger.info "Processing forgot_password for email: #{params[:email]}"
       user = User.find_by(email: params[:email])
       if user
-        user.reset_password_token = SecureRandom.hex(10)
-        user.reset_password_sent_at = Time.now.utc
-        user.save
-
-        UserMailer.reset_password_email(user).deliver_now
-        render json: { message: "Reset password instructions sent to your email" }, status: :ok
+        if user.reset_password_token.nil? || user.reset_password_sent_at < 2.hours.ago
+          user.reset_password_token = generate_unique_token
+          user.reset_password_sent_at = Time.now.utc
+          if user.save
+            Rails.logger.info "Token saved successfully: #{user.reset_password_token}"
+            UserMailer.reset_password_email(user).deliver_now
+            render json: { message: "Reset password instructions sent to your email" }, status: :ok
+          else
+            Rails.logger.error "Failed to save token: #{user.errors.full_messages}"
+            render json: { error: "Failed to generate reset password token" }, status: :unprocessable_entity
+          end
+        else
+          Rails.logger.info "Token already exists and is still valid for user: #{user.email}"
+          render json: { message: "Reset password instructions already sent. Please check your email." }, status: :ok
+        end
       else
-        render json: { error: "Email not found" }, status: :not_found
+        Rails.logger.info "Email not found: #{params[:email]}"
+        render json: { message: "If the email exists in our system, reset instructions have been sent." }, status: :ok
       end
     end
 
@@ -63,5 +74,12 @@ class AuthController < ApplicationController
     # Strong parameters
     def user_params
       params.permit(:user_name, :email, :password, :phone, :user_type, :fullname, :address)
+    end
+
+    def generate_unique_token
+      loop do
+        token = SecureRandom.hex(10)
+        break token unless User.exists?(reset_password_token: token)
+      end
     end
 end

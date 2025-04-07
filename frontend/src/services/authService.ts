@@ -11,9 +11,9 @@ export const loginUser = async (credentials: any) => {
 };
 
 export const sendForgotPasswordEmail = async (email: string) => {
-    return axios.post("/auth/forgot_password", { email });
+    return axiosInstance.post("/auth/forgot_password", { email });
 };
 
 export const resetPassword = async (token: string | null, password: string) => {
-    return axios.post("/auth/reset_password", { token, password });
+    return axiosInstance.post("/auth/reset_password", { token, password });
 };
