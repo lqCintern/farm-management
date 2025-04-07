@@ -1,5 +1,5 @@
 source "https://rubygems.org"
-git_source(:github){|repo| "https://github.com/#{repo}.git"}
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.0.2"
@@ -17,7 +17,7 @@ gem "jbuilder"
 gem "jwt"
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
-
+gem "dotenv-rails", groups: [ :development, :test ]
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
 gem "solid_queue"
@@ -47,4 +47,6 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+  gem "rubocop", require: false
+  gem "rubocop-rails", require: false # Hỗ trợ các quy tắc dành riêng cho Rails
 end

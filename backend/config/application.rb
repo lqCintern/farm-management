@@ -32,10 +32,10 @@ module Backend
     # Cấu hình CORS để cho phép frontend truy cập API
     config.middleware.insert_before 0, Rack::Cors do
       allow do
-        origins 'http://localhost:5173' # Chỉ cho phép frontend truy cập
-        resource '*',
+        origins "http://localhost:5173" # Chỉ cho phép frontend truy cập
+        resource "*",
         headers: :any,
-        methods: [:get, :post, :put, :patch, :delete, :options, :head],
+        methods: [ :get, :post, :put, :patch, :delete, :options, :head ],
         credentials: true
       end
     end

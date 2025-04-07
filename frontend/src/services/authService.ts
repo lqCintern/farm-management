@@ -9,3 +9,11 @@ export const registerUser = async (userData: any) => {
 export const loginUser = async (credentials: any) => {
   return axiosInstance.post("/login", credentials);
 };
+
+export const sendForgotPasswordEmail = async (email: string) => {
+    return axiosInstance.post("/auth/forgot_password", { email });
+};
+
+export const resetPassword = async (token: string | null, password: string) => {
+    return axiosInstance.post("/auth/reset_password", { token, password });
+};

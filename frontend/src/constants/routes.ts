@@ -12,6 +12,12 @@ export const routes = {
 	register: {
 		index: "/register",
 	},
+	forgotPassword: {
+        index: "/forgot-password",
+	},
+	resetPassword: {
+        index: "/reset-password",
+	},
 	products: {
 		index: "/products",
 		details: "/products/:id",

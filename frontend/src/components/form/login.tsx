@@ -123,7 +123,11 @@ const LoginForm = () => {
                                     Ghi nhớ đăng nhập
                                 </Label>
                             </div>
-                            <Button variant="link" className="text-sm">
+                            <Button
+                                variant="link"
+                                className="text-sm"
+                                onClick={() => navigate("/forgot-password")}
+                            >
                                 Quên mật khẩu?
                             </Button>
                         </div>

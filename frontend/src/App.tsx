@@ -12,6 +12,8 @@ import { Suspense, useState, useEffect } from "react";
 import { Loader } from "./components/loader";
 import MainLayout from "./layouts/MainLayout";
 import Login from "./pages/login";
+import ForgotPassword from "./pages/login/forgotPassword";
+import ResetPassword from "./pages/login/resetPassword";
 import Register from "./pages/register";
 import Products from "./pages/products";
 import ProductDetails from "./pages/products/[id]";
@@ -68,6 +70,22 @@ const router = createBrowserRouter(
 					</Suspense>
 				}
 			/>
+			<Route
+                path={routes.forgotPassword.index} // Thêm route Forgot Password
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <ForgotPassword />
+                    </Suspense>
+                }
+            />
+			<Route
+                path={routes.resetPassword.index} // Thêm route Forgot Password
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <ResetPassword />
+                    </Suspense>
+                }
+            />
 			<Route
 				path={routes.products.index}
 				element={
