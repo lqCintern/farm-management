@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :farm_activities
+      resources :farm_materials
       post "/register", to: "auth#register"
       post "/login", to: "auth#login"
       post "auth/forgot_password", to: "auth#forgot_password"
