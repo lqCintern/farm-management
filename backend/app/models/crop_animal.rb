@@ -5,7 +5,7 @@ class CropAnimal < ApplicationRecord
     has_many :harvests, foreign_key: :crop_id, dependent: :destroy
 
     # Validation
-    validates :type, presence: true
+    validates :crop_type, presence: true
     validates :name, presence: true, length: { maximum: 255 }
     validates :area, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
     validates :start_date, presence: true

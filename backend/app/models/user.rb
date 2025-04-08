@@ -1,6 +1,7 @@
 class User < ApplicationRecord
     has_secure_password
 
+    has_many :farm_activities, foreign_key: :user_id, dependent: :destroy
     has_many :farm_materials, foreign_key: :user_id, dependent: :destroy
     has_many :product_materials, foreign_key: :supplier_id, dependent: :destroy
     has_many :transactions, foreign_key: :user_id, dependent: :destroy
@@ -14,11 +15,10 @@ class User < ApplicationRecord
     validates :email, presence: true, uniqueness: true, length: { maximum: 255 }
     validates :password, presence: true, length: { minimum: 6 }, if: :password_required?
     validates :phone, presence: true, length: { maximum: 255 }
-
+    self.primary_key = "user_id"
     private
 
     def password_required?
         new_record? || password.present?
     end
-
 end

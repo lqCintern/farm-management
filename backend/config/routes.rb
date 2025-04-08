@@ -9,4 +9,5 @@ Rails.application.routes.draw do
   post "/login", to: "auth#login"
   post "auth/forgot_password", to: "auth#forgot_password"
   post "auth/reset_password", to: "auth#reset_password"
+  resources :farm_activities
 end
