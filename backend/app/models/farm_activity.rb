@@ -3,7 +3,7 @@ class FarmActivity < ApplicationRecord
     belongs_to :crop_animal, foreign_key: :crop_animal_id
 
     # Validation
-    validates :type, presence: true
+    validates :activity_type, presence: true
     validates :description, length: { maximum: 255 }
     validates :frequency, presence: true
     validates :status, presence: true

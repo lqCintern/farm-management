@@ -9,10 +9,10 @@ export default function HeroSection() {
 			<div className="bg-[#EDF2EE] w-full min-h-[400px] md:h-[630px] rounded-xl p-4 md:p-8 flex flex-col md:flex-row justify-between md:py-[120px]">
 				<div className="text-center md:text-left">
 					<p className="text-[#00B207] text-sm md:text-base">
-						WELCOME TO SHOPERY
+						CHÀO MỪNG ĐẾN VỚI VIEFARM
 					</p>
 					<p className="text-[40px] md:text-[80px] font-semibold leading-[1.1] md:leading-[80px] mt-4 md:mt-6">
-						Fresh & Healthy <br /> Organic Food
+						Theo dõi & Tiếp thị <br /> nông sản Việt
 					</p>
 					<p className="mt-4 md:mt-8 text-xl md:text-3xl">
 						Sale up to{" "}

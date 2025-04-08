@@ -47,6 +47,14 @@ const router = createBrowserRouter(
 				}
 			/>
 			<Route
+				path={routes.home.index}
+				element={
+					<Suspense fallback={<Loader />}>
+						<Home />
+					</Suspense>
+				}
+			/>
+			<Route
 				path={routes.shop.index}
 				element={
 					<Suspense fallback={<Loader />}>
@@ -71,7 +79,7 @@ const router = createBrowserRouter(
 				}
 			/>
 			<Route
-                path={routes.forgotPassword.index} // Thêm route Forgot Password
+                path={routes.forgotPassword.index}
                 element={
                     <Suspense fallback={<Loader />}>
                         <ForgotPassword />
@@ -79,7 +87,7 @@ const router = createBrowserRouter(
                 }
             />
 			<Route
-                path={routes.resetPassword.index} // Thêm route Forgot Password
+                path={routes.resetPassword.index}
                 element={
                     <Suspense fallback={<Loader />}>
                         <ResetPassword />

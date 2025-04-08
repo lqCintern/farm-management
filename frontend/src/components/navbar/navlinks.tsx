@@ -80,7 +80,7 @@ export default function Navlinks() {
 			</div>
 			<div className="flex gap-3">
 				<PhoneIcon className="mt-1" />
-				<p className="text-white text-[13px] mt-2">{`(219) 555-0114`}</p>
+				<p className="text-white text-[13px] mt-2">{`0833 143 135`}</p>
 			</div>
 		</div>
 	);

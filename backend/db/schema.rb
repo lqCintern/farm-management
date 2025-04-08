@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_06_035909) do
-  create_table "crops_animals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.integer "type", null: false
+ActiveRecord::Schema[8.0].define(version: 2025_04_08_054126) do
+  create_table "crop_animals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "crop_type", null: false
     t.string "name", null: false
     t.integer "area"
     t.date "start_date"
@@ -23,7 +23,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_06_035909) do
 
   create_table "farm_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "crop_animal_id"
-    t.integer "type", null: false
+    t.integer "activity_type", null: false
     t.string "description"
     t.integer "frequency"
     t.integer "status"
@@ -31,6 +31,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_06_035909) do
     t.date "end_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
   end
 
   create_table "farm_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

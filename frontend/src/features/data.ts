@@ -88,30 +88,30 @@ export const members = [
 export const categories = [
 	{
 		id: 1,
-		name: "Fresh Fruit",
+		name: "Hoa quả tươi",
 		image: "/img/categories/fresh_fruit.svg",
 		products: [
 			{
 				id: 101,
-				name: "Apple",
-				price: 2.99,
+				name: "Táo",
+				price: 50000,
 				image: "/img/products/apple.svg",
 			},
 			{
 				id: 102,
-				name: "Banana",
-				price: 1.99,
+				name: "Chuối",
+				price: 20000,
 				image: "/img/products/banana.png",
 			},
 			{
 				id: 103,
-				name: "Orange",
-				price: 3.49,
+				name: "Cam",
+				price: 25000,
 				image: "/img/products/orange.svg",
 			},
 			{
 				id: 104,
-				name: "Mango",
+				name: "Xoài",
 				price: 4.99,
 				image: "/img/products/mango.png",
 			},
@@ -119,7 +119,7 @@ export const categories = [
 	},
 	{
 		id: 2,
-		name: "Fresh Vegetables",
+		name: "Rau tươi",
 		image: "/img/categories/fresh_veg.svg",
 		products: [
 			{
@@ -130,7 +130,7 @@ export const categories = [
 			},
 			{
 				id: 202,
-				name: "Broccoli",
+				name: "Súp lơ",
 				price: 2.29,
 				image: "/img/products/broccolli.png",
 			},
@@ -238,37 +238,6 @@ export const categories = [
 				name: "Sparkling Water",
 				price: 1.49,
 				image: "/img/products/water.png",
-			},
-		],
-	},
-	{
-		id: 6,
-		name: "Beauty & Health",
-		image: "/img/categories/beauty.svg",
-		products: [
-			{
-				id: 601,
-				name: "Face Cream",
-				price: 12.99,
-				image: "/img/products/facecream.png",
-			},
-			{
-				id: 602,
-				name: "Shampoo",
-				price: 8.49,
-				image: "/img/products/shampoo.png",
-			},
-			{
-				id: 603,
-				name: "Toothpaste",
-				price: 2.99,
-				image: "/img/products/toothpaste.png",
-			},
-			{
-				id: 604,
-				name: "Vitamin C",
-				price: 10.99,
-				image: "/img/products/vitaminc.png",
 			},
 		],
 	},

@@ -52,7 +52,7 @@ export default function Navbar() {
 						alt="location"
 					/>
 					<p className="text-gray-400 text-[10px] mt-1.5">
-						Store Location: Lincoln- 344, Illinois, Chicago, USA
+						Ninh Bình, Việt Nam
 					</p>
 				</div>
 				<div className="flex gap-1 items-center">
