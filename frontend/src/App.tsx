@@ -17,7 +17,9 @@ import ResetPassword from "./pages/login/resetPassword";
 import Register from "./pages/register";
 import Products from "./pages/products";
 import ProductDetails from "./pages/products/[id]";
-import Cart from "./pages/cart";
+import CartPage from "./pages/cart";
+import FarmActivityPage from "./pages/farm_activities";
+import Calendar from "./pages/Calendar"
 
 const InitialLoader = ({ children }: any) => {
 	const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +116,23 @@ const router = createBrowserRouter(
 				path={routes.cart.index}
 				element={
 					<Suspense fallback={<Loader />}>
-						<Cart />
+						<CartPage />
+					</Suspense>
+				}
+			/>
+			<Route
+				path={routes.farm_activities.index}
+				element={
+					<Suspense fallback={<Loader />}>
+						<FarmActivityPage />
+					</Suspense>
+				}
+			/>
+			<Route
+				path={routes.calendar.index}
+				element={
+					<Suspense fallback={<Loader />}>
+						<Calendar />
 					</Suspense>
 				}
 			/>

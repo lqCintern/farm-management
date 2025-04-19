@@ -1,16 +1,16 @@
 require_relative "boot"
 
 require "rails/all"
-require 'jsonapi/serializer'
+require "jsonapi/serializer"
 
 Bundler.require(*Rails.groups)
 
 module Backend
   class Application < Rails::Application
-    
     config.load_defaults 8.0
 
     config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_paths += %W[#{config.root}/app/decorators]
     require Rails.root.join("app", "middleware", "authenticate_user")
     config.api_only = true
 
