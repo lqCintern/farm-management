@@ -12,16 +12,13 @@ export default function HeroSection() {
 						CHÀO MỪNG ĐẾN VỚI VIEFARM
 					</p>
 					<p className="text-[40px] md:text-[80px] font-semibold leading-[1.1] md:leading-[80px] mt-4 md:mt-6">
-						Theo dõi & Tiếp thị <br /> nông sản Việt
+						Chăm sóc & Tiếp thị <br /> nông sản Việt
 					</p>
 					<p className="mt-4 md:mt-8 text-xl md:text-3xl">
-						Sale up to{" "}
+						Đăng kí ngay{" "}
 						<span className="text-[#FF8A00] font-bold">
-							30% OFF
+							10+ tính năng
 						</span>
-					</p>
-					<p className="text-[#808080] mt-2 md:mt-4 text-sm md:text-base">
-						Free shipping on all your order. we deliver, you enjoy
 					</p>
 					<Button className="bg-[#00B207] text-white w-[160px] md:w-[200px] h-[45px] md:h-[55px] rounded-3xl mt-6 md:mt-10 text-sm md:text-base">
 						Shop Now <ArrowBigRightIcon className="mt-1" />

@@ -16,7 +16,7 @@ gem "cancancan"
 gem "importmap-rails"
 gem "jbuilder"
 gem "jwt"
-gem 'jsonapi-serializer'
+gem "jsonapi-serializer"
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "dotenv-rails", groups: [ :development, :test ]
