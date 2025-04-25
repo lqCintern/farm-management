@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_08_054126) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_25_063254) do
+  create_table "activity_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "farm_activity_id", null: false
+    t.bigint "farm_material_id", null: false
+    t.float "planned_quantity", null: false
+    t.float "actual_quantity"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["farm_activity_id", "farm_material_id"], name: "idx_activity_materials_on_activity_and_material", unique: true
+    t.index ["farm_activity_id"], name: "index_activity_materials_on_farm_activity_id"
+    t.index ["farm_material_id"], name: "index_activity_materials_on_farm_material_id"
+  end
+
   create_table "crop_animals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "crop_type", null: false
     t.string "name", null: false
@@ -32,6 +44,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_08_054126) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id"
+    t.date "actual_completion_date"
+    t.text "actual_notes"
+    t.bigint "parent_activity_id"
+    t.index ["parent_activity_id"], name: "index_farm_activities_on_parent_activity_id"
   end
 
   create_table "farm_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -42,6 +58,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_08_054126) do
     t.timestamp "last_updated", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "unit"
+    t.integer "category", default: 4
   end
 
   create_table "harvests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -51,6 +69,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_08_054126) do
     t.timestamp "harvest_date", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "coordinates"
   end
 
   create_table "materials_purchases", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -117,4 +136,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_08_054126) do
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
   end
+
+  add_foreign_key "activity_materials", "farm_activities"
+  add_foreign_key "activity_materials", "farm_materials"
+  add_foreign_key "farm_activities", "farm_activities", column: "parent_activity_id"
 end

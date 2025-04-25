@@ -1,6 +1,6 @@
 interface ProgressProps {
-  value: number; // Giá trị tiến độ (0-100)
-  className?: string; // Lớp CSS tùy chỉnh
+  value: number;
+  className?: string;
 }
 
 export function Progress({ value, className }: ProgressProps) {

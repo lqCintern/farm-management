@@ -32,9 +32,6 @@ const EventDetailPopup: React.FC<EventDetailPopupProps> = ({
         <p>
           <strong>End Date:</strong> {event.end_date || "N/A"}
         </p>
-        <p>
-          <strong>Status:</strong> {event.status_label}
-        </p>
         <button
           className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
           onClick={onClose}
