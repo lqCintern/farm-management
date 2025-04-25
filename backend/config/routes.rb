@@ -7,8 +7,19 @@ Rails.application.routes.draw do
   # API routes with versioning
   namespace :api do
     namespace :v1 do
-      resources :farm_activities
+      resources :farm_activities, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :complete # API để đánh dấu hoàn thành
+        end
+
+        collection do
+          get :statistics # API thống kê
+          get :history_by_field # API lịch sử theo cánh đồng
+        end
+      end
+
       resources :farm_materials
+      resources :harvests, only: [:create]
       post "/register", to: "auth#register"
       post "/login", to: "auth#login"
       post "auth/forgot_password", to: "auth#forgot_password"

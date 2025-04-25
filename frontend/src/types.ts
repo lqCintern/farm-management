@@ -1,5 +1,7 @@
 // filepath: /home/lqccql/DATN/farm-management/frontend/src/types.ts
 
+// Thêm các định nghĩa loại liên quan đến hoạt động nông trại
+
 export interface FarmActivity {
   id: number;
   activity_type: number;
@@ -12,6 +14,14 @@ export interface FarmActivity {
     ending_soon: boolean;
     overdue: boolean;
     overdue_days: number;
+  };
+  notes?: string;
+  completion_date?: string;
+  completion_note?: string;
+  crop_animal?: {
+    id: number;
+    name: string;
+    type: string;
   };
 }
 

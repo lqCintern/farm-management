@@ -1,52 +1,43 @@
 class Api::V1::FarmActivitiesController < Api::BaseController
   include PaginationHelper
 
-  before_action :set_farm_activity, only: [ :show, :update, :destroy ]
+  before_action :set_farm_activity, only: [:show, :update, :destroy, :complete]
 
   def index
     activities = current_user.farm_activities
 
-    begin
-      activities = FarmActivityFilterService.new(
-        activities,
-        params[:start_date],
-        params[:end_date]
-      ).filter
-    rescue ArgumentError => e
-      return render json: { error: e.message }, status: :unprocessable_entity
-    end
+    activities = FarmActivityFilterService.new(
+      activities,
+      params[:start_date],
+      params[:end_date],
+      params[:activity_type],
+      params[:crop_animal_id],
+      params[:status]
+    ).filter
 
     @pagy, activities = pagy(activities, items: 10)
 
-    activities_with_status = activities.map do |activity|
-      decorated_activity = FarmActivityDecorator.new(activity)
-      {
-        id: activity.id,
-        activity_type: activity.activity_type,
-        description: activity.description,
-        start_date: decorated_activity.formatted_start_date,
-        end_date: decorated_activity.formatted_end_date,
-        status_label: decorated_activity.status_label,
-        status_details: FarmActivityStatusService.new(activity).status_details
-      }
-    end
-
-    render json: {
-      farm_activities: activities_with_status,
-      pagination: pagy_metadata(@pagy)
-    }, status: :ok
+    # Sử dụng renderer service để trả về dữ liệu phẳng hơn
+    render json: ApiRendererService.render_farm_activities(activities, @pagy), status: :ok
   end
 
   def show
-    render json: FarmActivitySerializer.new(@farm_activity).serializable_hash, status: :ok
+    options = { include: [:activity_materials] }
+    
+    # Chỉ một farm activity, nhưng vẫn sử dụng renderer để xử lý nhất quán
+    render json: {
+      data: ApiRendererService.render_farm_activities([@farm_activity], nil, options)[:farm_activities].first
+    }, status: :ok
   end
 
   def create
-    farm_activity = current_user.farm_activities.new(farm_activity_params)
-    if farm_activity.save
+    service = FarmActivityService.new(current_user.farm_activities.new, current_user)
+    farm_activity = service.create_activity(farm_activity_params)
+
+    if farm_activity.errors.empty?
       render json: {
-        message: "Farm activity created successfully",
-        data: FarmActivitySerializer.new(farm_activity).serializable_hash
+        message: "Lịch chăm sóc đã được tạo thành công",
+        data: ApiRendererService.render_farm_activities([farm_activity], nil)[:farm_activities].first
       }, status: :created
     else
       render json: { errors: farm_activity.errors.full_messages }, status: :unprocessable_entity
@@ -54,29 +45,110 @@ class Api::V1::FarmActivitiesController < Api::BaseController
   end
 
   def update
-    if @farm_activity.update(farm_activity_params)
+    # Chỉ cho phép cập nhật nếu hoạt động chưa hoàn thành
+    if @farm_activity.completed?
+      return render json: { error: "Không thể chỉnh sửa hoạt động đã hoàn thành" }, status: :unprocessable_entity
+    end
+
+    service = FarmActivityService.new(@farm_activity, current_user)
+    farm_activity = service.update_activity(farm_activity_params)
+
+    if farm_activity.errors.empty?
       render json: {
-        message: "Farm activity updated successfully",
-        data: FarmActivitySerializer.new(@farm_activity).serializable_hash
+        message: "Lịch chăm sóc đã được cập nhật thành công",
+        data: ApiRendererService.render_farm_activities([farm_activity], nil)[:farm_activities].first
       }, status: :ok
     else
-      render json: { errors: @farm_activity.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: farm_activity.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
   def destroy
-    @farm_activity.destroy
-    render json: { message: "Farm activity deleted successfully" }, status: :ok
+    # Chỉ cho phép xóa nếu hoạt động chưa hoàn thành
+    if @farm_activity.completed?
+      return render json: { error: "Không thể xóa hoạt động đã hoàn thành" }, status: :unprocessable_entity
+    end
+
+    service = FarmActivityService.new(@farm_activity, current_user)
+    service.destroy_activity
+
+    render json: { message: "Đã hủy lịch chăm sóc thành công" }, status: :ok
+  end
+
+  # API để đánh dấu hoàn thành và cập nhật thông tin thực tế
+  def complete
+    service = FarmActivityService.new(@farm_activity, current_user)
+    farm_activity = service.complete_activity(completion_params)
+
+    if farm_activity.errors.empty?
+      render json: {
+        message: "Đã đánh dấu hoàn thành hoạt động",
+        data: ApiRendererService.render_farm_activities([farm_activity], nil)[:farm_activities].first
+      }, status: :ok
+    else
+      render json: { errors: farm_activity.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # API thống kê
+  def statistics
+    # Chuyển đổi các tham số thành kiểu dữ liệu phù hợp
+    year = params[:year].present? ? params[:year].to_i : Date.today.year
+    month = params[:month].present? ? params[:month].to_i : Date.today.month
+    quarter = params[:quarter].present? ? params[:quarter].to_i : ((Date.today.month - 1) / 3 + 1)
+    period = %w[month quarter year].include?(params[:period]) ? params[:period] : 'month'
+    
+    stats_service = FarmActivityStatsService.new(
+      current_user.farm_activities,
+      period,
+      year,
+      month,
+      quarter
+    )
+    
+    stats = stats_service.generate_stats
+    
+    render json: { statistics: stats }, status: :ok
+  end
+
+  # API lịch sử theo cánh đồng
+  def history_by_field
+    activities = current_user.farm_activities
+      .where(crop_animal_id: params[:crop_animal_id])
+      .order(start_date: :desc)
+
+    @pagy, activities = pagy(activities, items: 10)
+
+    render json: {
+      history: ApiRendererService.render_farm_activities(activities, @pagy)[:farm_activities],
+      pagination: pagy_metadata(@pagy)
+    }, status: :ok
   end
 
   private
 
   def set_farm_activity
     @farm_activity = current_user.farm_activities.find_by(id: params[:id])
-    render json: { error: "Farm activity not found" }, status: :not_found unless @farm_activity
+    render json: { error: "Không tìm thấy lịch chăm sóc" }, status: :not_found unless @farm_activity
   end
 
   def farm_activity_params
-    params.require(:farm_activity).permit(:activity_type, :description, :frequency, :status, :start_date, :end_date, :crop_animal_id)
+    params.require(:farm_activity).permit(
+      :activity_type, 
+      :description, 
+      :frequency, 
+      :status, 
+      :start_date, 
+      :end_date, 
+      :crop_animal_id,
+      materials: {}
+    )
+  end
+
+  def completion_params
+    params.require(:farm_activity).permit(
+      :actual_notes,
+      actual_materials: {}
+    )
   end
 end

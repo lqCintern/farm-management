@@ -3,8 +3,12 @@ import { FarmActivityResponse } from "@/types";
 
 // Farm Activities API
 export const getFarmActivities = async (): Promise<FarmActivityResponse> => {
+  const params = {};
   const response = await axiosInstance.get<FarmActivityResponse>(
-    "/farm_activities"
+    "/farm_activities",
+    {
+      params,
+    }
   );
   return response.data;
 };
@@ -44,4 +48,22 @@ export const updateFarmMaterial = async (id: number, materialData: any) => {
 
 export const deleteFarmMaterial = async (id: number) => {
   return axiosInstance.delete(`/farm_materials/${id}`);
+};
+interface StatisticsParams {
+  period: "month" | "quarter" | "year";
+  year: number;
+  month?: number;
+  quarter?: number;
+}
+
+export const getFarmActivityStatistics = async (params: StatisticsParams) => {
+  try {
+    const response = await axiosInstance.get("/farm_activities/statistics", {
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching statistics:", error);
+    throw error;
+  }
 };
