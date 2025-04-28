@@ -10,7 +10,35 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_25_063254) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_28_100113) do
+  create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
   create_table "activity_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "farm_activity_id", null: false
     t.bigint "farm_material_id", null: false
@@ -23,14 +51,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_25_063254) do
     t.index ["farm_material_id"], name: "index_activity_materials_on_farm_material_id"
   end
 
+  create_table "conversations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "product_listing_id"
+    t.bigint "sender_id", null: false
+    t.bigint "receiver_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_listing_id", "sender_id", "receiver_id"], name: "idx_unique_conversations", unique: true
+    t.index ["product_listing_id"], name: "index_conversations_on_product_listing_id"
+    t.index ["receiver_id"], name: "index_conversations_on_receiver_id"
+    t.index ["sender_id"], name: "index_conversations_on_sender_id"
+  end
+
   create_table "crop_animals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "crop_type", null: false
     t.string "name", null: false
-    t.integer "area"
-    t.date "start_date"
-    t.date "end_date"
+    t.integer "field_area"
+    t.date "planting_date"
+    t.date "harvest_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "status", default: 0, null: false
+    t.text "description"
+    t.string "location"
+    t.integer "quantity"
+    t.string "variety"
+    t.string "source"
+    t.index ["user_id", "crop_type"], name: "index_crop_animals_on_user_id_and_crop_type"
+    t.index ["user_id", "status"], name: "index_crop_animals_on_user_id_and_status"
+    t.index ["user_id"], name: "index_crop_animals_on_user_id"
   end
 
   create_table "farm_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -90,6 +140,60 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_25_063254) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.bigint "user_id", null: false
+    t.text "content", null: false
+    t.boolean "read", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "created_at"], name: "index_messages_on_conversation_id_and_created_at"
+    t.index ["conversation_id"], name: "index_messages_on_conversation_id"
+    t.index ["user_id", "read"], name: "index_messages_on_user_id_and_read"
+    t.index ["user_id"], name: "index_messages_on_user_id"
+  end
+
+  create_table "product_images", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "product_listing_id", null: false
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_listing_id", "position"], name: "index_product_images_on_product_listing_id_and_position"
+    t.index ["product_listing_id"], name: "index_product_images_on_product_listing_id"
+  end
+
+  create_table "product_listings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "crop_animal_id"
+    t.string "title", null: false
+    t.text "description"
+    t.integer "status", default: 1, null: false
+    t.string "product_type", null: false
+    t.integer "quantity"
+    t.decimal "total_weight", precision: 10, scale: 2
+    t.decimal "average_size", precision: 10, scale: 2
+    t.decimal "price_expectation", precision: 10, scale: 2
+    t.string "province"
+    t.string "district"
+    t.string "ward"
+    t.string "address"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.date "harvest_start_date"
+    t.date "harvest_end_date"
+    t.integer "view_count", default: 0
+    t.integer "message_count", default: 0
+    t.integer "order_count", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["crop_animal_id"], name: "index_product_listings_on_crop_animal_id"
+    t.index ["harvest_start_date", "harvest_end_date"], name: "idx_on_harvest_start_date_harvest_end_date_55751c2310"
+    t.index ["product_type"], name: "index_product_listings_on_product_type"
+    t.index ["province"], name: "index_product_listings_on_province"
+    t.index ["status"], name: "index_product_listings_on_status"
+    t.index ["user_id"], name: "index_product_listings_on_user_id"
+  end
+
   create_table "product_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
     t.integer "supplier_id", null: false
@@ -100,6 +204,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_25_063254) do
     t.timestamp "last_updated", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "product_orders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "product_listing_id", null: false
+    t.bigint "buyer_id", null: false
+    t.integer "status", default: 0
+    t.decimal "quantity", precision: 10, scale: 2, null: false
+    t.decimal "price", precision: 10, scale: 2
+    t.text "note"
+    t.text "rejection_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["buyer_id"], name: "index_product_orders_on_buyer_id"
+    t.index ["product_listing_id"], name: "index_product_orders_on_product_listing_id"
+    t.index ["status"], name: "index_product_orders_on_status"
   end
 
   create_table "sales", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -137,7 +256,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_25_063254) do
     t.datetime "reset_password_sent_at"
   end
 
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "activity_materials", "farm_activities"
   add_foreign_key "activity_materials", "farm_materials"
+  add_foreign_key "conversations", "product_listings"
+  add_foreign_key "conversations", "users", column: "receiver_id", primary_key: "user_id"
+  add_foreign_key "conversations", "users", column: "sender_id", primary_key: "user_id"
   add_foreign_key "farm_activities", "farm_activities", column: "parent_activity_id"
+  add_foreign_key "messages", "conversations"
+  add_foreign_key "messages", "users", primary_key: "user_id"
+  add_foreign_key "product_images", "product_listings"
+  add_foreign_key "product_listings", "crop_animals"
+  add_foreign_key "product_listings", "users", primary_key: "user_id"
+  add_foreign_key "product_orders", "product_listings"
+  add_foreign_key "product_orders", "users", column: "buyer_id", primary_key: "user_id"
 end

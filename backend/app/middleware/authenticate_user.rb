@@ -5,6 +5,12 @@ class AuthenticateUser
 
   def call(env)
     request = Rack::Request.new(env)
+    
+    # Bỏ qua xác thực cho Active Storage requests
+    if request.path.start_with?("/rails/active_storage")
+      return @app.call(env)
+    end
+    
     auth_header = request.get_header("HTTP_AUTHORIZATION")
     token = auth_header.split(" ").last if auth_header
 
