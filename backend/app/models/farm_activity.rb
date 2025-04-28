@@ -11,7 +11,7 @@ class FarmActivity < ApplicationRecord
   
   # Enum định nghĩa
   enum :status, { pending: 0, completed: 1, cancelled: 2 }, prefix: true
-enum :frequency, { once: 0, daily: 1, weekly: 2, monthly: 3 }, prefix: true
+  enum :frequency, { once: 0, daily: 1, weekly: 2, monthly: 3 }, prefix: true
   
   # Validation
   validates :activity_type, presence: true

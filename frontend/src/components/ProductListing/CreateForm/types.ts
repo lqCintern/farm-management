@@ -1,0 +1,25 @@
+export interface FormValues {
+  title: string;
+  product_type: string;
+  description?: string;
+  quantity: number | null;
+  average_size: number | null;
+  total_weight?: number | null;
+  price_expectation: number | null;
+  province: string;
+  district: string;
+  ward: string;
+  address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  harvest_start_date: string | null;
+  harvest_end_date: string | null;
+  crop_animal_id: number | null;
+  status: number;
+}
+
+export interface SectionProps {
+  formValues: FormValues;
+  setFormValues: (values: FormValues) => void;
+  errors: Record<string, string>;
+}

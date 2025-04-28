@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import { EventClickArg } from "@fullcalendar/core";
 import { DateClickArg } from "@fullcalendar/interaction";
