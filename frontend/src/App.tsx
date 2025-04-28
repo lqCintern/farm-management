@@ -16,7 +16,9 @@ import ForgotPassword from "./pages/login/forgotPassword";
 import ResetPassword from "./pages/login/resetPassword";
 import Register from "./pages/register";
 import Products from "./pages/products";
-import ProductDetails from "./pages/products/[id]";
+import ProductDetailPage from "./pages/products/[id]";
+import CreateProductPage from "./pages/products/create";
+import EditProductPage from "@/pages/products/edit";
 import CartPage from "./pages/cart";
 import FarmActivityPage from "./pages/farm_activities";
 import Calendar from "./pages/Calendar";
@@ -106,18 +108,18 @@ const router = createBrowserRouter(
         }
       />
       <Route
-        path={routes.products.details}
-        element={
-          <Suspense fallback={<Loader />}>
-            <ProductDetails />
-          </Suspense>
-        }
-      />
-      <Route
         path={routes.cart.index}
         element={
           <Suspense fallback={<Loader />}>
             <CartPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path={routes.products.create}
+        element={
+          <Suspense fallback={<Loader />}>
+            <CreateProductPage />
           </Suspense>
         }
       />
@@ -145,6 +147,8 @@ const router = createBrowserRouter(
           </Suspense>
         }
       />
+      <Route path="/products/:id" element={<ProductDetailPage />} />
+      <Route path="/products/:id/edit" element={<EditProductPage />} />
     </Route>
   )
 );

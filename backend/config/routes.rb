@@ -18,6 +18,25 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :product_listings do
+        collection do
+          get :my_listings
+        end
+        member do
+          put :toggle_status
+        end
+      end
+      
+      resources :crop_animals
+      resources :product_orders, only: [:index, :show, :create, :update]
+      
+      resources :conversations, only: [:index, :show, :create] do
+        member do
+          get :messages
+          post :messages, to: 'conversations#add_message'
+        end
+      end
+
       resources :farm_materials
       resources :harvests, only: [:create]
       post "/register", to: "auth#register"

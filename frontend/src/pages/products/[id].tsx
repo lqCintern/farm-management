@@ -1,14 +1,9 @@
-import Footer from "@/features/footer";
-import Newsletter from "@/features/newsletter";
-import ProductDetails from "@/features/products/details";
+import ProductListingDetail from "@/components/ProductListing/ProductListingDetail";
 
-export default function ProductId() {
-
-	return (
-		<div>
-			<ProductDetails />
-            <Newsletter />
-            <Footer />
-		</div>
-	);
+export default function ProductDetailPage() {
+  return (
+    <div>
+      <ProductListingDetail />
+    </div>
+  );
 }
