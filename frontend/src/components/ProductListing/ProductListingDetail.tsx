@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getProductListingById,
@@ -26,7 +26,6 @@ import {
   DeleteOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
-  MessageOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { formatCurrency, formatDate } from "@/utils/formatters";
@@ -131,12 +130,11 @@ export default function ProductListingDetail() {
     });
   };
 
-  const handleStartConversation = () => {
-    // Chuyển đến trang chat với người bán
-    if (listing?.user_id) {
-      navigate(`/chat/${listing.user_id}?product=${id}`);
-    }
-  };
+  // const handleStartConversation = () => {
+  //   if (listing?.user_id) {
+  //     navigate(`/chat/${listing.user_id}?product=${id}`);
+  //   }
+  // };
 
   if (loading) {
     return (

@@ -1,5 +1,4 @@
-import React from "react";
-import { Link } from "react-router-dom"; // Sử dụng react-router-dom để điều hướng
+import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -9,9 +8,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { ProductListing } from "@/services/productListingsService";
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { getProductListingById } from "@/services/productListingsService";
+//import { useState, useEffect } from "react";
+//import { useParams } from "react-router-dom";
+//import { getProductListingById } from "@/services/productListingsService";
 
 interface ProductListingCardProps {
   productListing: ProductListing;
