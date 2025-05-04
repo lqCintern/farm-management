@@ -23,6 +23,7 @@ import CartPage from "./pages/cart";
 import FarmActivityPage from "./pages/farm_activities";
 import Calendar from "./pages/Calendar";
 import HarvestPage from "./pages/Harvest";
+import ConversationPage from "./pages/Conversation";
 
 const InitialLoader = ({ children }: any) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -149,6 +150,7 @@ const router = createBrowserRouter(
       />
       <Route path="/products/:id" element={<ProductDetailPage />} />
       <Route path="/products/:id/edit" element={<EditProductPage />} />
+      <Route path="/chat" element={<ConversationPage />} />
     </Route>
   )
 );
