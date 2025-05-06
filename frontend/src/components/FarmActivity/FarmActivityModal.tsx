@@ -75,17 +75,21 @@ export default function FarmActivityModal({
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Frequency (days)
-            </label>
-            <input
-              type="number"
+            <label className="block text-sm font-medium mb-1">Frequency</label>
+            <select
               name="frequency"
               value={formData.frequency}
               onChange={handleChange}
               className="w-full border rounded-lg p-2"
               required
-            />
+            >
+              <option value="">Select Frequency</option>{" "}
+              {/* Giá trị mặc định */}
+              <option value="once">Once</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">

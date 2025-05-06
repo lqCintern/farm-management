@@ -11,10 +11,8 @@ module Api
       # GET /api/v1/product_orders
       def index
         if current_user.farmer?
-          # Nếu là nông dân, hiển thị các đơn bán hàng
           orders = ProductOrder.for_seller(current_user.user_id)
         else
-          # Nếu là thương lái, hiển thị các đơn mua hàng
           orders = current_user.product_orders
         end
         
@@ -55,7 +53,6 @@ module Api
       
       # POST /api/v1/product_orders
       def create
-        # Chỉ thương lái mới được đặt mua
         unless current_user.trader?
           return render json: { error: "Chỉ thương lái mới có thể đặt mua sản phẩm" }, status: :forbidden
         end
@@ -77,7 +74,6 @@ module Api
         product_order.buyer = current_user
         
         if product_order.save
-          # Tạo hội thoại cho người mua và người bán
           conversation = Conversation.find_or_create_by(
             product_listing: product_listing,
             sender: current_user,

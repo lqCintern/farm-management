@@ -6,7 +6,7 @@ interface CustomPaneProps {
   zIndex: number;
 }
 
-const CustomPane = ({ name, zIndex }: CustomPaneProps) => {
+const CustomPane: React.FC<CustomPaneProps> = ({ name, zIndex }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -15,7 +15,7 @@ const CustomPane = ({ name, zIndex }: CustomPaneProps) => {
       map.getPane(name)!.style.zIndex = zIndex.toString();
     }
     return () => {
-      // Không có cleanup cần thiết
+      // Cleanup if needed
     };
   }, [map, name, zIndex]);
 

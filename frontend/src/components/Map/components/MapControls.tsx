@@ -1,25 +1,25 @@
-import React from 'react';
+import React from "react";
 
-interface DrawControlsProps {
+interface MapControlsProps {
   isDrawing: boolean;
-  markers: { lat: number; lng: number }[];
+  markersCount: number;
   labelOpacity: number;
-  setLabelOpacity: (opacity: number) => void;
   startDrawing: () => void;
   finishDrawing: () => void;
   cancelDrawing: () => void;
   optimizePolygon: () => void;
+  setLabelOpacity: (opacity: number) => void;
 }
 
-const DrawControls: React.FC<DrawControlsProps> = ({
+const MapControls: React.FC<MapControlsProps> = ({
   isDrawing,
-  markers,
+  markersCount,
   labelOpacity,
-  setLabelOpacity,
   startDrawing,
   finishDrawing,
   cancelDrawing,
   optimizePolygon,
+  setLabelOpacity,
 }) => {
   return (
     <div className="buttons" style={{ marginBottom: "10px" }}>
@@ -31,20 +31,17 @@ const DrawControls: React.FC<DrawControlsProps> = ({
         <>
           <button
             onClick={finishDrawing}
-            disabled={markers.length < 3}
+            disabled={markersCount < 3}
             className="btn btn-success"
           >
             Hoàn thành đa giác
           </button>
-          <button
-            onClick={cancelDrawing}
-            className="btn btn-danger"
-          >
+          <button onClick={cancelDrawing} className="btn btn-danger">
             Hủy
           </button>
           <button
             onClick={optimizePolygon}
-            disabled={markers.length < 4}
+            disabled={markersCount < 4}
             title="Giảm số điểm của đa giác"
             style={{ marginLeft: "10px" }}
             className="btn"
@@ -72,4 +69,4 @@ const DrawControls: React.FC<DrawControlsProps> = ({
   );
 };
 
-export default DrawControls;
+export default MapControls;

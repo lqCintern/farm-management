@@ -1,11 +1,11 @@
 import React from "react";
 
-interface AreaDisplayProps {
+interface AreaInfoProps {
   area: number | null;
   markers: { lat: number; lng: number }[];
 }
 
-const AreaDisplay: React.FC<AreaDisplayProps> = ({ area, markers }) => {
+const AreaInfo: React.FC<AreaInfoProps> = ({ area, markers }) => {
   if (area === null) return null;
 
   return (
@@ -84,4 +84,4 @@ const AreaDisplay: React.FC<AreaDisplayProps> = ({ area, markers }) => {
   );
 };
 
-export default AreaDisplay;
+export default AreaInfo;

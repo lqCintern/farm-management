@@ -1,11 +1,25 @@
 import { useState } from "react";
 import FarmActivityList from "@/components/FarmActivity/FarmActivityList";
 import FarmActivityStats from "@/components/FarmActivity/FarmActivityStats";
+import FarmActivityModal from "@/components/FarmActivity/FarmActivityModal"; // Import modal
 import { useNavigate } from "react-router-dom";
 
 export default function FarmActivities() {
   const [activeTab, setActiveTab] = useState<"list" | "stats">("list");
+  const [isModalOpen, setIsModalOpen] = useState(false); // State để quản lý modal
+  const [activities, setActivities] = useState<any[]>([]); // State để lưu danh sách hoạt động
   const navigate = useNavigate();
+
+  // Hàm mở modal
+  const openModal = () => setIsModalOpen(true);
+
+  // Hàm đóng modal
+  const closeModal = () => setIsModalOpen(false);
+
+  // Hàm xử lý khi thêm hoạt động mới
+  const handleAddActivity = (newActivity: any) => {
+    setActivities((prev) => [...prev, newActivity]); // Thêm hoạt động mới vào danh sách
+  };
 
   return (
     <div className="p-6">
@@ -14,7 +28,7 @@ export default function FarmActivities() {
           Hoạt động Nông trại
         </h1>
         <button
-          onClick={() => navigate("/farm-activities/new")}
+          onClick={openModal} // Mở modal khi nhấn nút
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
         >
           Thêm hoạt động mới
@@ -47,6 +61,12 @@ export default function FarmActivities() {
 
       {/* Tab Content */}
       {activeTab === "list" ? <FarmActivityList /> : <FarmActivityStats />}
+      {/* Modal */}
+      <FarmActivityModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onAddActivity={handleAddActivity}
+      />
     </div>
   );
 }

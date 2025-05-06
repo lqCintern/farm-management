@@ -4,6 +4,7 @@ import {
   getMessages,
   sendMessage,
 } from "@/services/conversationService";
+import { useNavigate } from "react-router-dom";
 import ConversationList from "@/components/Conversation/ConversationList";
 import MessageList from "@/components/Conversation/MessageList";
 import MessageInput from "@/components/Conversation/MessageInput";
@@ -17,6 +18,7 @@ import {
 interface Conversation {
   id: number;
   product_listing: {
+    id: number;
     title: string;
     product_images?: { image_url: string }[];
   };
@@ -47,6 +49,7 @@ const ConversationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const navigate = useNavigate();
 
   const getCurrentUserId = () => {
     try {
@@ -204,7 +207,14 @@ const ConversationPage: React.FC = () => {
                   <ArrowLeftIcon className="h-5 w-5" />
                 </button>
 
-                <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden mr-3">
+                <div
+                  className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden mr-3 cursor-pointer"
+                  onClick={() =>
+                    navigate(
+                      `/products/${selectedConversation.product_listing.id}`
+                    )
+                  }
+                >
                   {selectedConversation.product_listing.product_images?.[0]
                     ?.image_url ? (
                     <img
