@@ -27,6 +27,10 @@ class Conversation < ApplicationRecord
   def unread_count(user_id)
     messages.where.not(user_id: user_id).where(read: false).count
   end
+
+  def unread_count_for_current_user(current_user_id)
+    unread_count(current_user_id)
+  end
   
   private
   

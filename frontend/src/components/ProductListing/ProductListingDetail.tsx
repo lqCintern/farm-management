@@ -26,9 +26,11 @@ import {
   DeleteOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
+  MessageOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { createOrFindConversation } from "@/services/conversationService";
 
 const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;
@@ -41,6 +43,7 @@ export default function ProductListingDetail() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState<boolean>(false);
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -130,11 +133,36 @@ export default function ProductListingDetail() {
     });
   };
 
-  // const handleStartConversation = () => {
-  //   if (listing?.user_id) {
-  //     navigate(`/chat/${listing.user_id}?product=${id}`);
-  //   }
-  // };
+  const handleStartConversation = async () => {
+    if (!listing?.user_id) {
+      message.error("Không thể nhắn tin do thiếu thông tin người bán");
+      return;
+    }
+
+    try {
+      setChatLoading(true);
+
+      // Sử dụng service để tạo/tìm cuộc hội thoại
+      const result = await createOrFindConversation(
+        id || "", // ID của sản phẩm
+        listing.user_id, // ID của người bán
+        "Xin chào, tôi quan tâm đến sản phẩm của bạn!" // Tin nhắn mặc định
+      );
+
+      // Nếu thành công, chuyển đến trang chat
+      if (result.conversation_id) {
+        message.success("Đã bắt đầu cuộc trò chuyện");
+        navigate(`/chat`); // Điều chỉnh đường dẫn theo ứng dụng của bạn
+      } else {
+        throw new Error("Không nhận được ID cuộc trò chuyện");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo cuộc trò chuyện:", error);
+      message.error("Không thể bắt đầu cuộc trò chuyện. Vui lòng thử lại sau.");
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -232,6 +260,21 @@ export default function ProductListingDetail() {
                 </Descriptions.Item>
               </Descriptions>
             </div>
+            <div className="mt-4">
+              {/* Chỉ hiển thị nút khi người xem không phải người bán */}
+              {/* Replace currentUser with a valid user object */}
+              {false && (
+                <Button
+                  type="primary"
+                  icon={<MessageOutlined />}
+                  loading={chatLoading}
+                  onClick={handleStartConversation}
+                  className="w-full"
+                >
+                  Nhắn tin với người bán
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Seller & Actions Section */}
@@ -289,6 +332,13 @@ export default function ProductListingDetail() {
                   onClick={handleToggleStatus}
                 >
                   {listing.status === 1 ? "Ẩn sản phẩm" : "Hiển thị sản phẩm"}
+                </Button>
+                <Button
+                  icon={<MessageOutlined />}
+                  block
+                  onClick={handleStartConversation} // Gọi hàm bắt đầu cuộc hội thoại
+                >
+                  Nhắn tin
                 </Button>
                 <Button
                   danger
