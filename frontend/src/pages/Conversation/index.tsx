@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   getConversations,
   getMessages,
@@ -36,6 +36,7 @@ interface Message {
   content: string;
   user_id: number;
   created_at: string;
+  conversation_id?: number;
   read?: boolean;
   read_at?: string;
 }
@@ -61,7 +62,7 @@ const ConversationPage: React.FC = () => {
     } catch (error) {
       console.error("Error parsing user info:", error);
     }
-    return 4; // Fallback user ID nếu không lấy được từ localStorage
+    return 4;
   };
 
   const currentUserId = getCurrentUserId();
@@ -113,17 +114,50 @@ const ConversationPage: React.FC = () => {
     }
   }, [selectedConversationId]);
 
+  // Callback để xử lý tin nhắn mới từ Firebase listener
+  const handleNewMessages = useCallback(
+    (newMessages: Message[]) => {
+      // Cập nhật state messages với tin nhắn mới
+      setMessages(newMessages);
+
+      // Nếu có tin nhắn mới, cập nhật last_message trong danh sách hội thoại
+      if (newMessages.length > 0 && selectedConversationId) {
+        const latestMessage = newMessages[newMessages.length - 1];
+
+        // Cập nhật conversations để hiển thị tin nhắn mới nhất
+        setConversations((prevConversations) =>
+          prevConversations.map((conv) =>
+            conv.id === selectedConversationId
+              ? {
+                  ...conv,
+                  last_message: {
+                    content: latestMessage.content,
+                    created_at: latestMessage.created_at,
+                  },
+                  // Nếu người gửi không phải là current user, tăng unread_count
+                  unread_count:
+                    latestMessage.user_id !== currentUserId
+                      ? conv.unread_count + 1
+                      : conv.unread_count,
+                }
+              : conv
+          )
+        );
+      }
+    },
+    [selectedConversationId, currentUserId]
+  );
+
   const handleSendMessage = async (message: string) => {
     if (!selectedConversationId) return;
 
     try {
       const data = await sendMessage(selectedConversationId, message);
 
-      // Cập nhật danh sách tin nhắn
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          id: data.message_id,
+          id: data.message_id || `temp-${Date.now()}`,
           content: message,
           user_id: currentUserId,
           created_at: new Date().toISOString(),
@@ -270,6 +304,8 @@ const ConversationPage: React.FC = () => {
                   currentUserId={currentUserId}
                   senderInfo={selectedConversation?.sender}
                   receiverInfo={selectedConversation?.receiver}
+                  conversationId={selectedConversationId}
+                  onNewMessages={handleNewMessages}
                 />
               )}
 

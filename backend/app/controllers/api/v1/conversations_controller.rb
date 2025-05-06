@@ -52,11 +52,9 @@ module Api
 
       # GET /api/v1/conversations/:id/messages
       def messages
-        # Lấy tin nhắn từ Firestore
-        messages = FirebaseService.get_messages(@conversation.id, params[:limit] || 20)
+        messages = FirebaseMessageService.get_messages(@conversation.id, params[:limit] || 20)
 
-        # Đánh dấu tin nhắn đã đọc
-        FirebaseService.mark_messages_as_read(@conversation.id, current_user.user_id)
+        FirebaseMessageService.mark_all_as_read(@conversation.id, current_user.user_id)
 
         render json: {
           messages: messages,
@@ -103,15 +101,21 @@ module Api
           return render json: { errors: conversation.errors.full_messages }, status: :unprocessable_entity
         end
 
-        # Thêm tin nhắn đầu tiên nếu có
+        # Thay đổi: Thêm tin nhắn đầu tiên bằng FirebaseMessageService
         if params[:message].present?
-          message_id = FirebaseService.save_message(conversation.id, {
+          # Ghi log để debug
+          Rails.logger.info "Saving first message to conversation #{conversation.id} using FirebaseMessageService"
+          
+          message_id = FirebaseMessageService.save_message(conversation.id, {
             user_id: current_user.user_id,
             content: params[:message]
           })
 
           if message_id.nil?
+            Rails.logger.error "Failed to save first message to Firebase"
             return render json: { error: "Không thể lưu tin nhắn" }, status: :unprocessable_entity
+          else
+            Rails.logger.info "Successfully saved first message with ID: #{message_id}"
           end
         end
 
@@ -125,15 +129,22 @@ module Api
       def add_message
         return render json: { error: "Nội dung tin nhắn không được để trống" }, status: :bad_request if params[:message].blank?
 
-        # Lưu tin nhắn vào Firestore
-        message_id = FirebaseService.save_message(@conversation.id, {
+        # Thay đổi: Lưu tin nhắn với FirebaseMessageService
+        Rails.logger.info "Adding message to conversation #{@conversation.id} using FirebaseMessageService"
+        
+        message_id = FirebaseMessageService.save_message(@conversation.id, {
           user_id: current_user.user_id,
           content: params[:message]
         })
 
         if message_id
+          # Cập nhật thời gian của conversation
+          @conversation.touch
+          
+          Rails.logger.info "Successfully added message with ID: #{message_id}"
           render json: { message_id: message_id }, status: :created
         else
+          Rails.logger.error "Failed to save message to Firebase"
           render json: { error: "Không thể lưu tin nhắn" }, status: :unprocessable_entity
         end
       end

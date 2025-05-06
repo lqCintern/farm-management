@@ -6,15 +6,27 @@ class AuthenticateUser
   def call(env)
     request = Rack::Request.new(env)
     
-    # Bỏ qua xác thực cho Active Storage requests
-    if request.path.start_with?("/rails/active_storage")
+    # Danh sách các đường dẫn không cần xác thực - cập nhật để khớp với routes
+    public_paths = [
+      "/api/v1/login",
+      "/api/v1/register",
+      "/api/v1/auth/forgot_password",
+      "/api/v1/auth/reset_password"
+    ]
+    
+    # Logging để debug
+    Rails.logger.info "Current path: #{request.path}"
+    
+    # Bỏ qua xác thực cho Active Storage và public paths
+    if request.path.start_with?("/rails/active_storage") || public_paths.include?(request.path)
+      Rails.logger.info "Skipping authentication for public path: #{request.path}"
       return @app.call(env)
     end
     
     auth_header = request.get_header("HTTP_AUTHORIZATION")
-    token = auth_header.split(" ").last if auth_header
-
     Rails.logger.info "Authorization Header: #{auth_header}"
+    
+    token = auth_header.split(" ").last if auth_header
     Rails.logger.info "Token: #{token}"
 
     if token
@@ -22,17 +34,20 @@ class AuthenticateUser
         decoded_token = JWT.decode(token, Rails.application.credentials.secret_key_base, true, algorithm: "HS256")[0]
         env["current_user"] = User.find_by(user_id: decoded_token["user_id"])
         Rails.logger.info "Decoded Token: #{decoded_token}"
-        Rails.logger.info "Current User: #{env['current_user'].inspect}"
+        Rails.logger.info "Current User: #{env['current_user']&.email}"
       rescue JWT::ExpiredSignature
         Rails.logger.error "Token has expired"
         return unauthorized_response("Token has expired")
       rescue JWT::DecodeError
         Rails.logger.error "Invalid token"
         return unauthorized_response("Invalid token")
+      rescue => e
+        Rails.logger.error "Error during token verification: #{e.message}"
+        return unauthorized_response("Authentication error")
       end
     else
       Rails.logger.error "No token provided"
-      return unauthorized_response
+      return unauthorized_response("No token provided")
     end
 
     @app.call(env)

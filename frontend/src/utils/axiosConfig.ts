@@ -1,15 +1,25 @@
 import axios from "axios";
+import { getToken } from "./storage";
 
+// Instance chính có thêm token cho các endpoint cần xác thực
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:3000/api/v1", // Cập nhật baseURL để trỏ đến namespace api/v1
+  baseURL: "http://localhost:3000/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Thêm interceptor để tự động thêm token vào header Authorization
+// Instance riêng cho các endpoints không cần xác thực
+export const publicAxiosInstance = axios.create({
+  baseURL: "http://localhost:3000/api/v1",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Chỉ thêm interceptor vào instance chính
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // Lấy token từ localStorage
+  const token = getToken();
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;

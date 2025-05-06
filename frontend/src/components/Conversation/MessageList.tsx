@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { listenToMessages, testFirebaseConnection } from "@/utils/firebase";
 import {
   CheckIcon,
   CheckCircleIcon,
@@ -19,6 +20,8 @@ interface Props {
   currentUserId: number;
   senderInfo?: { user_id: number; fullname: string };
   receiverInfo?: { user_id: number; fullname: string };
+  conversationId?: number;
+  onNewMessages?: (messages: Message[]) => void;
 }
 
 const MessageList: React.FC<Props> = ({
@@ -26,18 +29,129 @@ const MessageList: React.FC<Props> = ({
   currentUserId,
   senderInfo,
   receiverInfo,
+  conversationId,
+  onNewMessages,
 }) => {
   const messageEndRef = useRef<HTMLDivElement>(null);
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const isInitializedRef = useRef<boolean>(false);
+  const normalizedCurrentUserId = Number(currentUserId);
 
+  // Utility function to compare user IDs
+  const isSameUser = (id1: any, id2: any): boolean => {
+    return Number(id1) === Number(id2);
+  };
+
+  // Debug info khi component render
+  useEffect(() => {
+    console.log("MessageList rendered with props:", {
+      messagesCount: messages.length,
+      conversationId,
+      hasCallback: !!onNewMessages,
+      localMessagesCount: localMessages.length,
+    });
+  }, [messages, conversationId, onNewMessages, localMessages.length]);
+
+  // Scroll to bottom khi messages thay đổi
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [localMessages]);
+
+  // Ban đầu chỉ set localMessages từ props một lần, dùng để hiển thị ban đầu
+  // khi Firebase chưa kết nối xong
+  useEffect(() => {
+    if (!isInitializedRef.current && messages.length > 0) {
+      console.log("Initializing localMessages from props:", messages.length);
+      setLocalMessages(messages);
+      isInitializedRef.current = true;
+    }
   }, [messages]);
 
-  const sortedMessages = [...messages].sort(
-    (a, b) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
+  // Test Firebase connection
+  useEffect(() => {
+    testFirebaseConnection().then((isConnected) => {
+      console.log(
+        "Firebase connection test result:",
+        isConnected ? "Connected" : "Failed"
+      );
+    });
+  }, []);
 
+  // Thiết lập Firebase Realtime Database listener
+  useEffect(() => {
+    if (!conversationId) {
+      console.log("No conversationId provided, skipping Firebase setup");
+      return;
+    }
+
+    console.log(
+      `Setting up Firebase listener for conversation ${conversationId}`
+    );
+
+    // Đăng ký lắng nghe tin nhắn mới
+    try {
+      const unsubscribe = listenToMessages(
+        conversationId,
+        (fetchedMessages) => {
+          console.log(
+            `Received ${fetchedMessages.length} messages from Firebase`
+          );
+
+          if (fetchedMessages.length > 0) {
+            console.log("Sample message:", fetchedMessages[0]);
+
+            // Kiểm tra trùng lặp trước khi cập nhật
+            // Tạo một Map để lưu tin nhắn theo ID
+            const messageMap = new Map<string, Message>();
+
+            // Thêm các tin nhắn mới từ Firebase
+            fetchedMessages.forEach((msg) => {
+              messageMap.set(msg.id, msg);
+            });
+
+            // Chuyển Map thành mảng
+            const uniqueMessages = Array.from(messageMap.values());
+
+            // Sắp xếp theo thời gian
+            const sortedMessages = uniqueMessages.sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()
+            );
+
+            // Cập nhật local state
+            setLocalMessages(sortedMessages);
+
+            // Gọi callback nếu được cung cấp
+            if (onNewMessages) {
+              console.log("Calling onNewMessages with fetched messages");
+              onNewMessages(sortedMessages);
+            }
+          }
+        }
+      );
+
+      // Lưu hàm unsubscribe để cleanup khi unmount
+      unsubscribeRef.current = unsubscribe;
+    } catch (error) {
+      console.error("Error setting up Firebase listener:", error);
+    }
+
+    // Cleanup function
+    return () => {
+      console.log(
+        "Cleaning up Firebase listener for conversation",
+        conversationId
+      );
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, [conversationId, onNewMessages]);
+
+  // Các hàm và logic hiển thị tin nhắn giữ nguyên
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -64,17 +178,26 @@ const MessageList: React.FC<Props> = ({
     const groups: { userId: number; messages: Message[] }[] = [];
 
     messages.forEach((message) => {
+      // Chuẩn hóa message user_id thành number
+      const messageUserId = Number(message.user_id);
+
       const lastGroup = groups[groups.length - 1];
 
-      if (lastGroup && lastGroup.userId === message.user_id) {
+      if (lastGroup && isSameUser(lastGroup.userId, messageUserId)) {
         lastGroup.messages.push(message);
       } else {
-        groups.push({ userId: message.user_id, messages: [message] });
+        groups.push({ userId: messageUserId, messages: [message] });
       }
     });
 
     return groups;
   };
+
+  // Đảm bảo tin nhắn được sắp xếp theo thời gian
+  const sortedMessages = [...localMessages].sort(
+    (a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
 
   const messageGroups = groupMessages(sortedMessages);
 
@@ -87,7 +210,7 @@ const MessageList: React.FC<Props> = ({
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
-      {messages.length === 0 ? (
+      {localMessages.length === 0 ? (
         <div className="flex h-full items-center justify-center">
           <p className="text-gray-400 text-center">
             Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
@@ -95,7 +218,8 @@ const MessageList: React.FC<Props> = ({
         </div>
       ) : (
         messageGroups.map((group, groupIndex) => {
-          const isSent = group.userId === currentUserId;
+          // Sử dụng function để đảm bảo so sánh đúng
+          const isSent = isSameUser(group.userId, normalizedCurrentUserId);
           const userName = getUserName(group.userId);
 
           return (
