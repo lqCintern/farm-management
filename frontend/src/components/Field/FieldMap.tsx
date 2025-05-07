@@ -12,10 +12,10 @@ import * as turf from "@turf/turf";
 // Icon mặc định cho marker - QUAN TRỌNG!
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import CustomPane from "./components/CustomPane";
-import CustomStyle from "./components/CustomStyle";
-import MapControls from "./components/MapControls";
-import AreaInfo from "./components/AreaInfo";
+import CustomPane from "./components/new/CustomPane";
+import CustomStyle from "./components/new/CustomStyle";
+import MapControls from "./components/new/MapControls";
+import AreaInfo from "./components/new/AreaInfo";
 
 // Thiết lập icon mặc định cho tất cả markers - QUAN TRỌNG!
 const DefaultIcon = L.icon({
