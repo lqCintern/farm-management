@@ -22,8 +22,10 @@ import EditProductPage from "@/pages/products/edit";
 import CartPage from "./pages/cart";
 import FarmActivityPage from "./pages/farm_activities";
 import Calendar from "./pages/Calendar";
-import HarvestPage from "./pages/Harvest";
+import FieldPage from "./pages/Field";
 import ConversationPage from "./pages/Conversation";
+import FieldForm from "@/components/Field/FieldForm";
+import FieldList from "@/components/Field/FieldList";
 
 const InitialLoader = ({ children }: any) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -144,13 +146,16 @@ const router = createBrowserRouter(
         path={routes.harvest.index}
         element={
           <Suspense fallback={<Loader />}>
-            <HarvestPage />
+            <FieldPage />
           </Suspense>
         }
       />
       <Route path="/products/:id" element={<ProductDetailPage />} />
       <Route path="/products/:id/edit" element={<EditProductPage />} />
       <Route path="/chat" element={<ConversationPage />} />
+      <Route path="/fields" element={<FieldList />} />
+      <Route path="/fields/new" element={<FieldForm />} />
+      <Route path="/fields/:id/edit" element={<FieldForm />} />
     </Route>
   )
 );
