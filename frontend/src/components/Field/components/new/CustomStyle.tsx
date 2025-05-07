@@ -1,9 +1,6 @@
 import { useEffect } from "react";
-import { useMap } from "react-leaflet";
 
 const CustomStyle: React.FC = () => {
-  const map = useMap();
-
   useEffect(() => {
     // Create style element to only display text from OSM
     const style = document.createElement("style");

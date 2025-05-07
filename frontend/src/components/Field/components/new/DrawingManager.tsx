@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
-import * as turf from "@turf/turf";
-import { calculatePolygonArea } from "../utils/polygonUtils";
+import { calculatePolygonArea } from "../../utils/polygonUtils";
 
 interface DrawingManagerProps {
   isDrawing: boolean;

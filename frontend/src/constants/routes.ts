@@ -35,7 +35,7 @@ export const routes = {
   calendar: {
     index: "/calendar",
   },
-  harvest: {
-    index: "/harvest",
+  fields: {
+    index: "/fields",
   },
 };

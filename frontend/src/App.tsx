@@ -8,8 +8,6 @@ import { routes } from "./constants";
 import { Home } from "./pages/home";
 import Shop from "./pages/shop";
 import "./index.css";
-import { Suspense, useState, useEffect } from "react";
-import { Loader } from "./components/loader";
 import MainLayout from "./layouts/MainLayout";
 import Login from "./pages/login";
 import ForgotPassword from "./pages/login/forgotPassword";
@@ -25,135 +23,29 @@ import Calendar from "./pages/Calendar";
 import FieldPage from "./pages/Field";
 import ConversationPage from "./pages/Conversation";
 import FieldForm from "@/components/Field/FieldForm";
-import FieldList from "@/components/Field/FieldList";
-
-const InitialLoader = ({ children }: any) => {
-  const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
-    return <Loader />;
-  }
-  return children;
-};
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path={routes.index} element={<MainLayout />}>
-      <Route
-        index
-        path={routes.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <Home />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.home.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <Home />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.shop.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <Shop />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.login.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <Login />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.register.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <Register />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.forgotPassword.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <ForgotPassword />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.resetPassword.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <ResetPassword />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.products.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <Products />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.cart.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <CartPage />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.products.create}
-        element={
-          <Suspense fallback={<Loader />}>
-            <CreateProductPage />
-          </Suspense>
-        }
-      />
+      <Route index path={routes.index} element={<Home />} />
+      <Route path={routes.home.index} element={<Home />} />
+      <Route path={routes.shop.index} element={<Shop />} />
+      <Route path={routes.login.index} element={<Login />} />
+      <Route path={routes.register.index} element={<Register />} />
+      <Route path={routes.forgotPassword.index} element={<ForgotPassword />} />
+      <Route path={routes.resetPassword.index} element={<ResetPassword />} />
+      <Route path={routes.products.index} element={<Products />} />
+      <Route path={routes.cart.index} element={<CartPage />} />
+      <Route path={routes.products.create} element={<CreateProductPage />} />
       <Route
         path={routes.farm_activities.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <FarmActivityPage />
-          </Suspense>
-        }
+        element={<FarmActivityPage />}
       />
-      <Route
-        path={routes.calendar.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <Calendar />
-          </Suspense>
-        }
-      />
-      <Route
-        path={routes.harvest.index}
-        element={
-          <Suspense fallback={<Loader />}>
-            <FieldPage />
-          </Suspense>
-        }
-      />
+      <Route path={routes.calendar.index} element={<Calendar />} />
+      <Route path={routes.fields.index} element={<FieldPage />} />
       <Route path="/products/:id" element={<ProductDetailPage />} />
       <Route path="/products/:id/edit" element={<EditProductPage />} />
       <Route path="/chat" element={<ConversationPage />} />
-      <Route path="/fields" element={<FieldList />} />
       <Route path="/fields/new" element={<FieldForm />} />
       <Route path="/fields/:id/edit" element={<FieldForm />} />
     </Route>
@@ -161,11 +53,7 @@ const router = createBrowserRouter(
 );
 
 function App() {
-  return (
-    <InitialLoader>
-      <RouterProvider router={router} />
-    </InitialLoader>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
