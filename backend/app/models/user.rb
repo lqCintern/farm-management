@@ -11,6 +11,7 @@ class User < ApplicationRecord
     has_one :member, foreign_key: :user_id, dependent: :destroy
     has_one :cooperative, foreign_key: :leader_id, dependent: :destroy
     has_many :crop_animals, dependent: :destroy
+    has_many :fields, dependent: :destroy
 
     validates :user_name, presence: true, length: { maximum: 255 }
     validates :email, presence: true, uniqueness: true, length: { maximum: 255 }

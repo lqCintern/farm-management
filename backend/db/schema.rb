@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_28_100113) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_06_085502) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -78,6 +78,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_28_100113) do
     t.integer "quantity"
     t.string "variety"
     t.string "source"
+    t.bigint "field_id"
+    t.index ["field_id"], name: "index_crop_animals_on_field_id"
     t.index ["user_id", "crop_type"], name: "index_crop_animals_on_user_id_and_crop_type"
     t.index ["user_id", "status"], name: "index_crop_animals_on_user_id_and_status"
     t.index ["user_id"], name: "index_crop_animals_on_user_id"
@@ -97,6 +99,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_28_100113) do
     t.date "actual_completion_date"
     t.text "actual_notes"
     t.bigint "parent_activity_id"
+    t.bigint "field_id"
+    t.json "coordinates"
+    t.index ["field_id"], name: "index_farm_activities_on_field_id"
     t.index ["parent_activity_id"], name: "index_farm_activities_on_parent_activity_id"
   end
 
@@ -112,6 +117,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_28_100113) do
     t.integer "category", default: 4
   end
 
+  create_table "fields", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "user_id", null: false
+    t.json "coordinates"
+    t.decimal "area", precision: 10, scale: 2
+    t.string "description"
+    t.string "location"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_fields_on_user_id"
+  end
+
   create_table "harvests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "crop_id", null: false
@@ -120,6 +137,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_28_100113) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "coordinates"
+    t.bigint "field_id"
+    t.bigint "farm_activity_id"
+    t.index ["farm_activity_id"], name: "index_harvests_on_farm_activity_id"
+    t.index ["field_id"], name: "index_harvests_on_field_id"
   end
 
   create_table "materials_purchases", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -262,7 +283,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_28_100113) do
   add_foreign_key "conversations", "product_listings"
   add_foreign_key "conversations", "users", column: "receiver_id", primary_key: "user_id"
   add_foreign_key "conversations", "users", column: "sender_id", primary_key: "user_id"
+  add_foreign_key "crop_animals", "fields"
   add_foreign_key "farm_activities", "farm_activities", column: "parent_activity_id"
+  add_foreign_key "farm_activities", "fields"
+  add_foreign_key "fields", "users", primary_key: "user_id"
+  add_foreign_key "harvests", "farm_activities"
+  add_foreign_key "harvests", "fields"
   add_foreign_key "messages", "conversations"
   add_foreign_key "messages", "users", primary_key: "user_id"
   add_foreign_key "product_images", "product_listings"
