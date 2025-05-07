@@ -26,7 +26,16 @@ Rails.application.routes.draw do
           put :toggle_status
         end
       end
-      
+      resources :fields do
+        member do
+          get :activities
+          get :harvests
+          get :crops
+        end
+        collection do
+          get :stats
+        end
+      end
       resources :crop_animals
       resources :product_orders, only: [:index, :show, :create, :update]
       
@@ -38,7 +47,14 @@ Rails.application.routes.draw do
       end
 
       resources :farm_materials
-      resources :harvests, only: [:create]
+            resources :harvests do
+        collection do
+          get :by_crop # GET /api/v1/harvests/by_crop/:crop_id
+          get :by_field # GET /api/v1/harvests/by_field/:field_id
+          get :stats # GET /api/v1/harvests/stats
+        end
+      end
+      
       post "/register", to: "auth#register"
       post "/login", to: "auth#login"
       post "auth/forgot_password", to: "auth#forgot_password"
