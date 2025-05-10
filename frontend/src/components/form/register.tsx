@@ -1,278 +1,286 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-	CardContent,
-	CardFooter,
-} from "@/components/ui/card";
-import { Mail, Lock, User, AlertCircle, Github } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { routes } from "@/constants";
+import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { FormEvent, useState } from "react";
-import { registerUser } from "@/services/authService"; 
+import {
+  Form,
+  Input,
+  Button,
+  Card,
+  Typography,
+  Alert,
+  Select,
+  Checkbox,
+  Divider,
+  Space,
+  notification,
+} from "antd";
+import {
+  MailOutlined,
+  LockOutlined,
+  UserOutlined,
+  InfoCircleOutlined,
+  GithubOutlined,
+  GoogleOutlined,
+} from "@ant-design/icons";
+import { routes } from "@/constants";
+import { registerUser } from "@/services/authService";
 import { validateEmail, validatePassword } from "@/constants/function";
-import { Bounce, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
+const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 const RegisterForm = () => {
-    const navigate = useNavigate();
-    const [name, setName] = useState("");
-    const [password, setPassword] = useState("");
-    const [email, setEmail] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate();
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [userType, setUserType] = useState("1");
 
-    const [errors, setErrors] = useState({
-        email: "",
-        password: "",
-        name: "",
-        confirmPassword: "",
-        general: "",
-    });
+  const onFinish = async (values: any) => {
+    setLoading(true);
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setErrors({
-            email: "",
-            password: "",
-            name: "",
-            confirmPassword: "",
-            general: "",
-        });
+    // Validate email and password
+    const emailError = validateEmail(values.email);
+    const passwordError = validatePassword(values.password);
 
-        // Validate email and password
-        const emailError = validateEmail(email);
-        const passwordError = validatePassword(password);
+    if (emailError || passwordError) {
+      if (emailError) {
+        form.setFields([{ name: "email", errors: [emailError] }]);
+      }
+      if (passwordError) {
+        form.setFields([{ name: "password", errors: [passwordError] }]);
+      }
+      setLoading(false);
+      return;
+    }
 
-        // Validate confirm password
-        let confirmPasswordError = "";
-        if (password !== confirmPassword) {
-            confirmPasswordError = "Passwords do not match.";
-        }
+    try {
+      // Call registerUser API
+      await registerUser({
+        user_name: values.name,
+        email: values.email,
+        password: values.password,
+        phone: "123456789", // Default value if needed
+        fullname: values.name,
+        address: "Default Address", // Default value if needed
+        user_type: parseInt(values.userType || userType, 10), // Convert to integer
+      });
 
-        if (emailError || passwordError || confirmPasswordError) {
-            setErrors({
-                email: emailError,
-                password: passwordError,
-                name: "",
-                confirmPassword: confirmPasswordError,
-                general: "",
-            });
-            return;
-        }
+      notification.success({
+        message: "Registration Successful",
+        description: "Please login with your new account",
+      });
 
-        try {
-            // Gọi API registerUser
-            await registerUser({
-                user_name: name,
-                email,
-                password,
-                phone: "123456789", // Thêm giá trị mặc định nếu cần
-                fullname: name,
-                address: "Default Address", // Thêm giá trị mặc định nếu cần
-                user_type: 1,
-            });
-            toast.success("Registration Successful, Please login", {
-                position: "top-center",
-                theme: "dark",
-                transition: Bounce,
-            });
-            navigate(routes.login.index);
-        } catch (error: any) {
-            setErrors((prev) => ({
-                ...prev,
-                general:
-                    error.response?.data?.message ||
-                    "Account Creation Failed. Please try again.",
-            }));
-        }
-    };
+      navigate(routes.login.index);
+    } catch (error: any) {
+      notification.error({
+        message: "Registration Failed",
+        description:
+          error.response?.data?.message ||
+          "Account creation failed. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <Card className="w-full max-w-md">
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold text-center">
-                        Create an account
-                    </CardTitle>
-                    <CardDescription className="text-center">
-                        Enter your details below to create your account
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {errors.general && (
-                        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                            {errors.general}
-                        </div>
-                    )}
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    placeholder="John Doe"
-                                    className="pl-10"
-                                    required
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                />
-                            </div>
-                            {errors.name && (
-                                <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                                    {errors.name}
-                                </div>
-                            )}
-                        </div>
+  const getUserTypeDescription = (type: string) => {
+    switch (type) {
+      case "1":
+        return "Create a farmer account to manage your farm activities and products.";
+      case "2":
+        return "Create a supplier account to sell agricultural supplies.";
+      case "3":
+        return "Create a trader account to purchase agricultural products.";
+      default:
+        return "";
+    }
+  };
 
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="name@example.com"
-                                    className="pl-10"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                />
-                            </div>
-                            {errors.email && (
-                                <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                                    {errors.email}
-                                </div>
-                            )}
-                        </div>
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        padding: "24px",
+      }}
+    >
+      <Card style={{ width: "100%", maxWidth: 500 }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <Title level={2}>Create an account</Title>
+          <Paragraph type="secondary">
+            Enter your details below to create your account
+          </Paragraph>
+        </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="Create a password"
-                                    className="pl-10"
-                                    required
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                />
-                            </div>
-                            {errors.password && (
-                                <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                                    {errors.password}
-                                </div>
-                            )}
-                        </div>
+        <Form
+          form={form}
+          name="register"
+          onFinish={onFinish}
+          layout="vertical"
+          requiredMark={false}
+        >
+          <Form.Item
+            name="name"
+            label="Full Name"
+            rules={[{ required: true, message: "Please input your name!" }]}
+          >
+            <Input
+              prefix={<UserOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="John Doe"
+              size="large"
+            />
+          </Form.Item>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">
-                                Confirm Password
-                            </Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-                                <Input
-                                    id="confirmPassword"
-                                    type="password"
-                                    placeholder="Confirm your password"
-                                    className="pl-10"
-                                    required
-                                    value={confirmPassword}
-                                    onChange={(e) =>
-                                        setConfirmPassword(e.target.value)
-                                    }
-                                />
-                            </div>
-                            {errors.confirmPassword && (
-                                <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                                    {errors.confirmPassword}
-                                </div>
-                            )}
-                        </div>
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[{ required: true, message: "Please input your email!" }]}
+          >
+            <Input
+              prefix={<MailOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="name@example.com"
+              size="large"
+            />
+          </Form.Item>
 
-						<Alert
-							variant="default"
-							className="bg-blue-50 text-blue-800 border-blue-200"
-						>
-							<AlertCircle className="h-4 w-4" />
-							<AlertDescription>
-								Password must be at least 8 characters long and
-								include a number and special character
-							</AlertDescription>
-						</Alert>
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[{ required: true, message: "Please input your password!" }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="Create a password"
+              size="large"
+            />
+          </Form.Item>
 
-						<div className="flex items-center space-x-2">
-							<input
-								type="checkbox"
-								id="terms"
-								className="h-4 w-4 rounded border-gray-300"
-								required
-							/>
-							<Label htmlFor="terms" className="text-sm">
-								I agree to the{" "}
-								<Button variant="link" className="p-0 h-auto">
-									Terms of Service
-								</Button>{" "}
-								and{" "}
-								<Button variant="link" className="p-0 h-auto">
-									Privacy Policy
-								</Button>
-							</Label>
-						</div>
+          <Form.Item
+            name="confirmPassword"
+            label="Confirm Password"
+            dependencies={["password"]}
+            rules={[
+              { required: true, message: "Please confirm your password!" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("The two passwords do not match!")
+                  );
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="Confirm your password"
+              size="large"
+            />
+          </Form.Item>
 
-						<Button
-							type="submit"
-							className="w-full bg-[#00B207] text-white"
-						>
-							Create Account
-						</Button>
-					</form>
-				</CardContent>
-				<CardFooter className="flex flex-col space-y-4">
-					<div className="relative">
-						<div className="absolute inset-0 flex items-center">
-							<span className="w-full border-t" />
-						</div>
-						<div className="relative flex justify-center text-xs uppercase">
-							<span className="bg-white px-2 text-gray-500">
-								Or continue with
-							</span>
-						</div>
-					</div>
-					<div className="flex space-x-2">
-						<Button variant="outline" className="w-full">
-							<Mail />
-							Google
-						</Button>
-						<Button variant="outline" className="w-full">
-							<Github />
-							GitHub
-						</Button>
-					</div>
-					<p className="text-center text-sm text-gray-600">
-						Already have an account?{" "}
-						<Button
-							variant="link"
-							className="p-0"
-							onClick={() => navigate(routes.login.index)}
-						>
-							Sign in
-						</Button>
-					</p>
-				</CardFooter>
-			</Card>
-		</div>
-	);
+          <Form.Item
+            name="userType"
+            label="Account Type"
+            initialValue={userType}
+          >
+            <Select size="large" onChange={(value) => setUserType(value)}>
+              <Option value="1">Farmer (Nông dân)</Option>
+              <Option value="2">Supplier (Nhà cung cấp vật tư)</Option>
+              <Option value="3">Trader (Thương lái)</Option>
+            </Select>
+          </Form.Item>
+
+          <Paragraph
+            type="secondary"
+            style={{ marginTop: -16, marginBottom: 16 }}
+          >
+            {getUserTypeDescription(userType)}
+          </Paragraph>
+
+          <Alert
+            message={
+              <span>
+                <InfoCircleOutlined style={{ marginRight: 8 }} />
+                Password must be at least 8 characters long and include a number
+                and special character
+              </span>
+            }
+            type="info"
+            style={{ marginBottom: 16 }}
+          />
+
+          <Form.Item
+            name="agreement"
+            valuePropName="checked"
+            rules={[
+              {
+                validator: (_, value) =>
+                  value
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        new Error("You must accept the terms and conditions")
+                      ),
+              },
+            ]}
+          >
+            <Checkbox>
+              I agree to the{" "}
+              <Button type="link" style={{ padding: 0 }}>
+                Terms of Service
+              </Button>{" "}
+              and{" "}
+              <Button type="link" style={{ padding: 0 }}>
+                Privacy Policy
+              </Button>
+            </Checkbox>
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+              loading={loading}
+              style={{ backgroundColor: "#00B207" }}
+            >
+              Create Account
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <Divider plain>Or continue with</Divider>
+
+        <Space
+          size="middle"
+          style={{ width: "100%", justifyContent: "center", marginBottom: 16 }}
+        >
+          <Button icon={<GoogleOutlined />} size="large">
+            Google
+          </Button>
+          <Button icon={<GithubOutlined />} size="large">
+            GitHub
+          </Button>
+        </Space>
+
+        <div style={{ textAlign: "center" }}>
+          <Text type="secondary">
+            Already have an account?{" "}
+            <Button
+              type="link"
+              style={{ padding: 0 }}
+              onClick={() => navigate(routes.login.index)}
+            >
+              Sign in
+            </Button>
+          </Text>
+        </div>
+      </Card>
+    </div>
+  );
 };
 
 export default RegisterForm;

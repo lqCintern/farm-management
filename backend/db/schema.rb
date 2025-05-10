@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_06_085502) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_10_080719) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -143,16 +143,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_06_085502) do
     t.index ["field_id"], name: "index_harvests_on_field_id"
   end
 
-  create_table "materials_purchases", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.integer "user_id", null: false
-    t.integer "supply_id", null: false
-    t.decimal "quantity", precision: 10, scale: 2, null: false
-    t.decimal "price", precision: 10, scale: 2, null: false
-    t.timestamp "purchase_date", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "members", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "coop_id", null: false
@@ -215,18 +205,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_06_085502) do
     t.index ["user_id"], name: "index_product_listings_on_user_id"
   end
 
-  create_table "product_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "name"
-    t.integer "supplier_id", null: false
-    t.integer "category"
-    t.decimal "price", precision: 10, scale: 2, null: false
-    t.string "unit", null: false
-    t.decimal "stock", precision: 10, null: false
-    t.timestamp "last_updated", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "product_orders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "product_listing_id", null: false
     t.bigint "buyer_id", null: false
@@ -250,6 +228,81 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_06_085502) do
     t.timestamp "sale_date", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "supplier_reviews", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "supply_listing_id", null: false
+    t.bigint "supply_order_id", null: false
+    t.bigint "reviewer_id", null: false
+    t.bigint "supplier_id", null: false
+    t.integer "rating", null: false
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reviewer_id"], name: "index_supplier_reviews_on_reviewer_id"
+    t.index ["supplier_id"], name: "index_supplier_reviews_on_supplier_id"
+    t.index ["supply_listing_id"], name: "index_supplier_reviews_on_supply_listing_id"
+    t.index ["supply_order_id"], name: "index_supplier_reviews_on_supply_order_id"
+  end
+
+  create_table "supply_images", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "supply_listing_id", null: false
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["supply_listing_id", "position"], name: "index_supply_images_on_supply_listing_id_and_position"
+    t.index ["supply_listing_id"], name: "index_supply_images_on_supply_listing_id"
+  end
+
+  create_table "supply_listings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.bigint "user_id", null: false
+    t.integer "category"
+    t.decimal "price", precision: 10, scale: 2, null: false
+    t.string "unit", null: false
+    t.decimal "quantity", precision: 10, null: false
+    t.timestamp "last_updated", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "description"
+    t.integer "status", default: 1
+    t.string "brand"
+    t.string "manufacturer"
+    t.date "manufacturing_date"
+    t.date "expiry_date"
+    t.string "province"
+    t.string "district"
+    t.string "ward"
+    t.string "address"
+    t.integer "view_count", default: 0
+    t.integer "order_count", default: 0
+    t.index ["category"], name: "index_supply_listings_on_category"
+    t.index ["province"], name: "index_supply_listings_on_province"
+    t.index ["status"], name: "index_supply_listings_on_status"
+    t.index ["user_id"], name: "fk_rails_5869d02daf"
+  end
+
+  create_table "supply_orders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.bigint "supply_listing_id", null: false
+    t.decimal "quantity", precision: 10, scale: 2, null: false
+    t.decimal "price", precision: 10, scale: 2, null: false
+    t.timestamp "purchase_date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "status", default: 0
+    t.text "note"
+    t.text "rejection_reason"
+    t.string "delivery_province"
+    t.string "delivery_district"
+    t.string "delivery_ward"
+    t.string "delivery_address"
+    t.string "contact_phone"
+    t.integer "payment_method", default: 0
+    t.boolean "is_paid", default: false
+    t.index ["status"], name: "index_supply_orders_on_status"
+    t.index ["supply_listing_id"], name: "index_supply_orders_on_supply_listing_id"
+    t.index ["user_id"], name: "index_supply_orders_on_user_id"
   end
 
   create_table "transactions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -296,4 +349,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_06_085502) do
   add_foreign_key "product_listings", "users", primary_key: "user_id"
   add_foreign_key "product_orders", "product_listings"
   add_foreign_key "product_orders", "users", column: "buyer_id", primary_key: "user_id"
+  add_foreign_key "supplier_reviews", "supply_listings"
+  add_foreign_key "supplier_reviews", "supply_orders"
+  add_foreign_key "supplier_reviews", "users", column: "reviewer_id", primary_key: "user_id"
+  add_foreign_key "supplier_reviews", "users", column: "supplier_id", primary_key: "user_id"
+  add_foreign_key "supply_images", "supply_listings"
+  add_foreign_key "supply_listings", "users", primary_key: "user_id"
+  add_foreign_key "supply_orders", "supply_listings"
 end

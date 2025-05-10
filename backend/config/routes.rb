@@ -9,12 +9,12 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :farm_activities, only: [:index, :show, :create, :update, :destroy] do
         member do
-          post :complete # API để đánh dấu hoàn thành
+          post :complete
         end
 
         collection do
-          get :statistics # API thống kê
-          get :history_by_field # API lịch sử theo cánh đồng
+          get :statistics
+          get :history_by_field
         end
       end
 
@@ -47,18 +47,48 @@ Rails.application.routes.draw do
       end
 
       resources :farm_materials
-            resources :harvests do
+      resources :harvests do
         collection do
           get :by_crop # GET /api/v1/harvests/by_crop/:crop_id
           get :by_field # GET /api/v1/harvests/by_field/:field_id
           get :stats # GET /api/v1/harvests/stats
         end
       end
+
+      # Routes cho nhà cung cấp
+      namespace :supplier do
+        resources :supply_listings do
+          member do
+            put :change_status
+          end
+        end
+        
+        resources :supply_orders, only: [:index, :show, :update]
+        get 'dashboard', to: 'supply_orders#dashboard'
+      end
       
+      # Routes cho nông dân
+      resources :supply_listings, only: [:index, :show] do
+        collection do
+          get :categories
+        end
+      end
+      
+      resources :supply_orders, only: [:index, :show, :create] do
+        member do
+          patch :cancel
+          patch :complete
+        end
+      end
+      
+      resources :supplier_reviews, only: [:create]
+      get 'suppliers/:id/reviews', to: 'supplier_reviews#supplier_reviews'
+
       post "/register", to: "auth#register"
       post "/login", to: "auth#login"
       post "auth/forgot_password", to: "auth#forgot_password"
       post "auth/reset_password", to: "auth#reset_password"
+      get "/auth/profile", to: "auth#profile"
     end
   end
 end

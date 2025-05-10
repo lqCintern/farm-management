@@ -66,11 +66,44 @@ module Api
         end
       end
 
+      # Lấy thông tin người dùng
+      def profile
+        token = request.headers["Authorization"]&.split(" ")&.last
+        if token
+          decoded_token = decode_token(token)
+          user_id = decoded_token[0]["user_id"]
+          user = User.find_by(user_id: user_id)
+
+          if user
+            render json: {
+              id: user.user_id,
+              email: user.email,
+              user_name: user.user_name,
+              user_type: user.user_type,
+              fullname: user.fullname,
+              phone: user.phone,
+              address: user.address
+            }, status: :ok
+          else
+            render json: { error: "User not found" }, status: :not_found
+          end
+        else
+          render json: { error: "Token is missing" }, status: :unauthorized
+        end
+      end
+
       private
 
       # Mã hóa JWT
       def encode_token(payload)
         JWT.encode(payload, SECRET_KEY)
+      end
+
+      # Giải mã JWT
+      def decode_token(token)
+        JWT.decode(token, SECRET_KEY, true, algorithm: "HS256")
+      rescue JWT::DecodeError
+        nil
       end
 
       # Strong parameters

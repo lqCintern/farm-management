@@ -23,6 +23,10 @@ import Calendar from "./pages/Calendar";
 import FieldPage from "./pages/Field";
 import ConversationPage from "./pages/Conversation";
 import FieldForm from "@/components/Field/FieldForm";
+import SupplyMarketplace from "@/components/farmer/SupplyMarketplace";
+import SupplierDashboard from "@/components/supplier/SupplierDashboard";
+import SupplyListingList from "@/components/supplier/SupplyListingList";
+import SupplyListingsManagement from "@/components/supplier/SupplyListingsManagement";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -48,6 +52,13 @@ const router = createBrowserRouter(
       <Route path="/chat" element={<ConversationPage />} />
       <Route path="/fields/new" element={<FieldForm />} />
       <Route path="/fields/:id/edit" element={<FieldForm />} />
+      <Route path="/supply-marketplace" element={<SupplyMarketplace />} />
+      <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
+      <Route
+        path="/supplier/listings-management"
+        element={<SupplyListingsManagement />}
+      />
+      <Route path="/supplier/listings" element={<SupplyListingList />} />
     </Route>
   )
 );
