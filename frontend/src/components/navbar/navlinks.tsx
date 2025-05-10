@@ -1,3 +1,5 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -6,40 +8,88 @@ import {
   NavigationMenuTrigger,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
-import { useNavigate } from "react-router-dom";
-import { PhoneIcon } from "../icons";
 
-export default function Navlinks() {
-  const navigate = useNavigate();
-  const links = [
+// Cấu hình navlinksConfig
+const navlinksConfig: Record<string, any[]> = {
+  farmer: [
     {
       id: 1,
       name: "Home",
-      subLinks: [{ name: "Homepage", href: "/calendar" }],
-    },
-    {
-      id: 2,
-      name: "Shop",
       subLinks: [
-        { name: "New", href: "/products/create" },
-        { name: "Products", href: "/products" },
-        { name: "Categories", href: "/categories" },
+        { name: "Homepage", href: "/calendar" },
+        { name: "Chat", href: "/chat" },
+        { name: "Field", href: "/fields" },
+        { name: "Tasks", href: "/tasks" },
+        { name: "Notes", href: "/notes" },
       ],
     },
     {
-      id: 3,
+      id: 2,
       name: "Activity",
       subLinks: [{ name: "Farm Activities", href: "/farm-activities" }],
     },
     {
-      id: 4,
+      id: 3,
       name: "Contact Us",
       subLinks: [
         { name: "Contact", href: "/contact" },
         { name: "Location", href: "/location" },
       ],
     },
-  ];
+  ],
+  supplier: [
+    {
+      id: 1,
+      name: "Dashboard",
+      subLinks: [
+        { name: "Overview", href: "/supplier/dashboard" },
+        { name: "Listings", href: "/supplier/listings" },
+        { name: "Orders", href: "/supplier/orders" },
+      ],
+    },
+    {
+      id: 2,
+      name: "Shop",
+      subLinks: [
+        { name: "New Product", href: "/products/create" },
+        { name: "Products", href: "/products" },
+        { name: "Categories", href: "/categories" },
+      ],
+    },
+    {
+      id: 3,
+      name: "Contact Us",
+      subLinks: [
+        { name: "Contact", href: "/contact" },
+        { name: "Location", href: "/location" },
+      ],
+    },
+  ],
+};
+
+// Hàm getInitials
+const getInitials = (name: string | undefined | null) => {
+  if (!name) return ""; // Trả về chuỗi rỗng nếu name không hợp lệ
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+};
+
+// Define the SubLink type if not already imported
+interface SubLink {
+  name: string;
+  href: string;
+}
+
+interface NavlinksProps {
+  userType: string | null;
+}
+
+export default function Navlinks({ userType }: NavlinksProps) {
+  const navigate = useNavigate();
+  const links = navlinksConfig[userType || "farmer"]; // Mặc định là "farmer" nếu không có userType
 
   return (
     <div className="flex bg-[#333333] text-white space-x-4 px-4 py-2 justify-between">
@@ -53,7 +103,7 @@ export default function Navlinks() {
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className="bg-[#333333] text-white">
                   <div className="grid w-[200px] p-2">
-                    {link.subLinks.map((subLink) => (
+                    {link.subLinks.map((subLink: SubLink) => (
                       <NavigationMenuLink
                         asChild
                         key={subLink.name}
@@ -73,10 +123,6 @@ export default function Navlinks() {
             </NavigationMenuList>
           </NavigationMenu>
         ))}
-      </div>
-      <div className="flex gap-3">
-        <PhoneIcon className="mt-1" />
-        <p className="text-white text-[13px] mt-2">{`0833 143 135`}</p>
       </div>
     </div>
   );

@@ -10,6 +10,6 @@ class FarmMaterial < ApplicationRecord
   validates :unit, presence: true
   
   # Phân loại vật tư
-  enum category: { fertilizer: 0, pesticide: 1, seed: 2, tool: 3, other: 4 }
+  enum :category, { fertilizer: 0, pesticide: 1, seed: 2, tool: 3, other: 4 }
 
 end
