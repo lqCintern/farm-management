@@ -77,16 +77,22 @@ class Api::V1::FarmActivitiesController < Api::BaseController
 
   # API để đánh dấu hoàn thành và cập nhật thông tin thực tế
   def complete
+    # Validate và tìm activity
+    @farm_activity = current_user.farm_activities.find(params[:id])
+  
+    # Gọi service để xử lý hoàn thành
     service = FarmActivityService.new(@farm_activity, current_user)
-    farm_activity = service.complete_activity(completion_params)
-
-    if farm_activity.errors.empty?
+    result = service.complete_activity(completion_params)
+  
+    # Kiểm tra kết quả từ service
+    if result[:success]
       render json: {
         message: "Đã đánh dấu hoàn thành hoạt động",
-        data: ApiRendererService.render_farm_activities([farm_activity], nil)[:farm_activities].first
+        data: ApiRendererService.render_farm_activities([@farm_activity], nil)[:farm_activities].first,
+        suggestion: result[:suggestion]
       }, status: :ok
     else
-      render json: { errors: farm_activity.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: result[:error] }, status: :unprocessable_entity
     end
   end
 
@@ -125,6 +131,23 @@ class Api::V1::FarmActivitiesController < Api::BaseController
     }, status: :ok
   end
 
+  # API để lấy danh sách hoạt động theo giai đoạn
+  def stage_activities
+    crop = PineappleCrop.find(params[:pineapple_crop_id])
+  
+    # Gọi service để xử lý logic
+    result = FarmActivityService.new(nil, current_user)
+              .get_stage_activities(crop, params[:current_stage_only])
+              
+    @pagy, activities = pagy(result, items: 10)
+  
+    render json: {
+      data: ApiRendererService.render_farm_activities(activities, @pagy),
+      stage: crop.current_stage,
+      pagination: pagy_metadata(@pagy)
+    }, status: :ok
+  end
+
   private
 
   def set_farm_activity
@@ -141,6 +164,7 @@ class Api::V1::FarmActivitiesController < Api::BaseController
       :start_date, 
       :end_date, 
       :crop_animal_id,
+      :field_id,
       materials: {}
     )
   end

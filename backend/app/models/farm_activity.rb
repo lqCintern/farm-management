@@ -1,7 +1,7 @@
 class FarmActivity < ApplicationRecord
-
   belongs_to :user
-  belongs_to :crop_animal, foreign_key: :crop_animal_id
+  # Sửa quan hệ để sử dụng foreign key đúng
+  belongs_to :pineapple_crop, foreign_key: :crop_animal_id, optional: true
   has_many :activity_materials, dependent: :destroy
   has_many :farm_materials, through: :activity_materials
   
@@ -38,13 +38,13 @@ class FarmActivity < ApplicationRecord
   validates :end_date, presence: true
   validates :field_id, presence: true
   
-  # Validation quy trình trồng dứa
-  validate :validate_pineapple_process, if: -> { crop_animal&.crop_type == 'pineapple' }
+  # Validation quy trình trồng dứa - luôn validate vì bây giờ đã chuyển sang model dành riêng cho dứa
+  validate :validate_pineapple_process
   
   # Kiểm tra hoạt động tương tự
   validate :check_similar_activities
   
-  # # Lưu tọa độ cho hoạt động
+  # Lưu tọa độ cho hoạt động
   # serialize :coordinates, JSON
 
   # def coordinates_array
@@ -54,6 +54,7 @@ class FarmActivity < ApplicationRecord
   # Kiểm tra quy trình trồng dứa
   def validate_pineapple_process
     return if parent_activity.present? # Bỏ qua nếu là hoạt động lặp lại
+    return unless pineapple_crop.present? # Bỏ qua nếu không có liên kết với pineapple_crop
     
     # Lấy các hoạt động trước đó của cùng cây dứa và cánh đồng
     previous_activities = FarmActivity.where(
@@ -103,5 +104,14 @@ class FarmActivity < ApplicationRecord
     if similar_activities.exists?
       errors.add(:base, "Đã tồn tại hoạt động tương tự trên cùng cánh đồng trong khoảng thời gian này")
     end
+  end
+  
+  # Thêm helper method để dễ truy cập pineapple_crop_id (giúp code dễ đọc hơn)
+  def pineapple_crop_id
+    crop_animal_id
+  end
+  
+  def pineapple_crop_id=(value)
+    self.crop_animal_id = value
   end
 end
