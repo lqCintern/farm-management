@@ -3,7 +3,7 @@ require 'rgeo'
 class Field < ApplicationRecord
   # Quan hệ
   belongs_to :user
-  has_many :crop_animals
+  has_many :pineapple_crop
   has_many :farm_activities
   has_many :harvests
   

@@ -67,3 +67,26 @@ export const getFarmActivityStatistics = async (params: StatisticsParams) => {
     throw error;
   }
 };
+
+export const completeFarmActivity = async (activityId: number, completionData: { 
+  farm_activity: { 
+    actual_notes?: string; 
+    actual_completion_date?: string;
+    actual_materials?: Array<{
+      farm_material_id: number;
+      quantity: number;
+      unit: string;
+    }>;
+  }; 
+}) => {
+  try {
+    const response = await axiosInstance.post(
+      `/farm_activities/${activityId}/complete`, 
+      completionData
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error completing farm activity:", error);
+    throw error;
+  }
+};

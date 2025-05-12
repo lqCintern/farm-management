@@ -137,8 +137,9 @@ class PineappleCropService
     created = []
     ActiveRecord::Base.transaction do
       @pineapple_crop.farm_activities.destroy_all
+      
       activities_params.each do |act|
-        created << @pineapple_crop.farm_activities.create!(
+        activity = @pineapple_crop.farm_activities.new(
           activity_type: act[:activity_type],
           description: act[:description],
           start_date: act[:start_date],
@@ -148,6 +149,12 @@ class PineappleCropService
           user_id: @user.id,
           field_id: act[:field_id] || @pineapple_crop.field_id
         )
+        
+        # Bỏ qua kiểm tra trùng lặp khi tạo từ template
+        activity.skip_similar_check = true
+        activity.save!
+        
+        created << activity
       end
     end
     created
