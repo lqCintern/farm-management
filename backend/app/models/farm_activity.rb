@@ -43,6 +43,7 @@ class FarmActivity < ApplicationRecord
   
   # Kiểm tra hoạt động tương tự
   validate :check_similar_activities
+  attr_accessor :skip_similar_check
   
   # Lưu tọa độ cho hoạt động
   # serialize :coordinates, JSON
@@ -91,7 +92,7 @@ class FarmActivity < ApplicationRecord
   
   # Kiểm tra hoạt động tương tự
   def check_similar_activities
-    return if parent_activity.present? # Bỏ qua nếu là hoạt động lặp lại
+    return if parent_activity.present? || skip_similar_check == true
     
     # Tìm hoạt động tương tự (cùng loại, cùng cánh đồng, trong khoảng thời gian gần nhau)
     similar_activities = FarmActivity.where(

@@ -29,7 +29,7 @@ class PineappleActivityTemplate < ApplicationRecord
   }, prefix: true
   
   validates :name, :activity_type, :stage, presence: true
-  validates :day_offset, :duration_days, numericality: { greater_than_or_equal_to: 0 }
+  validates :day_offset, :duration_days, presence: true
   
   scope :default_templates, -> { where(user_id: nil) }
   scope :for_stage, ->(stage) { where(stage: stage) }

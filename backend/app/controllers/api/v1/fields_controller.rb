@@ -1,7 +1,7 @@
 module Api
   module V1
     class FieldsController < Api::BaseController
-      before_action :set_field, only: [:show, :update, :destroy, :activities, :harvests, :crops]
+      before_action :set_field, only: [:show, :update, :destroy, :activities, :harvests, :pineapple_crops]
 
       # GET /api/v1/fields
       def index
@@ -47,7 +47,7 @@ module Api
         if field_params[:coordinates].present?
           # Cần gán tạm để tính diện tích
           @field.assign_attributes(field_params)
-          @field.area = field_params[:area] || field.calculate_area
+          @field.area = field_params[:area] || @field.calculate_area
         end
 
         if @field.update(field_params)
@@ -62,9 +62,9 @@ module Api
 
       # DELETE /api/v1/fields/:id
       def destroy
-        if @field.crop_animals.exists? || @field.farm_activities.exists? || @field.harvests.exists?
+        if @field.pineapple_crops.exists? || @field.farm_activities.exists? || @field.harvests.exists?
           render json: { 
-            error: "Cannot delete field. It has associated crops, activities or harvests." 
+            error: "Cannot delete field. It has associated pineapple crops, activities or harvests." 
           }, status: :unprocessable_entity
           return
         end
@@ -78,7 +78,7 @@ module Api
       # GET /api/v1/fields/:id/activities
       def activities
         activities = @field.farm_activities
-                          .includes(:crop_animal, :user)
+                          .includes(:pineapple_crop, :user)
                           .order(start_date: :desc)
         
         render json: {
@@ -90,7 +90,7 @@ module Api
       # GET /api/v1/fields/:id/harvests
       def harvests
         harvests = @field.harvests
-                        .includes(:crop_animal, :user)
+                        .includes(:pineapple_crop, :user)
                         .order(harvest_date: :desc)
         
         render json: {
@@ -99,13 +99,13 @@ module Api
         }
       end
 
-      # GET /api/v1/fields/:id/crops
-      def crops
-        crops = @field.crop_animals
+      # GET /api/v1/fields/:id/pineapple_crops
+      def pineapple_crops
+        pineapple_crops = @field.pineapple_crops
 
         render json: {
-          message: "Field crops retrieved successfully",
-          data: crops.map { |c| crop_response(c) }
+          message: "Field pineapple crops retrieved successfully",
+          data: pineapple_crops.map { |c| pineapple_crop_response(c) }
         }
       end
 
@@ -114,11 +114,11 @@ module Api
         # Thống kê theo diện tích
         total_area = current_user.fields.sum(:area)
         
-        # Thống kê theo cây trồng
+        # Thống kê theo vụ trồng dứa
         crops_by_field = current_user.fields
-                                    .joins(:crop_animals)
+                                    .joins(:pineapple_crops)
                                     .group("fields.id")
-                                    .count("crop_animals.id")
+                                    .count("pineapple_crops.id")
         
         # Thống kê hoạt động
         activities_by_field = current_user.fields
@@ -170,7 +170,6 @@ module Api
           location: field.location,
           area: field.area,
           coordinates: field.coordinates,
-          crop_count: field.crop_animals.count,
           activity_count: field.farm_activities.is_a?(ActiveRecord::Relation) ? field.farm_activities.count : 0,
           harvest_count: field.harvests.count,
           created_at: field.created_at,
@@ -187,11 +186,11 @@ module Api
           end_date: activity.end_date,
           status: activity.status,
           frequency: activity.frequency,
-          crop: {
-            id: activity.crop_animal&.id,
-            name: activity.crop_animal&.name,
-            crop_type: activity.crop_animal&.crop_type
-          },
+          pineapple_crop: activity.pineapple_crop ? {
+            id: activity.pineapple_crop.id,
+            name: activity.pineapple_crop.name,
+            current_stage: activity.pineapple_crop.current_stage
+          } : nil,
           coordinates: activity.coordinates,
           created_at: activity.created_at,
           updated_at: activity.updated_at
@@ -203,26 +202,29 @@ module Api
           id: harvest.id,
           quantity: harvest.quantity,
           harvest_date: harvest.harvest_date,
-          crop: {
-            id: harvest.crop_animal&.id,
-            name: harvest.crop_animal&.name,
-            crop_type: harvest.crop_animal&.crop_type
-          },
+          pineapple_crop: harvest.pineapple_crop ? {
+            id: harvest.pineapple_crop.id,
+            name: harvest.pineapple_crop.name,
+            current_stage: harvest.pineapple_crop.current_stage
+          } : nil,
           coordinates: harvest.coordinates,
           created_at: harvest.created_at,
           updated_at: harvest.updated_at
         }
       end
 
-      def crop_response(crop)
+      def pineapple_crop_response(crop)
         {
           id: crop.id,
           name: crop.name,
-          crop_type: crop.crop_type,
+          season_type: crop.season_type,
+          current_stage: crop.current_stage,
           status: crop.status,
           planting_date: crop.planting_date,
-          harvest_date: crop.harvest_date,
-          expected_output: crop.expected_output,
+          field_area: crop.field_area,
+          planting_density: crop.planting_density,
+          variety: crop.variety,
+          source: crop.source,
           description: crop.description,
           created_at: crop.created_at,
           updated_at: crop.updated_at

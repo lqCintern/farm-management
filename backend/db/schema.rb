@@ -288,7 +288,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
 
   create_table "supply_listings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
-    t.bigint "user_id", null: false
+    t.integer "user_id", null: false
     t.integer "category"
     t.decimal "price", precision: 10, scale: 2, null: false
     t.string "unit", null: false
@@ -311,12 +311,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
     t.index ["category"], name: "index_supply_listings_on_category"
     t.index ["province"], name: "index_supply_listings_on_province"
     t.index ["status"], name: "index_supply_listings_on_status"
-    t.index ["user_id"], name: "fk_rails_5869d02daf"
   end
 
   create_table "supply_orders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.bigint "supply_listing_id", null: false
+    t.integer "supply_id", null: false
     t.decimal "quantity", precision: 10, scale: 2, null: false
     t.decimal "price", precision: 10, scale: 2, null: false
     t.timestamp "purchase_date", null: false
@@ -332,6 +331,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
     t.string "contact_phone"
     t.integer "payment_method", default: 0
     t.boolean "is_paid", default: false
+    t.bigint "supply_listing_id"
     t.index ["status"], name: "index_supply_orders_on_status"
     t.index ["supply_listing_id"], name: "index_supply_orders_on_supply_listing_id"
     t.index ["user_id"], name: "index_supply_orders_on_user_id"
@@ -386,6 +386,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
   add_foreign_key "supplier_reviews", "users", column: "reviewer_id", primary_key: "user_id"
   add_foreign_key "supplier_reviews", "users", column: "supplier_id", primary_key: "user_id"
   add_foreign_key "supply_images", "supply_listings"
-  add_foreign_key "supply_listings", "users", primary_key: "user_id"
   add_foreign_key "supply_orders", "supply_listings"
 end

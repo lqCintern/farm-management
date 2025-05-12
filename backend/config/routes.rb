@@ -96,11 +96,12 @@ Rails.application.routes.draw do
         post :advance_stage
         post :record_harvest
         post :clean_activities
-        post :preview_plan
+        
         post :confirm_plan
       end
       collection do
         get :statistics
+        post :preview_plan
       end
     end
 

@@ -26,6 +26,10 @@ import FieldForm from "@/components/Field/FieldForm";
 import SupplyMarketplace from "@/components/farmer/SupplyMarketplace";
 import SupplierDashboard from "@/components/supplier/SupplierDashboard";
 import SupplyListingList from "@/components/supplier/SupplyListingList";
+import PineappleCropFormPage  from "@/pages/PineappleCrop/PineappleCropForm";
+import PineappleCropDetailPage  from "@/pages/PineappleCrop/PineappleCropDetail";
+import PineappleCropActivities  from "@/pages/PineappleCrop/PineappleCropActivities";
+
 import SupplyListingsManagement from "@/components/supplier/SupplyListingsManagement";
 
 const router = createBrowserRouter(
@@ -59,6 +63,9 @@ const router = createBrowserRouter(
         element={<SupplyListingsManagement />}
       />
       <Route path="/supplier/listings" element={<SupplyListingList />} />
+      <Route path="/pineapple" element={<PineappleCropFormPage />} />
+      <Route path="/pineapple/:id" element={<PineappleCropDetailPage />} />
+      <Route path="/pineapple/:id/activities" element={<PineappleCropActivities />} />
     </Route>
   )
 );
