@@ -81,6 +81,29 @@ Rails.application.routes.draw do
         end
       end
       
+    # Routes cho templates
+    resources :pineapple_activity_templates do
+      collection do
+        post :apply_to_crop
+      end
+    end
+    
+    # Routes cho crop
+    resources :pineapple_crops do
+      member do
+        post :generate_plan
+        post :generate_stage_plan
+        post :advance_stage
+        post :record_harvest
+        post :clean_activities
+        post :preview_plan
+        post :confirm_plan
+      end
+      collection do
+        get :statistics
+      end
+    end
+
       resources :supplier_reviews, only: [:create]
       get 'suppliers/:id/reviews', to: 'supplier_reviews#supplier_reviews'
 

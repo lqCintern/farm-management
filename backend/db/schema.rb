@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_10_080719) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -61,28 +61,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_10_080719) do
     t.index ["product_listing_id"], name: "index_conversations_on_product_listing_id"
     t.index ["receiver_id"], name: "index_conversations_on_receiver_id"
     t.index ["sender_id"], name: "index_conversations_on_sender_id"
-  end
-
-  create_table "crop_animals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.integer "crop_type", null: false
-    t.string "name", null: false
-    t.integer "field_area"
-    t.date "planting_date"
-    t.date "harvest_date"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.integer "status", default: 0, null: false
-    t.text "description"
-    t.string "location"
-    t.integer "quantity"
-    t.string "variety"
-    t.string "source"
-    t.bigint "field_id"
-    t.index ["field_id"], name: "index_crop_animals_on_field_id"
-    t.index ["user_id", "crop_type"], name: "index_crop_animals_on_user_id_and_crop_type"
-    t.index ["user_id", "status"], name: "index_crop_animals_on_user_id_and_status"
-    t.index ["user_id"], name: "index_crop_animals_on_user_id"
   end
 
   create_table "farm_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -162,6 +140,60 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_10_080719) do
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
     t.index ["user_id", "read"], name: "index_messages_on_user_id_and_read"
     t.index ["user_id"], name: "index_messages_on_user_id"
+  end
+
+  create_table "pineapple_activity_templates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.integer "activity_type", null: false
+    t.integer "stage", null: false
+    t.integer "day_offset"
+    t.integer "duration_days"
+    t.string "season_specific"
+    t.boolean "is_required", default: true
+    t.bigint "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_pineapple_activity_templates_on_user_id"
+  end
+
+  create_table "pineapple_crops", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "crop_type", default: 0, null: false
+    t.string "name", null: false
+    t.integer "field_area"
+    t.date "planting_date"
+    t.date "harvest_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "status", default: 0, null: false
+    t.text "description"
+    t.string "location"
+    t.integer "quantity"
+    t.string "variety"
+    t.string "source"
+    t.bigint "field_id"
+    t.string "season_type", comment: "Vụ: Xuân-Hè hoặc Thu-Đông"
+    t.integer "planting_density", comment: "Mật độ trồng (cây/ha)"
+    t.date "land_preparation_date", comment: "Ngày chuẩn bị đất"
+    t.date "expected_flower_date", comment: "Ngày dự kiến ra hoa"
+    t.date "actual_flower_date", comment: "Ngày thực tế ra hoa"
+    t.integer "current_stage", default: 0, comment: "Giai đoạn hiện tại: 0-Chuẩn bị, 1-Trồng, 2-Chăm sóc, etc."
+    t.date "current_stage_start_date", comment: "Ngày bắt đầu giai đoạn hiện tại"
+    t.json "fertilizer_schedule", comment: "Lịch bón phân"
+    t.date "flower_treatment_date", comment: "Ngày xử lý ra hoa"
+    t.date "tie_date", comment: "Ngày buộc lá (áp dụng vụ Xuân-Hè)"
+    t.decimal "expected_yield", precision: 10, scale: 2, comment: "Sản lượng dự kiến (kg)"
+    t.decimal "actual_yield", precision: 10, scale: 2, comment: "Sản lượng thực tế (kg)"
+    t.decimal "completion_percentage", precision: 5, scale: 2, default: "0.0", comment: "Phần trăm hoàn thành chu kỳ"
+    t.index ["current_stage"], name: "index_pineapple_crops_on_current_stage"
+    t.index ["field_id"], name: "index_pineapple_crops_on_field_id"
+    t.index ["harvest_date"], name: "index_pineapple_crops_on_harvest_date"
+    t.index ["planting_date"], name: "index_pineapple_crops_on_planting_date"
+    t.index ["season_type"], name: "index_pineapple_crops_on_season_type"
+    t.index ["user_id", "crop_type"], name: "index_pineapple_crops_on_user_id_and_crop_type"
+    t.index ["user_id", "status"], name: "index_pineapple_crops_on_user_id_and_status"
+    t.index ["user_id"], name: "index_pineapple_crops_on_user_id"
   end
 
   create_table "product_images", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -336,7 +368,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_10_080719) do
   add_foreign_key "conversations", "product_listings"
   add_foreign_key "conversations", "users", column: "receiver_id", primary_key: "user_id"
   add_foreign_key "conversations", "users", column: "sender_id", primary_key: "user_id"
-  add_foreign_key "crop_animals", "fields"
   add_foreign_key "farm_activities", "farm_activities", column: "parent_activity_id"
   add_foreign_key "farm_activities", "fields"
   add_foreign_key "fields", "users", primary_key: "user_id"
@@ -344,8 +375,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_10_080719) do
   add_foreign_key "harvests", "fields"
   add_foreign_key "messages", "conversations"
   add_foreign_key "messages", "users", primary_key: "user_id"
+  add_foreign_key "pineapple_crops", "fields"
   add_foreign_key "product_images", "product_listings"
-  add_foreign_key "product_listings", "crop_animals"
+  add_foreign_key "product_listings", "pineapple_crops", column: "crop_animal_id"
   add_foreign_key "product_listings", "users", primary_key: "user_id"
   add_foreign_key "product_orders", "product_listings"
   add_foreign_key "product_orders", "users", column: "buyer_id", primary_key: "user_id"
