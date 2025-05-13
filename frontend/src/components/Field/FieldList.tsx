@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
-import fieldService from "@/services/fieldService";
+import fieldService from "@/services/farming/fieldService";
 import { Field } from "./types";
 import { getRandomColor, filterFields, sortFields } from "./utils/fieldUtils";
 import SearchContainer from "./components/search/SearchContainer";

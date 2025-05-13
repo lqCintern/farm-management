@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   getProductListings,
   ProductListing,
-} from "@/services/productListingsService";
+} from "@/services/marketplace/productListingsService";
 import { ProductListingCard } from "./ProductListingCard";
 
 export default function ProductListingList() {

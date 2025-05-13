@@ -5,7 +5,7 @@ import Navlinks from "./navlinks";
 import { routes } from "@/constants";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getUserProfile } from "@/services/authService";
+import { getUserProfile } from "@/services/users/authService";
 import { authService } from "@/lib/appwrite.config";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";

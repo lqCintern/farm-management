@@ -6,7 +6,7 @@ import {
   DollarCircleOutlined,
   InboxOutlined,
 } from "@ant-design/icons";
-import supplyOrderService from "@/services/supplyOrderService";
+import supplyOrderService from "@/services/supply_chain/supplyOrderService";
 import { Link } from "react-router-dom";
 
 const { Title } = Typography;

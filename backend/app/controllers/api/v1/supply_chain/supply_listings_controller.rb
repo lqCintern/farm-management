@@ -1,7 +1,7 @@
 module Api
   module V1
-    module Supplier
-      class SupplyListingsController < ApplicationController
+    module SupplyChain
+      class SupplyListingsController < BaseController
         before_action :authenticate_user!
         before_action :ensure_supplier
         before_action :set_supply_listing, only: [:show, :update, :destroy]

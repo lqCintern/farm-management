@@ -5,7 +5,7 @@ import { FarmActivityResponse } from "@/types";
 export const getFarmActivities = async (): Promise<FarmActivityResponse> => {
   const params = {};
   const response = await axiosInstance.get<FarmActivityResponse>(
-    "/farm_activities",
+    "/farming/farm_activities",
     {
       params,
     }
@@ -14,19 +14,19 @@ export const getFarmActivities = async (): Promise<FarmActivityResponse> => {
 };
 
 export const getFarmActivityById = async (id: number) => {
-  return axiosInstance.get(`/farm_activities/${id}`);
+  return axiosInstance.get(`/farming/farm_activities/${id}`);
 };
 
 export const createFarmActivity = async (activityData: any) => {
-  return axiosInstance.post("/farm_activities", activityData);
+  return axiosInstance.post("/farming/farm_activities", activityData);
 };
 
 export const updateFarmActivity = async (id: number, activityData: any) => {
-  return axiosInstance.put(`/farm_activities/${id}`, activityData);
+  return axiosInstance.put(`/farming/farm_activities/${id}`, activityData);
 };
 
 export const deleteFarmActivity = async (id: number) => {
-  return axiosInstance.delete(`/farm_activities/${id}`);
+  return axiosInstance.delete(`/farming/farm_activities/${id}`);
 };
 
 // Farm Materials API
@@ -58,7 +58,7 @@ interface StatisticsParams {
 
 export const getFarmActivityStatistics = async (params: StatisticsParams) => {
   try {
-    const response = await axiosInstance.get("/farm_activities/statistics", {
+    const response = await axiosInstance.get("/farming/farm_activities/statistics", {
       params,
     });
     return response.data;
@@ -81,7 +81,7 @@ export const completeFarmActivity = async (activityId: number, completionData: {
 }) => {
   try {
     const response = await axiosInstance.post(
-      `/farm_activities/${activityId}/complete`, 
+      `/farming/farm_activities/${activityId}/complete`, 
       completionData
     );
     return response.data;

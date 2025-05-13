@@ -18,7 +18,7 @@ export const getConversations = async (): Promise<{
   conversations: Conversation[];
 }> => {
   const response = await axiosInstance.get<{ conversations: Conversation[] }>(
-    `/conversations`
+    `/marketplace/conversations`
   );
   return response.data;
 };
@@ -27,7 +27,7 @@ export const getMessages = async (
   conversationId: number
 ): Promise<{ messages: Message[] }> => {
   const response = await axiosInstance.get<{ messages: Message[] }>(
-    `/conversations/${conversationId}/messages`
+    `/marketplace/conversations/${conversationId}/messages`
   );
   return response.data;
 };
@@ -37,7 +37,7 @@ export const sendMessage = async (
   message: string
 ): Promise<{ message_id: string }> => {
   const response = await axiosInstance.post<{ message_id: string }>(
-    `/conversations/${conversationId}/messages`,
+    `/marketplace/conversations/${conversationId}/messages`,
     {
       message,
     }
@@ -54,7 +54,7 @@ export const createOrFindConversation = async (
   const response = await axiosInstance.post<{
     conversation_id: number;
     message?: string;
-  }>(`/conversations`, {
+  }>(`/marketplace/conversations`, {
     product_listing_id: productListingId,
     user_id: userId,
     message: initialMessage || "Xin chào, tôi quan tâm đến sản phẩm của bạn!",

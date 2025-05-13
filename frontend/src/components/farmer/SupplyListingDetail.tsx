@@ -11,7 +11,7 @@ import {
   Breadcrumb,
   message,
 } from "antd";
-import supplyListingService from "@/services/supplyListingService";
+import supplyListingService from "@/services/supply_chain/supplyListingService";
 
 const { Title, Text } = Typography;
 

@@ -11,7 +11,7 @@ export interface SupplierReview {
 const reviewService = {
   // Nông dân: Đánh giá nhà cung cấp
   createReview: async (review: SupplierReview): Promise<any> => {
-    const response = await axiosInstance.post("/supplier_reviews", review);
+    const response = await axiosInstance.post("/supply_chain/supplier_reviews", review);
     return response.data;
   },
 
@@ -21,7 +21,7 @@ const reviewService = {
     params?: any
   ): Promise<any> => {
     const response = await axiosInstance.get(
-      `/suppliers/${supplierId}/reviews`,
+      `/supply_chain/suppliers/${supplierId}/reviews`,
       { params }
     );
     return response.data;

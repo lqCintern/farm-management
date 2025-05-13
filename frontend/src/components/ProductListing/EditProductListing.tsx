@@ -5,7 +5,7 @@ import {
   getProductListingById,
   updateProductListing,
   ProductListing,
-} from "@/services/productListingsService";
+} from "@/services/marketplace/productListingsService";
 import BasicInfoSection from "./CreateForm/BasicInfoSection";
 import PricingSection from "./CreateForm/PricingSection";
 import LocationSection from "./CreateForm/LocationSection";

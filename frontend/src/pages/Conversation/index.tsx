@@ -3,7 +3,7 @@ import {
   getConversations,
   getMessages,
   sendMessage,
-} from "@/services/conversationService";
+} from "@/services/marketplace/conversationService";
 import { useNavigate } from "react-router-dom";
 import ConversationList from "@/components/Conversation/ConversationList";
 import MessageList from "@/components/Conversation/MessageList";
