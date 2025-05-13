@@ -1,11 +1,8 @@
-import { Form, Input, Select, Typography } from "antd";
+import { Form, Input, Typography, Card } from "antd";
 import { SectionProps } from "@/components/ProductListing/CreateForm/types";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const { Option } = Select;
-
-const productTypes = ["Dứa Queen", "Dứa Cayenne", "Dứa MD2"];
 
 const BasicInfoSection: React.FC<SectionProps> = ({
   formValues,
@@ -35,25 +32,17 @@ const BasicInfoSection: React.FC<SectionProps> = ({
           />
         </Form.Item>
 
-        <Form.Item
-          label="Loại dứa"
-          required
-          validateStatus={errors.product_type ? "error" : ""}
-          help={errors.product_type}
-        >
-          <Select
-            placeholder="Chọn loại dứa"
-            value={formValues.product_type || undefined}
-            onChange={(value) =>
-              setFormValues({ ...formValues, product_type: value })
-            }
+        <Form.Item label="Giống dứa">
+          <Card 
+            size="small" 
+            className="bg-gray-50"
+            bordered={false}
           >
-            {productTypes.map((type) => (
-              <Option key={type} value={type}>
-                {type}
-              </Option>
-            ))}
-          </Select>
+            <div className="font-medium text-gray-800">{formValues.variety || "Không xác định"}</div>
+            <Text type="secondary" className="text-xs">
+              Thông tin được lấy từ giống dứa {formValues.variety} của bạn
+            </Text>
+          </Card>
         </Form.Item>
 
         <Form.Item label="Mô tả">

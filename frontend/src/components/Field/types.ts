@@ -1,3 +1,5 @@
+import { PineappleCrop } from "@/types";
+
 export interface Field {
     id: string;
     name: string;
@@ -7,4 +9,5 @@ export interface Field {
     coordinates: { lat: number; lng: number }[];
     color: string;
     created_at: string;
+    currentCrop?: PineappleCrop;
   }

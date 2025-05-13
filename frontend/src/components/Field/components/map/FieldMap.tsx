@@ -1,3 +1,4 @@
+// map hiển thị các cánh đồng trên bản đồ và cho phép người dùng tương tác với các cánh đồng đó
 import React, { useRef } from "react";
 import { MapContainer } from "react-leaflet";
 import CustomPane from "../new/CustomPane";

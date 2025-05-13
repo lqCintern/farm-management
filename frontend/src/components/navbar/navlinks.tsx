@@ -30,6 +30,15 @@ const navlinksConfig: Record<string, any[]> = {
     },
     {
       id: 3,
+      name: "Shop",
+      subLinks: [
+        { name: "New Product", href: "/products/create" },
+        { name: "Products", href: "/products" },
+        { name: "Categories", href: "/categories" },
+      ],
+    },
+    {
+      id: 4,
       name: "Contact Us",
       subLinks: [
         { name: "Contact", href: "/contact" },
@@ -49,6 +58,32 @@ const navlinksConfig: Record<string, any[]> = {
     },
     {
       id: 2,
+      name: "Contact Us",
+      subLinks: [
+        { name: "Contact", href: "/contact" },
+        { name: "Location", href: "/location" },
+      ], 
+    },
+  ],
+  trader: [
+    {
+      id: 1,
+      name: "Home",
+      subLinks: [
+        { name: "Homepage", href: "/calendar" },
+        { name: "Chat", href: "/chat" },
+        { name: "Field", href: "/fields" },
+        { name: "Tasks", href: "/tasks" },
+        { name: "Notes", href: "/notes" },
+      ],
+    },
+    {
+      id: 2,
+      name: "Activity",
+      subLinks: [{ name: "Farm Activities", href: "/farm-activities" }],
+    },
+    {
+      id: 3,
       name: "Shop",
       subLinks: [
         { name: "New Product", href: "/products/create" },
@@ -57,7 +92,7 @@ const navlinksConfig: Record<string, any[]> = {
       ],
     },
     {
-      id: 3,
+      id: 4,
       name: "Contact Us",
       subLinks: [
         { name: "Contact", href: "/contact" },
@@ -65,16 +100,6 @@ const navlinksConfig: Record<string, any[]> = {
       ],
     },
   ],
-};
-
-// Hàm getInitials
-const getInitials = (name: string | undefined | null) => {
-  if (!name) return ""; // Trả về chuỗi rỗng nếu name không hợp lệ
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
 };
 
 // Define the SubLink type if not already imported

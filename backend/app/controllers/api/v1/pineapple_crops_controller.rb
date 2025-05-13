@@ -24,9 +24,18 @@ class Api::V1::PineappleCropsController < Api::BaseController
   end
   
   def create
+    # Kiểm tra xem field đã có mùa vụ hiện tại hay chưa
+    existing_crop = PineappleCrop.find_by(field_id: pineapple_crop_params[:field_id], status: 'active')
+
+    if existing_crop
+      render json: { error: "Field này đã có một mùa vụ đang hoạt động" }, status: :unprocessable_entity
+      return
+    end
+
+    # Nếu không có mùa vụ hiện tại, tạo mùa vụ mới
     service = PineappleCropService.new(PineappleCrop.new, current_user)
     pineapple_crop = service.create(pineapple_crop_params)
-    
+
     if pineapple_crop.errors.empty?
       render json: {
         message: "Đã tạo vụ trồng dứa thành công",

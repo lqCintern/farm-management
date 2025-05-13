@@ -56,6 +56,7 @@ export interface PineappleCrop {
   created_at: string;
   updated_at: string;
   harvests?: Harvest[];
+  currentCrop?: PineappleCrop;
 }
 
 export interface PineappleCropCreateParams {

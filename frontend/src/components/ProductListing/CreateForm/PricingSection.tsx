@@ -1,4 +1,4 @@
-import { Form, InputNumber, Typography } from "antd";
+import { Form, InputNumber, Typography, Row, Col, Divider } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { SectionProps } from "@/components/ProductListing/CreateForm/types";
 
@@ -9,6 +9,17 @@ const PricingSection: React.FC<SectionProps> = ({
   setFormValues,
   errors,
 }) => {
+  // Tính tổng sản lượng dựa trên số lượng và kích thước trung bình
+  const calculateTotalWeight = () => {
+    const { quantity, min_size, max_size } = formValues;
+    if (!quantity || !min_size || !max_size) return null;
+    
+    const avgSize = (min_size + max_size) / 2;
+    return (quantity * avgSize) / 1000; // Chuyển đổi gram thành kg
+  };
+
+  const totalWeight = calculateTotalWeight();
+
   return (
     <div>
       <Title level={4}>Giá cả & Số lượng</Title>
@@ -43,23 +54,43 @@ const PricingSection: React.FC<SectionProps> = ({
         <Form.Item
           label="Kích thước trung bình (g)"
           tooltip={{
-            title: "Trọng lượng trung bình của mỗi đơn vị sản phẩm (gram)",
+            title: "Nhập khoảng trọng lượng trung bình mỗi quả",
             icon: <InfoCircleOutlined />,
           }}
         >
-          <InputNumber
-            style={{ width: "100%" }}
-            min={0.01}
-            step={0.01}
-            placeholder="Cân nặng trung bình mỗi đơn vị (gram)"
-            value={formValues.average_size || undefined}
-            onChange={(value) =>
-              setFormValues({
-                ...formValues,
-                average_size: value !== null ? Number(value) : null,
-              })
-            }
-          />
+          <Row gutter={8} align="middle">
+            <Col span={11}>
+              <InputNumber
+                style={{ width: "100%" }}
+                min={1}
+                placeholder="Tối thiểu (g)"
+                value={formValues.min_size || undefined}
+                onChange={(value) =>
+                  setFormValues({
+                    ...formValues,
+                    min_size: value !== null ? Number(value) : undefined,
+                  })
+                }
+              />
+            </Col>
+            <Col span={2} className="text-center">
+              <span>-</span>
+            </Col>
+            <Col span={11}>
+              <InputNumber
+                style={{ width: "100%" }}
+                min={1}
+                placeholder="Tối đa (g)"
+                value={formValues.max_size || undefined}
+                onChange={(value) =>
+                  setFormValues({
+                    ...formValues,
+                    max_size: value !== null ? Number(value) : undefined,
+                  })
+                }
+              />
+            </Col>
+          </Row>
         </Form.Item>
 
         <Form.Item
@@ -85,6 +116,17 @@ const PricingSection: React.FC<SectionProps> = ({
             }
           />
         </Form.Item>
+
+        <Divider />
+        
+        <div className="bg-blue-50 p-3 rounded-md">
+          <Text strong>Tổng sản lượng muốn bán:</Text>
+          <div className="text-lg font-bold mt-1">
+            {totalWeight 
+              ? `${totalWeight.toLocaleString()} kg` 
+              : "Hãy nhập đủ số lượng và kích thước"}
+          </div>
+        </div>
       </Form>
     </div>
   );

@@ -1,182 +1,261 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { message } from "antd";
-import { useNavigate } from "react-router-dom";
-import { createProductListing } from "../../../services/productListingsService";
-import { FormValues } from "@/components/ProductListing/CreateForm/types";
+import { FormValues } from "./types";
+import { createProductListing } from "@/services/productListingsService";
+import fieldService from "@/services/fieldService";
+import { getPineappleCropById } from "@/services/pineappleCropService";
 
 export const useCreateForm = () => {
+  const [searchParams] = useSearchParams();
+  const fieldId = searchParams.get("fieldId");
+  const cropId = searchParams.get("cropId");
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<
-    { id: number; url: string }[]
-  >([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formValues, setFormValues] = useState<FormValues>({
     title: "",
-    product_type: "",
+    product_type: "pineapple", // Default product type
     description: "",
     quantity: null,
-    average_size: null,
     price_expectation: null,
-    province: "",
-    district: "",
-    ward: "",
-    address: "",
-    latitude: null,
-    longitude: null,
     harvest_start_date: null,
     harvest_end_date: null,
-    crop_animal_id: null,
-    status: 1, // Active by default
+    status: 1, // Default status (active)
   });
 
-  const validate = (): boolean => {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+
+  // Fetch field and crop data when component mounts
+  useEffect(() => {
+    const fetchFieldAndCropData = async () => {
+      if (fieldId) {
+        try {
+          const fieldResponse = await fieldService.getFieldById(Number(fieldId));
+          const fieldData = fieldResponse.data;
+
+          if (fieldData) {
+            const centerCoords = calculateCenter(fieldData.coordinates);
+
+            setFormValues((prev) => ({
+              ...prev,
+              fieldName: fieldData.name,
+              coordinates: fieldData.coordinates,
+              latitude: centerCoords.lat,
+              longitude: centerCoords.lng,
+            }));
+
+            if (cropId) {
+              const response = await getPineappleCropById(Number(cropId));
+
+              const cropData = (response as { data?: any }).data; // Truy cập đúng property 'data'
+
+              if (cropData) {
+                setFormValues((prev) => {
+                  const newValues = {
+                    ...prev,
+                    variety: cropData.variety, // Đảm bảo gán đúng variety
+                    crop_animal_id: cropData.id,
+                    title: `Dứa ${cropData.variety || "tươi"} từ ${fieldData.name}`,
+                  };
+      
+                  return newValues;
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          message.error("Không thể lấy thông tin vườn/cây trồng");
+        }
+      }
+    };
+
+    fetchFieldAndCropData();
+  }, [fieldId, cropId]);
+
+  // Calculate center from coordinates
+  const calculateCenter = (coordinates: Array<{ lat: number; lng: number }>) => {
+    if (!coordinates || coordinates.length === 0) return { lat: 0, lng: 0 };
+
+    const totalLat = coordinates.reduce((sum, coord) => sum + coord.lat, 0);
+    const totalLng = coordinates.reduce((sum, coord) => sum + coord.lng, 0);
+
+    return {
+      lat: totalLat / coordinates.length,
+      lng: totalLng / coordinates.length,
+    };
+  };
+
+  // Validate form
+  const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    // Required fields validation
     if (!formValues.title) newErrors.title = "Vui lòng nhập tiêu đề";
-    if (!formValues.product_type)
-      newErrors.product_type = "Vui lòng chọn loại sản phẩm";
-    if (!formValues.province) newErrors.province = "Vui lòng chọn tỉnh/thành";
-    if (!formValues.district) newErrors.district = "Vui lòng chọn quận/huyện";
-    if (!formValues.ward) newErrors.ward = "Vui lòng chọn phường/xã";
-
-    // Numeric validation
-    if (formValues.quantity !== null && formValues.quantity <= 0) {
-      newErrors.quantity = "Số lượng phải lớn hơn 0";
-    }
-
-    if (
-      formValues.price_expectation !== null &&
-      formValues.price_expectation <= 0
-    ) {
-      newErrors.price_expectation = "Giá mong muốn phải lớn hơn 0";
-    }
-
-    // Date validation
-    if (formValues.harvest_start_date && formValues.harvest_end_date) {
-      const start = new Date(formValues.harvest_start_date);
-      const end = new Date(formValues.harvest_end_date);
-
-      if (end < start) {
-        newErrors.harvest_end_date =
-          "Ngày kết thúc thu hoạch phải sau ngày bắt đầu";
-      }
-    }
+    if (!formValues.quantity) newErrors.quantity = "Vui lòng nhập số lượng";
+    if (!formValues.price_expectation) newErrors.price_expectation = "Vui lòng nhập giá mong muốn";
+    if (!formValues.harvest_start_date) newErrors.harvest_start_date = "Vui lòng chọn ngày bắt đầu thu hoạch";
+    if (!formValues.harvest_end_date) newErrors.harvest_end_date = "Vui lòng chọn ngày kết thúc thu hoạch";
 
     setErrors(newErrors);
-    console.log("Validation errors:", newErrors); // Debug
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle form submission
   const handleSubmit = async () => {
-    if (!validate()) {
-      message.error("Vui lòng kiểm tra lại thông tin");
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
-
     try {
+      // Calculate total weight from quantity and size range
+      let totalWeight = null;
+      if (formValues.quantity && formValues.min_size && formValues.max_size) {
+        const avgSize = (formValues.min_size + formValues.max_size) / 2;
+        totalWeight = (formValues.quantity * avgSize) / 1000; // Convert to kg
+      }
+
+      const data = {
+        ...formValues,
+        total_weight: totalWeight,
+      };
+
+      // Convert data object to FormData - lồng ghép dữ liệu vào product_listing
       const formData = new FormData();
 
-      // Append form values
-      Object.entries(formValues).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          formData.append(`product_listing[${key}]`, String(value));
+      // Thêm các trường dữ liệu với khóa "product_listing[field]"
+      Object.entries(data).forEach(([key, value]) => {
+        if (value === undefined || value === null) {
+          return; // Skip undefined or null values
+        }
+
+        if (key === "coordinates" && Array.isArray(value)) {
+          // Convert coordinates array to JSON string
+          formData.append(`product_listing[${key}]`, JSON.stringify(value));
+        } else if (Array.isArray(value)) {
+          if (key === "images") {
+            // Xử lý images riêng (không lồng trong product_listing)
+            value.forEach((item, idx) => {
+              if (typeof item === "string") {
+                formData.append(`images[]`, item);
+              }
+            });
+          } else {
+            // For other arrays, convert to JSON
+            formData.append(`product_listing[${key}]`, JSON.stringify(value));
+          }
+        } else if (typeof value === "object") {
+          // Convert objects to JSON strings
+          formData.append(`product_listing[${key}]`, JSON.stringify(value));
+        } else {
+          // Append primitive values directly
+          formData.append(`product_listing[${key}]`, value.toString());
         }
       });
 
-      // Append new images
-      uploadedImages.forEach((image) => {
-        formData.append("images[]", image);
-      });
-
-      // Append retained image IDs
-      existingImages.forEach((image) => {
-        formData.append("retained_image_ids[]", String(image.id));
-      });
-
-      const response = (await createProductListing(formData)) as {
-        message: string;
-      };
-      message.success(response.message || "Đăng bài thành công");
-      navigate("/products");
+      const response = await createProductListing(formData);
+      message.success("Sản phẩm đã được đăng thành công");
+      navigate("/products"); // Redirect to products page
     } catch (error) {
-      console.error("Error creating product listing:", error);
-      message.error("Đã có lỗi xảy ra khi đăng bài");
+      console.error("Error creating product:", error);
+      message.error("Lỗi khi đăng sản phẩm. Vui lòng thử lại");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Save as draft
   const saveDraft = async () => {
-    setFormValues({
-      ...formValues,
-      status: 0, // Draft status
-    });
-
     setIsLoading(true);
-
     try {
+      // Tương tự code ở trên nhưng cần thêm status: 0
+      let totalWeight = null;
+      if (formValues.quantity && formValues.min_size && formValues.max_size) {
+        const avgSize = (formValues.min_size + formValues.max_size) / 2;
+        totalWeight = (formValues.quantity * avgSize) / 1000;
+      }
+
+      const data = {
+        ...formValues,
+        total_weight: totalWeight,
+        status: 0, // Draft status
+      };
+
+      // Convert data object to FormData - lồng ghép dữ liệu vào product_listing
       const formData = new FormData();
 
-      // Append form values
-      Object.entries({ ...formValues, status: 0 }).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          formData.append(`product_listing[${key}]`, String(value));
+      // Thêm các trường dữ liệu với khóa "product_listing[field]"
+      Object.entries(data).forEach(([key, value]) => {
+        if (value === undefined || value === null) {
+          return;
+        }
+
+        if (key === "coordinates" && Array.isArray(value)) {
+          formData.append(`product_listing[${key}]`, JSON.stringify(value));
+        } else if (Array.isArray(value)) {
+          if (key === "images") {
+            value.forEach((item, idx) => {
+              if (typeof item === "string") {
+                formData.append(`images[]`, item);
+              }
+            });
+          } else {
+            formData.append(`product_listing[${key}]`, JSON.stringify(value));
+          }
+        } else if (typeof value === "object") {
+          formData.append(`product_listing[${key}]`, JSON.stringify(value));
+        } else {
+          formData.append(`product_listing[${key}]`, value.toString());
         }
       });
-
-      // Append new images
-      uploadedImages.forEach((image) => {
-        formData.append("images[]", image);
-      });
-
-      // Append retained image IDs
-      existingImages.forEach((image) => {
-        formData.append("retained_image_ids[]", String(image.id));
-      });
-
-      const response = (await createProductListing(formData)) as {
-        message: string;
-      };
-      message.success(response.message || "Đã lưu bản nháp");
-      navigate("/products");
     } catch (error) {
       console.error("Error saving draft:", error);
-      message.error("Đã có lỗi xảy ra khi lưu bản nháp");
+      message.error("Lỗi khi lưu nháp. Vui lòng thử lại");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleImageUpload = (file: File) => {
-    setUploadedImages((prev) => [...prev, file]);
-    return false; // Prevent default upload behavior
+  // Handle image upload
+  const handleImageUpload = (url: string) => {
+    setUploadedImages([...uploadedImages, url]);
   };
 
-  const handleRemoveImage = (file: File) => {
-    setUploadedImages((prev) => prev.filter((f) => f !== file));
-  };
-
-  const handleRemoveExistingImage = (id: number) => {
-    setExistingImages((prev) => prev.filter((image) => image.id !== id));
+  // Handle remove image
+  const handleRemoveImage = (url: string) => {
+    setUploadedImages(uploadedImages.filter((item) => item !== url));
   };
 
   return {
     formValues,
-    isLoading,
-    errors,
-    uploadedImages,
-    existingImages,
     setFormValues,
+    errors,
+    isLoading,
     handleSubmit,
     saveDraft,
     handleImageUpload,
     handleRemoveImage,
-    handleRemoveExistingImage,
+    uploadedImages,
   };
 };
+
+// Minimal dayjs-like implementation for adding days and formatting dates
+function dayjs(harvest_date: string) {
+  return {
+    add: (days: number, unit: string) => {
+      if (unit !== "day") throw new Error("Only 'day' unit is supported.");
+      const date = new Date(harvest_date);
+      date.setDate(date.getDate() + days);
+      return {
+        format: (formatStr: string) => {
+          // Only supports 'YYYY-MM-DD'
+          if (formatStr !== "YYYY-MM-DD") throw new Error("Only 'YYYY-MM-DD' format is supported.");
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        },
+      };
+    },
+  };
+}

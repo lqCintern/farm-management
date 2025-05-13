@@ -68,7 +68,6 @@ export function CreateProductListingForm() {
         <ImageUploadSection
           onUpload={handleImageUpload}
           onRemove={handleRemoveImage}
-          uploadedImages={uploadedImages}
         />
       ),
     },

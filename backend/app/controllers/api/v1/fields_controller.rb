@@ -172,6 +172,7 @@ module Api
           coordinates: field.coordinates,
           activity_count: field.farm_activities.is_a?(ActiveRecord::Relation) ? field.farm_activities.count : 0,
           harvest_count: field.harvests.count,
+          currentCrop: field.pineapple_crop,
           created_at: field.created_at,
           updated_at: field.updated_at
         }
