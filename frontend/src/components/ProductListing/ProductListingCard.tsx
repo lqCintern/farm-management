@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/utils/formatters";
-import { ProductListing } from "@/services/productListingsService";
+import { ProductListing } from "@/services/marketplace/productListingsService";
 //import { useState, useEffect } from "react";
 //import { useParams } from "react-router-dom";
 //import { getProductListingById } from "@/services/productListingsService";

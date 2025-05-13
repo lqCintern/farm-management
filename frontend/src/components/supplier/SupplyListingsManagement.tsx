@@ -45,7 +45,7 @@ import {
 } from "@ant-design/icons";
 import supplyListingService, {
   SupplyListing,
-} from "@/services/supplyListingService";
+} from "@/services/supply_chain/supplyListingService";
 import type { UploadProps } from "antd";
 import dayjs from "dayjs";
 

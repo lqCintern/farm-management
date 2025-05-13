@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { message } from "antd";
 import { FormValues } from "./types";
-import { createProductListing } from "@/services/productListingsService";
-import fieldService from "@/services/fieldService";
-import { getPineappleCropById } from "@/services/pineappleCropService";
+import { createProductListing } from "@/services/marketplace/productListingsService";
+import fieldService from "@/services/farming/fieldService";
+import { getPineappleCropById } from "@/services/farming/pineappleCropService";
 
 export const useCreateForm = () => {
   const [searchParams] = useSearchParams();
@@ -48,18 +48,15 @@ export const useCreateForm = () => {
 
             if (cropId) {
               const response = await getPineappleCropById(Number(cropId));
-
-              const cropData = (response as { data?: any }).data; // Truy cập đúng property 'data'
-
+              const cropData = (response as { data?: any }).data;
               if (cropData) {
                 setFormValues((prev) => {
                   const newValues = {
                     ...prev,
-                    variety: cropData.variety, // Đảm bảo gán đúng variety
+                    variety: cropData.variety,
                     crop_animal_id: cropData.id,
                     title: `Dứa ${cropData.variety || "tươi"} từ ${fieldData.name}`,
                   };
-      
                   return newValues;
                 });
               }
@@ -75,7 +72,6 @@ export const useCreateForm = () => {
     fetchFieldAndCropData();
   }, [fieldId, cropId]);
 
-  // Calculate center from coordinates
   const calculateCenter = (coordinates: Array<{ lat: number; lng: number }>) => {
     if (!coordinates || coordinates.length === 0) return { lat: 0, lng: 0 };
 
@@ -88,7 +84,6 @@ export const useCreateForm = () => {
     };
   };
 
-  // Validate form
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -120,40 +115,33 @@ export const useCreateForm = () => {
         total_weight: totalWeight,
       };
 
-      // Convert data object to FormData - lồng ghép dữ liệu vào product_listing
       const formData = new FormData();
 
-      // Thêm các trường dữ liệu với khóa "product_listing[field]"
       Object.entries(data).forEach(([key, value]) => {
         if (value === undefined || value === null) {
-          return; // Skip undefined or null values
+          return;
         }
 
         if (key === "coordinates" && Array.isArray(value)) {
-          // Convert coordinates array to JSON string
           formData.append(`product_listing[${key}]`, JSON.stringify(value));
         } else if (Array.isArray(value)) {
           if (key === "images") {
-            // Xử lý images riêng (không lồng trong product_listing)
             value.forEach((item, idx) => {
               if (typeof item === "string") {
                 formData.append(`images[]`, item);
               }
             });
           } else {
-            // For other arrays, convert to JSON
             formData.append(`product_listing[${key}]`, JSON.stringify(value));
           }
         } else if (typeof value === "object") {
-          // Convert objects to JSON strings
           formData.append(`product_listing[${key}]`, JSON.stringify(value));
         } else {
-          // Append primitive values directly
           formData.append(`product_listing[${key}]`, value.toString());
         }
       });
 
-      const response = await createProductListing(formData);
+      await createProductListing(formData);
       message.success("Sản phẩm đã được đăng thành công");
       navigate("/products"); // Redirect to products page
     } catch (error) {

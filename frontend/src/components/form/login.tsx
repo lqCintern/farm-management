@@ -12,7 +12,7 @@ import {
 import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, FormEvent } from "react";
-import { loginUser } from "@/services/authService";
+import { loginUser } from "@/services/users/authService";
 import { saveToken } from "@/utils/storage";
 
 const LoginForm = () => {

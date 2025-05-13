@@ -8,7 +8,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import FieldMap from "@/components/Field/FieldMap";
-import fieldService from "@/services/fieldService";
+import fieldService from "@/services/farming/fieldService";
 
 const FieldForm: React.FC = () => {
   const { id } = useParams(); // Get field ID from URL if in edit mode

@@ -26,8 +26,8 @@ import {
   PhoneOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
-import supplyOrderService from "@/services/supplyOrderService";
-import { SupplyListing as OriginalSupplyListing } from "@/services/supplyListingService";
+import supplyOrderService from "@/services/supply_chain/supplyOrderService";
+import { SupplyListing as OriginalSupplyListing } from "@/services/supply_chain/supplyListingService";
 
 // Extended interface with supplier property
 interface SupplyListing extends OriginalSupplyListing {

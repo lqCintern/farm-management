@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFarmActivity } from "@/services/farmService";
+import { createFarmActivity } from "@/services/farming/farmService";
 import "@/styles/modal.css";
 
 interface Props {

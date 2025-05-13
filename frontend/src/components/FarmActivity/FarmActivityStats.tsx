@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getFarmActivityStatistics } from "@/services/farmService";
+import { getFarmActivityStatistics } from "@/services/farming/farmService";
 import ActivityTypeChart from "@/components/Statistics/ActivityTypeChart";
 import StatusChart from "@/components/Statistics/StatusChart";
 import CompletionRateCard from "@/components/Statistics/CompletionRateCard";

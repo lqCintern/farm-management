@@ -8,7 +8,7 @@ const { Title, Text } = Typography;
 interface ImageUploadSectionProps {
   onUpload: (url: string) => void;
   onRemove: (url: string) => void;
-  uploadedImages: string[] | undefined; // Thêm undefined vào kiểu dữ liệu
+  uploadedImages: string[] | undefined;
 }
 
 const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({

@@ -29,37 +29,37 @@ const supplyOrderService = {
     supply_listing_id: number;
     supply_order: Omit<SupplyOrder, "supply_listing_id">;
   }): Promise<any> => {
-    const response = await axiosInstance.post("/supply_orders", order);
+    const response = await axiosInstance.post("/supply_chain/supply_orders", order);
     return response.data;
   },
 
   // Nông dân: Lấy danh sách đơn hàng
   getFarmerOrders: async (params?: any): Promise<any> => {
-    const response = await axiosInstance.get("/supply_orders", { params });
+    const response = await axiosInstance.get("/supply_chain/supply_orders", { params });
     return response.data;
   },
 
   // Nông dân: Lấy chi tiết đơn hàng
   getFarmerOrderById: async (id: number): Promise<any> => {
-    const response = await axiosInstance.get(`/supply_orders/${id}`);
+    const response = await axiosInstance.get(`/supply_chain/supply_orders/${id}`);
     return response.data;
   },
 
   // Nông dân: Hủy đơn hàng
   cancelOrder: async (id: number): Promise<any> => {
-    const response = await axiosInstance.patch(`/supply_orders/${id}/cancel`);
+    const response = await axiosInstance.patch(`/supply_chain/supply_orders/${id}/cancel`);
     return response.data;
   },
 
   // Nông dân: Xác nhận đã nhận hàng
   completeOrder: async (id: number): Promise<any> => {
-    const response = await axiosInstance.patch(`/supply_orders/${id}/complete`);
+    const response = await axiosInstance.patch(`/supply_chain/supply_orders/${id}/complete`);
     return response.data;
   },
 
   // Nhà cung cấp: Lấy danh sách đơn hàng
   getSupplierOrders: async (params?: any): Promise<any> => {
-    const response = await axiosInstance.get("/supplier/supply_orders", {
+    const response = await axiosInstance.get("/supplier/supply_chain/supply_orders", {
       params,
     });
     return response.data;
@@ -67,7 +67,7 @@ const supplyOrderService = {
 
   // Nhà cung cấp: Lấy chi tiết đơn hàng
   getSupplierOrderById: async (id: number): Promise<any> => {
-    const response = await axiosInstance.get(`/supplier/supply_orders/${id}`);
+    const response = await axiosInstance.get(`/supplier/supply_chain/supply_orders/${id}`);
     return response.data;
   },
 
@@ -82,7 +82,7 @@ const supplyOrderService = {
       data.rejection_reason = rejection_reason;
     }
     const response = await axiosInstance.put(
-      `/supplier/supply_orders/${id}`,
+      `/supplier/supply_chain/supply_orders/${id}`,
       data
     );
     return response.data;

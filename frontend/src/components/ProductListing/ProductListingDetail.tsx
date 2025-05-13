@@ -4,7 +4,7 @@ import {
   getProductListingById,
   ProductListing,
   toggleProductListingStatus,
-} from "@/services/productListingsService";
+} from "@/services/marketplace/productListingsService";
 import {
   Card,
   Typography,
@@ -30,7 +30,7 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { formatCurrency, formatDate } from "@/utils/formatters";
-import { createOrFindConversation } from "@/services/conversationService";
+import { createOrFindConversation } from "@/services/marketplace/conversationService";
 
 const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;

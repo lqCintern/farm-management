@@ -8,10 +8,10 @@ class AuthenticateUser
     
     # Danh sách các đường dẫn không cần xác thực - cập nhật để khớp với routes
     public_paths = [
-      "/api/v1/login",
-      "/api/v1/register",
-      "/api/v1/auth/forgot_password",
-      "/api/v1/auth/reset_password"
+      "/api/v1/users/login",
+      "/api/v1/users/register",
+      "/api/v1/users/auth/forgot_password",
+      "/api/v1/users/auth/reset_password"
     ]
     
     # Logging để debug

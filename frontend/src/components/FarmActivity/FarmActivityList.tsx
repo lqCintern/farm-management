@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFarmActivities } from "@/services/farmService";
+import { getFarmActivities } from "@/services/farming/farmService";
 import { FarmActivity, Pagination } from "@/types";
 
 export default function FarmActivityList() {
@@ -25,7 +25,15 @@ export default function FarmActivityList() {
         setLoading(true);
         const response = await getFarmActivities();
         setActivities(response.farm_activities);
-        setPagination(response.pagination);
+        setPagination({
+          ...response.pagination,
+          next_page: response.pagination.current_page < response.pagination.total_pages
+            ? response.pagination.current_page + 1
+            : null,
+          prev_page: response.pagination.current_page > 1
+            ? response.pagination.current_page - 1
+            : null,
+        });
         setError(null);
       } catch (err) {
         console.error("Failed to fetch activities:", err);
@@ -191,7 +199,7 @@ export default function FarmActivityList() {
                     {activity.activity_type === 4 && "Phun thuốc"}
                     {activity.activity_type === 5 && "Làm đất"}
                     {activity.activity_type === 6 && "Gieo trồng"}
-                    {activity.activity_type > 6 &&
+                    {Number(activity.activity_type) > 6 &&
                       `Loại ${activity.activity_type}`}
                   </td>
                   <td className="px-6 py-4">
@@ -208,10 +216,10 @@ export default function FarmActivityList() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
-                        activity.status_label
+                        activity.status ? activity.status.toString() : ""
                       )}`}
                     >
-                      {activity.status_label}
+                      {getStatusLabel(activity.status ? activity.status.toString() : "")}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

@@ -38,8 +38,8 @@ import {
   ExclamationCircleOutlined,
   InboxOutlined,
 } from "@ant-design/icons";
-import supplyOrderService, { SupplyOrder } from "@/services/supplyOrderService";
-import reviewService from "@/services/reviewService";
+import supplyOrderService, { SupplyOrder } from "@/services/supply_chain/supplyOrderService";
+import reviewService from "@/services/supply_chain/reviewService";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;

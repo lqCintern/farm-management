@@ -22,7 +22,7 @@ import {
   GoogleOutlined,
 } from "@ant-design/icons";
 import { routes } from "@/constants";
-import { registerUser } from "@/services/authService";
+import { registerUser } from "@/services/users/authService";
 import { validateEmail, validatePassword } from "@/constants/function";
 
 const { Title, Text, Paragraph } = Typography;

@@ -3,7 +3,7 @@ import BigCalendar from "@/components/Calendar/BigCalendar";
 import { format } from "date-fns";
 import { formatWithOptions } from "date-fns/fp";
 import { vi } from "date-fns/locale";
-import { getFarmActivities } from "@/services/farmService";
+import { getFarmActivities } from "@/services/farming/farmService";
 import { FarmActivity } from "@/types";
 
 export default function Calendar() {

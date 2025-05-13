@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FaCheckCircle, FaEdit, FaTrash, FaPlus, FaCalendarAlt } from 'react-icons/fa';
-import * as farmService from '@/services/farmService';
+import * as farmService from '@/services/farming/farmService';
 import { FarmActivity } from '@/types';
 
 const STATUS_BADGES = {

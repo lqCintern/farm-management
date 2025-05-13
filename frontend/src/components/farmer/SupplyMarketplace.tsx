@@ -27,7 +27,7 @@ import {
 } from "@ant-design/icons";
 import supplyListingService, {
   SupplyListing,
-} from "@/services/supplyListingService";
+} from "@/services/supply_chain/supplyListingService";
 
 const { Title, Text } = Typography;
 const { Option } = Select;

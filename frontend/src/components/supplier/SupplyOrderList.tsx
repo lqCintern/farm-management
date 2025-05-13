@@ -20,7 +20,7 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import supplyOrderService from "@/services/supplyOrderService";
+import supplyOrderService from "@/services/supply_chain/supplyOrderService";
 
 const { Title } = Typography;
 const { Option } = Select;

@@ -4,8 +4,8 @@ import {
   FaArrowLeft, FaEdit, FaTrash, FaLeaf, FaCalendarAlt, 
   FaChartLine, FaArrowRight, FaList, FaCheck, FaExclamationTriangle, FaPlus
 } from 'react-icons/fa';
-import * as pineappleCropService from '@/services/pineappleCropService';
-import * as farmService from '@/services/farmService';
+import * as pineappleCropService from '@/services/farming/pineappleCropService';
+import * as farmService from '@/services/farming/farmService';
 import { PineappleCrop, FarmActivity } from '@/types';
 import Modal from '@/components/common/Modal';
 

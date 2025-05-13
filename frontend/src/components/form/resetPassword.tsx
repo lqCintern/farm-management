@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { resetPassword } from "@/services/authService";
+import { resetPassword } from "@/services/users/authService";
 import { toast } from "react-toastify";
 
 const ResetPasswordForm = () => {
