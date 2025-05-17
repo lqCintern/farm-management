@@ -1,109 +1,101 @@
 import { useState } from "react";
-import { Upload, Typography, message } from "antd";
+import { Upload, Typography, Modal } from "antd";
+import type { RcFile, UploadProps } from "antd/es/upload";
 import { PlusOutlined } from "@ant-design/icons";
-import type { UploadFile, UploadProps } from "antd/es/upload/interface";
+import type { UploadFile } from "antd/es/upload/interface";
 
 const { Title, Text } = Typography;
 
-interface ImageUploadSectionProps {
-  onUpload: (url: string) => void;
-  onRemove: (url: string) => void;
-  uploadedImages: string[] | undefined;
+interface ImageUploadProps {
+  uploadedImages: File[];
+  onUpload: (file: File) => boolean;
+  onRemove: (file: File) => void;
 }
 
-const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
+const ImageUploadSection: React.FC<ImageUploadProps> = ({
+  uploadedImages = [], // Thêm giá trị mặc định
   onUpload,
   onRemove,
-  uploadedImages = [], // Thêm giá trị mặc định là mảng rỗng
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
+  const [previewTitle, setPreviewTitle] = useState("");
 
-  // Convert uploaded images to file list format - thêm kiểm tra
-  const initialFileList: UploadFile[] = uploadedImages ? uploadedImages.map((url, index) => ({
-    uid: `-${index}`,
-    name: `image-${index}.jpg`,
-    status: 'done',
-    url,
-  })) : [];
-
-  const handleUpload: UploadProps['customRequest'] = async (options) => {
-    const { file, onSuccess, onError } = options;
-    
-    if (!(file instanceof File)) {
-      message.error('Vui lòng chọn một tệp hợp lệ');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Giả lập việc tải lên - trong thực tế, bạn sẽ gọi API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Giả định URL từ file upload
-      const imageUrl = URL.createObjectURL(file);
-      
-      // Gọi callback để lưu URL vào state cha
-      onUpload(imageUrl);
-      
-      // Cập nhật file list
-      setFileList(prev => [
-        ...prev,
-        {
-          uid: `${Date.now()}`,
+  const uploadProps: UploadProps = {
+    name: "images",
+    multiple: true,
+    listType: "picture-card",
+    accept: "image/*",
+    fileList: (uploadedImages || []).map( // Thêm kiểm tra null/undefined
+      (file, index) =>
+        ({
+          uid: `-${index}`,
           name: file.name,
-          status: 'done',
-          url: imageUrl,
-        }
-      ]);
-      
-      onSuccess && onSuccess("ok");
-      message.success(`${file.name} tải lên thành công`);
-    } catch (error) {
-      onError && onError(new Error('Lỗi khi tải lên'));
-      message.error(`${file.name} tải lên thất bại`);
-    } finally {
-      setLoading(false);
-    }
+          status: "done",
+          url: URL.createObjectURL(file),
+          originFileObj: file as RcFile,
+        } as UploadFile)
+    ),
+    beforeUpload: (file) => {
+      onUpload(file);
+      return false; // Prevent default upload behavior
+    },
+    onRemove: (file) => {
+      if (file.originFileObj) {
+        onRemove(file.originFileObj as File);
+      }
+    },
+    onPreview: async (file) => {
+      const src = file.url || (await getBase64(file.originFileObj as RcFile));
+      setPreviewImage(src);
+      setPreviewOpen(true);
+      setPreviewTitle(file.name || "Image");
+    },
   };
 
-  const handleRemove = (file: UploadFile) => {
-    const url = file.url || file.response;
-    if (url) {
-      onRemove(url);
-    }
-    return true;
-  };
+  const uploadButton = (
+    <div>
+      <PlusOutlined />
+      <div style={{ marginTop: 8 }}>Tải lên</div>
+    </div>
+  );
 
   return (
-    <div>
+    <div className="my-4">
       <Title level={4}>Hình ảnh sản phẩm</Title>
-      <Text type="secondary" className="mb-4 block">
-        Thêm hình ảnh để người mua dễ dàng hình dung sản phẩm của bạn
-      </Text>
-
-      <Upload
-        listType="picture-card"
-        fileList={fileList.length > 0 ? fileList : initialFileList}
-        customRequest={handleUpload}
-        onRemove={handleRemove}
-        accept="image/*"
-      >
-        {(uploadedImages?.length || 0) >= 8 ? null : (
-          <div>
-            <PlusOutlined />
-            <div style={{ marginTop: 8 }}>Tải lên</div>
-          </div>
-        )}
-      </Upload>
+      <Text type="secondary">Thêm hình ảnh của sản phẩm (tối đa 5 ảnh)</Text>
 
       <div className="mt-4">
+        <Upload {...uploadProps}>
+          {uploadedImages.length >= 5 ? null : uploadButton}
+        </Upload>
+
+        <Modal
+          open={previewOpen}
+          title={previewTitle}
+          footer={null}
+          onCancel={() => setPreviewOpen(false)}
+        >
+          <img alt="preview" style={{ width: "100%" }} src={previewImage} />
+        </Modal>
+      </div>
+
+      <div className="mt-2">
         <Text type="secondary">
-          * Bạn có thể tải lên tối đa 8 hình ảnh, mỗi hình không quá 5MB
+          * Hình ảnh rõ nét sẽ giúp sản phẩm của bạn được chú ý nhiều hơn
         </Text>
       </div>
     </div>
   );
 };
+
+// Helper function để chuyển file thành base64
+const getBase64 = (file: RcFile): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
 
 export default ImageUploadSection;

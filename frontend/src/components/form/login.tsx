@@ -62,7 +62,7 @@ const LoginForm = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            Quản Lý Nông Trại
+            Cùng trồng dứa thôi !!!
           </CardTitle>
           <CardDescription className="text-center">
             Nhập email và mật khẩu để đăng nhập

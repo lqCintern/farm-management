@@ -52,7 +52,7 @@ const navlinksConfig: Record<string, any[]> = {
       name: "Dashboard",
       subLinks: [
         { name: "Overview", href: "/supplier/dashboard" },
-        { name: "Listings", href: "/supplier/listings" },
+        { name: "Listings", href: "/supplier/listings-management" },
         { name: "Orders", href: "/supplier/orders" },
       ],
     },

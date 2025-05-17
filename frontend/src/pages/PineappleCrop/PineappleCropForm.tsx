@@ -219,7 +219,7 @@ const PineappleCropFormPage: React.FC = () => {
         }
       }
       
-      navigate('/pineapple_crops');
+      navigate('/fields');
     } catch (error) {
       console.error('Error saving pineapple crop:', error);
       setError(`Không thể ${isEditMode ? 'cập nhật' : 'tạo'} vụ trồng dứa. Vui lòng thử lại.`);

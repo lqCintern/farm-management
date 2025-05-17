@@ -27,8 +27,6 @@ export default function EditProductListing() {
   const [existingImages, setExistingImages] = useState<any[]>([]);
 
   useEffect(() => {
-    // Redirect if not authenticated or not a farmer
-    // Load product data
     const fetchProductData = async () => {
       if (!id) return;
 

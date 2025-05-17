@@ -15,6 +15,8 @@ class ProductListing < ApplicationRecord
   validates :average_size, numericality: { greater_than: 0 }, allow_nil: true
   validates :price_expectation, numericality: { greater_than: 0 }, allow_nil: true
   
+  attr_accessor :min_size, :max_size
+
   # Đảm bảo ngày thu hoạch hợp lệ
   validate :validate_harvest_dates
   

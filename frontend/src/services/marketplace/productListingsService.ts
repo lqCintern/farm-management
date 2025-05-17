@@ -53,7 +53,7 @@ export interface ProductListingFilters {
 
 // API functions
 export const getProductListings = async (filters?: ProductListingFilters) => {
-  const response = await axiosInstance.get("/product_listings", {
+  const response = await axiosInstance.get("/marketplace/product_listings", {
     params: filters,
   });
   return response.data;
@@ -64,19 +64,19 @@ export const getMyProductListings = async (
   page = 1,
   per_page = 10
 ) => {
-  const response = await axiosInstance.get("/product_listings/my_listings", {
+  const response = await axiosInstance.get("/marketplace/product_listings/my_listings", {
     params: { status, page, per_page },
   });
   return response.data;
 };
 
 export const getProductListingById = async (id: number) => {
-  const response = await axiosInstance.get(`/product_listings/${id}`);
+  const response = await axiosInstance.get(`/marketplace/product_listings/${id}`);
   return response.data;
 };
 
 export const createProductListing = async (productData: FormData) => {
-  const response = await axiosInstance.post("/product_listings", productData, {
+  const response = await axiosInstance.post("/marketplace/product_listings", productData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
@@ -87,7 +87,7 @@ export const updateProductListing = async (
   productData: FormData
 ) => {
   const response = await axiosInstance.put(
-    `/product_listings/${id}`,
+    `/marketplace/product_listings/${id}`,
     productData,
     {
       headers: { "Content-Type": "multipart/form-data" },
@@ -97,7 +97,7 @@ export const updateProductListing = async (
 };
 
 export const deleteProductListing = async (id: number) => {
-  const response = await axiosInstance.delete(`/api/v1/product_listings/${id}`);
+  const response = await axiosInstance.delete(`/api/v1/marketplace/product_listings/${id}`);
   return response.data;
 };
 
@@ -106,7 +106,7 @@ export const toggleProductListingStatus = async (
   status: "activate" | "hide" | "draft"
 ) => {
   const response = await axiosInstance.put(
-    `/api/v1/product_listings/${id}/toggle_status`,
+    `/api/v1/marketplace/product_listings/${id}/toggle_status`,
     { status }
   );
   return response.data;

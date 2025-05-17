@@ -14,7 +14,7 @@ export const useCreateForm = () => {
 
   const [formValues, setFormValues] = useState<FormValues>({
     title: "",
-    product_type: "pineapple", // Default product type
+    product_type: "",
     description: "",
     quantity: null,
     price_expectation: null,
@@ -25,7 +25,7 @@ export const useCreateForm = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
 
   // Fetch field and crop data when component mounts
   useEffect(() => {
@@ -53,7 +53,7 @@ export const useCreateForm = () => {
                 setFormValues((prev) => {
                   const newValues = {
                     ...prev,
-                    variety: cropData.variety,
+                    product_type: cropData.variety,
                     crop_animal_id: cropData.id,
                     title: `Dứa ${cropData.variety || "tươi"} từ ${fieldData.name}`,
                   };
@@ -205,13 +205,14 @@ export const useCreateForm = () => {
   };
 
   // Handle image upload
-  const handleImageUpload = (url: string) => {
-    setUploadedImages([...uploadedImages, url]);
+  const handleImageUpload = (file: File): boolean => {
+    setUploadedImages([...uploadedImages, file]);
+    return true; // Trả về true để biểu thị thành công
   };
 
   // Handle remove image
-  const handleRemoveImage = (url: string) => {
-    setUploadedImages(uploadedImages.filter((item) => item !== url));
+  const handleRemoveImage = (file: File) => {
+    setUploadedImages(uploadedImages.filter((item) => item.name !== file.name));
   };
 
   return {

@@ -28,19 +28,19 @@ export interface SupplyListing {
 const supplyListingService = {
   // Nhà cung cấp: Lấy danh sách vật tư đã đăng
   getSupplierListings: async (): Promise<any> => {
-    const response = await axiosInstance.get("/supplier/supply_listings");
+    const response = await axiosInstance.get("/supply_chain/supply_listings");
     return response.data;
   },
 
   // Nhà cung cấp: Lấy chi tiết vật tư
   getSupplierListingById: async (id: number): Promise<any> => {
-    const response = await axiosInstance.get(`/supplier/supply_listings/${id}`);
+    const response = await axiosInstance.get(`/supply_chain/supply_listings/${id}`);
     return response.data;
   },
 
   // Nhà cung cấp: Tạo vật tư mới
   createListing: async (listingData: SupplyListing): Promise<any> => {
-    const response = await axiosInstance.post("/supplier/supply_listings", {
+    const response = await axiosInstance.post("/supply_chain/supply_listings", {
       supply_listing: listingData,
     });
     return response.data;
@@ -52,7 +52,7 @@ const supplyListingService = {
     listingData: Partial<SupplyListing>
   ): Promise<any> => {
     const response = await axiosInstance.put(
-      `/supplier/supply_listings/${id}`,
+      `/supply_chain/supply_listings/${id}`,
       {
         supply_listing: listingData,
       }
@@ -63,7 +63,7 @@ const supplyListingService = {
   // Nhà cung cấp: Xóa vật tư
   deleteListing: async (id: number): Promise<any> => {
     const response = await axiosInstance.delete(
-      `/supplier/supply_listings/${id}`
+      `/supply_chain/supply_listings/${id}`
     );
     return response.data;
   },
@@ -71,7 +71,7 @@ const supplyListingService = {
   // Nhà cung cấp: Thay đổi trạng thái
   changeStatus: async (id: number, status: string): Promise<any> => {
     const response = await axiosInstance.put(
-      `/supplier/supply_listings/${id}/change_status`,
+      `/supply_chain/supply_listings/${id}/change_status`,
       {
         status,
       }
