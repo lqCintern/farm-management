@@ -21,7 +21,6 @@ export interface FormValues {
   harvest_end_date: string | null;
   crop_animal_id?: number | null;
   status: number;
-  variety?: string;
 }
 
 export interface SectionProps {

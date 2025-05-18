@@ -38,9 +38,9 @@ const BasicInfoSection: React.FC<SectionProps> = ({
             className="bg-gray-50"
             bordered={false}
           >
-            <div className="font-medium text-gray-800">{formValues.variety || "Không xác định"}</div>
+            <div className="font-medium text-gray-800">{formValues.product_type || "Không xác định"}</div>
             <Text type="secondary" className="text-xs">
-              Thông tin được lấy từ giống dứa {formValues.variety} của bạn
+              Giống dứa {formValues.product_type} được trồng trên đồng
             </Text>
           </Card>
         </Form.Item>
