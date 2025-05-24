@@ -31,6 +31,9 @@ import PineappleCropDetailPage  from "@/pages/PineappleCrop/PineappleCropDetail"
 import PineappleCropActivities  from "@/pages/PineappleCrop/PineappleCropActivities";
 
 import SupplyListingsManagement from "@/components/supplier/SupplyListingsManagement";
+import PineappleActivityTemplates from "./pages/PineappleActivityTemplates";
+import ActivityTemplateDetail from "./pages/PineappleActivityTemplates/ActivityTemplateDetail";
+import PineappleCrops from "./pages/PineappleCrop";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -63,9 +66,12 @@ const router = createBrowserRouter(
         element={<SupplyListingsManagement />}
       />
       <Route path="/supplier/listings" element={<SupplyListingList />} />
-      <Route path="/pineapple" element={<PineappleCropFormPage />} />
+      <Route path="/pineapple" element={<PineappleCrops />} />
+      <Route path="/pineapple/new" element={<PineappleCropFormPage />} />
       <Route path="/pineapple/:id" element={<PineappleCropDetailPage />} />
       <Route path="/pineapple/:id/activities" element={<PineappleCropActivities />} />
+      <Route path="/activity-templates" element={<PineappleActivityTemplates />} />
+      <Route path="/activity-templates/:id" element={<ActivityTemplateDetail />} />
     </Route>
   )
 );

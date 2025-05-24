@@ -235,7 +235,7 @@ const PineappleCropFormPage: React.FC = () => {
           {/* Header with back button */}
           <div className="mb-6 flex items-center">
             <button
-              onClick={() => navigate('/pineapple_crops')}
+              onClick={() => navigate('/pineapple')}
               className="text-gray-600 hover:text-gray-900 mr-4 flex items-center"
             >
               <FaArrowLeft className="mr-2" />
@@ -428,7 +428,7 @@ const PineappleCropFormPage: React.FC = () => {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => navigate('/pineapple_crops')}
+                      onClick={() => navigate('/pineapple')}
                       className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 flex items-center hover:bg-gray-100"
                     >
                       <FaTimes className="mr-2" />

@@ -18,15 +18,18 @@ const navlinksConfig: Record<string, any[]> = {
       subLinks: [
         { name: "Homepage", href: "/calendar" },
         { name: "Chat", href: "/chat" },
-        { name: "Field", href: "/fields" },
-        { name: "Tasks", href: "/tasks" },
-        { name: "Notes", href: "/notes" },
+        { name: "Theo dõi cánh đồng", href: "/fields" },
+        { name: "Quy trình chung", href: "/activity-templates" },
+        { name: "Các mùa vụ", href: "/pineapple" },
       ],
     },
     {
       id: 2,
       name: "Activity",
-      subLinks: [{ name: "Farm Activities", href: "/farm-activities" }],
+      subLinks: [{ name: "Farm Activities", href: "/farm-activities" },
+        { name: "Template", href: "/activity-templates" },
+      ],
+      
     },
     {
       id: 3,
