@@ -169,7 +169,7 @@ const PineappleCropDetailPage: React.FC = () => {
           <div className="mb-6 flex justify-between items-center">
             <div className="flex items-center">
               <button
-                onClick={() => navigate('/pineapple_crops')}
+                onClick={() => navigate('/pineapple')}
                 className="text-gray-600 hover:text-gray-900 mr-4 flex items-center"
               >
                 <FaArrowLeft className="mr-2" />
@@ -179,7 +179,7 @@ const PineappleCropDetailPage: React.FC = () => {
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={() => navigate(`/pineapple_crops/${id}/edit`)}
+                onClick={() => navigate(`/pineapple/${id}/edit`)}
                 className="px-4 py-2 border border-gray-300 bg-white rounded-lg text-gray-700 flex items-center hover:bg-gray-50"
               >
                 <FaEdit className="mr-2" />

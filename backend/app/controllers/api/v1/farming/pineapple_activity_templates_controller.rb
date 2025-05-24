@@ -90,10 +90,15 @@ module Api
         end
 
         def template_params
-          params.require(:template).permit(
+          permitted = params.require(:template).permit(
             :name, :description, :activity_type, :stage,
             :day_offset, :duration_days, :season_specific, :is_required
           )
+
+          permitted[:activity_type] = permitted[:activity_type].to_i if permitted[:activity_type].present?
+          permitted[:stage] = permitted[:stage].to_i if permitted[:stage].present?
+          
+          permitted
         end
       end
     end
