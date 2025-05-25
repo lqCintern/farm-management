@@ -102,14 +102,14 @@ module Api
             return render json: { errors: conversation.errors.full_messages }, status: :unprocessable_entity
           end
 
-          # Thay đổi: Thêm tin nhắn đầu tiên bằng FirebaseMessageService
+          # Thêm tin nhắn đầu tiên bằng FirebaseMessageService
           if params[:message].present?
-            # Ghi log để debug
             Rails.logger.info "Saving first message to conversation #{conversation.id} using FirebaseMessageService"
             
             message_id = FirebaseMessageService.save_message(conversation.id, {
               user_id: current_user.user_id,
-              content: params[:message]
+              content: params[:message],
+              type: "text"
             })
 
             if message_id.nil?
@@ -128,22 +128,62 @@ module Api
 
         # POST /api/v1/conversations/:id/messages
         def add_message
-          return render json: { error: "Nội dung tin nhắn không được để trống" }, status: :bad_request if params[:message].blank?
-
-          # Thay đổi: Lưu tin nhắn với FirebaseMessageService
-          Rails.logger.info "Adding message to conversation #{@conversation.id} using FirebaseMessageService"
+          # Kiểm tra quyền truy cập
+          unless @conversation.sender_id == current_user.user_id || @conversation.receiver_id == current_user.user_id
+            return render json: { error: "Không có quyền truy cập cuộc trò chuyện này" }, status: :forbidden
+          end
           
-          message_id = FirebaseMessageService.save_message(@conversation.id, {
+          # Kiểm tra nội dung tin nhắn
+          if params[:message].blank? && params[:image].blank? && !params[:payment_info].present?
+            return render json: { error: "Tin nhắn không được để trống" }, status: :bad_request
+          end
+          
+          # Chuẩn bị dữ liệu tin nhắn
+          message_data = {
             user_id: current_user.user_id,
-            content: params[:message]
-          })
+            content: params[:message] || "",
+            created_at: Time.now.to_i * 1000, # Milliseconds
+            type: params[:type] || "text"
+          }
+          
+          # Xử lý hình ảnh nếu có
+          if params[:image].present?
+            message_data[:image] = params[:image]
+            message_data[:type] = "image" if message_data[:type] == "text"
+            
+            Rails.logger.info "Processing image upload for message in conversation #{@conversation.id}"
+          end
+          
+          # Xử lý thông tin thanh toán nếu có
+          if params[:payment_info].present?
+            message_data[:payment_info] = params[:payment_info]
+            message_data[:type] = "payment"
+            
+            Rails.logger.info "Processing payment info for message in conversation #{@conversation.id}"
+          end
+          
+          # Xử lý thông tin lịch trình thu hoạch
+          if params[:harvest_info].present?
+            message_data[:metadata] = { harvest_info: params[:harvest_info] }
+            message_data[:type] = "schedule"
+            
+            Rails.logger.info "Processing harvest schedule info for message in conversation #{@conversation.id}"
+          end
+
+          # Lưu tin nhắn với FirebaseMessageService
+          Rails.logger.info "Adding #{message_data[:type]} message to conversation #{@conversation.id}"
+          
+          message_id = FirebaseMessageService.save_message(@conversation.id, message_data)
 
           if message_id
             # Cập nhật thời gian của conversation
             @conversation.touch
             
             Rails.logger.info "Successfully added message with ID: #{message_id}"
-            render json: { message_id: message_id }, status: :created
+            render json: { 
+              message_id: message_id,
+              message_type: message_data[:type]
+            }, status: :created
           else
             Rails.logger.error "Failed to save message to Firebase"
             render json: { error: "Không thể lưu tin nhắn" }, status: :unprocessable_entity

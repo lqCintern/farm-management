@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_25_003310) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -119,6 +119,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
     t.bigint "farm_activity_id"
     t.index ["farm_activity_id"], name: "index_harvests_on_farm_activity_id"
     t.index ["field_id"], name: "index_harvests_on_field_id"
+  end
+
+  create_table "marketplace_harvests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "product_listing_id", null: false
+    t.bigint "product_order_id"
+    t.bigint "trader_id", null: false
+    t.datetime "scheduled_date", null: false
+    t.string "location", null: false
+    t.text "notes"
+    t.decimal "estimated_quantity", precision: 10
+    t.decimal "actual_quantity", precision: 10
+    t.decimal "estimated_price", precision: 10
+    t.decimal "final_price", precision: 10
+    t.integer "status", default: 0
+    t.datetime "payment_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_listing_id"], name: "index_marketplace_harvests_on_product_listing_id"
+    t.index ["product_order_id"], name: "index_marketplace_harvests_on_product_order_id"
+    t.index ["status"], name: "index_marketplace_harvests_on_status"
+    t.index ["trader_id"], name: "index_marketplace_harvests_on_trader_id"
   end
 
   create_table "members", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -339,7 +360,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
 
   create_table "transactions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.integer "type"
+    t.integer "transaction_type"
     t.decimal "amount", precision: 10, scale: 2, null: false
     t.text "description"
     t.timestamp "date", null: false
@@ -373,6 +394,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_11_225740) do
   add_foreign_key "fields", "users", primary_key: "user_id"
   add_foreign_key "harvests", "farm_activities"
   add_foreign_key "harvests", "fields"
+  add_foreign_key "marketplace_harvests", "product_listings"
+  add_foreign_key "marketplace_harvests", "product_orders"
+  add_foreign_key "marketplace_harvests", "users", column: "trader_id", primary_key: "user_id"
   add_foreign_key "messages", "conversations"
   add_foreign_key "messages", "users", primary_key: "user_id"
   add_foreign_key "pineapple_crops", "fields"

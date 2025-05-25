@@ -25,6 +25,17 @@ const LoginForm = () => {
     general: "",
   });
 
+  // Cập nhật interface để bao gồm thông tin người dùng
+  interface LoginResponse {
+    token: string;
+    user: {
+      user_id: number;
+      fullname: string;
+      email: string;
+      role?: string;
+    };
+  }
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({ email: "", password: "", general: "" });
@@ -41,13 +52,41 @@ const LoginForm = () => {
 
     try {
       const response = await loginUser({ email, password });
-      interface LoginResponse {
-        token: string;
-      }
-      const data = response.data as LoginResponse; // Explicitly type response.data
+      const data = response.data as LoginResponse;
       console.log("Login successful:", data);
 
+      // Lưu token
       saveToken(data.token);
+
+      // Lưu thông tin người dùng
+      if (data.user) {
+        localStorage.setItem("userInfo", JSON.stringify(data.user));
+      } else {
+        // Nếu API không trả về user info trực tiếp, thử giải mã từ token JWT
+        try {
+          const base64Url = data.token.split(".")[1];
+          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+          const payload = JSON.parse(window.atob(base64));
+
+          localStorage.setItem(
+            "userInfo",
+            JSON.stringify({
+              user_id: payload.user_id || payload.sub || payload.id,
+              fullname: payload.name || payload.fullname,
+              email: payload.email,
+              role: payload.role,
+            })
+          );
+
+          console.log("Extracted user info from token:", payload);
+        } catch (e) {
+          console.error("Error extracting user info from token:", e);
+        }
+      }
+
+      // Xóa bỏ ID xác nhận cũ nếu có
+      localStorage.removeItem("confirmedUserId");
+
       navigate("/");
     } catch (error: any) {
       setErrors((prev) => ({
