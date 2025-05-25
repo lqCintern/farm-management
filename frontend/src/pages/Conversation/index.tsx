@@ -3,23 +3,33 @@ import {
   getConversations,
   getMessages,
   sendMessage,
+  sendPaymentMessage,
+  sendHarvestScheduleMessage
 } from "@/services/marketplace/conversationService";
 import { useNavigate } from "react-router-dom";
 import ConversationList from "@/components/Conversation/ConversationList";
 import MessageList from "@/components/Conversation/MessageList";
 import MessageInput from "@/components/Conversation/MessageInput";
+import ScheduleHarvestModal from "@/components/Conversation/ScheduleHarvestModal";
+import TransactionConfirmModal from "@/components/Conversation/TransactionConfirmModal";
+import UserVerification from "@/components/Conversation/UserVerification";
 import {
   ArrowLeftIcon,
   PhoneIcon,
   InformationCircleIcon,
   ChatBubbleLeftRightIcon,
+  CalendarIcon,
+  CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
+import { message } from "antd";
+import { getActiveHarvest } from "@/services/marketplace/harvestService";
 
 interface Conversation {
   id: number;
   product_listing: {
     id: number;
     title: string;
+    user_id: number; // Add user_id property
     product_images?: { image_url: string }[];
   };
   sender: { user_id: number; fullname: string };
@@ -33,12 +43,16 @@ interface Conversation {
 
 interface Message {
   id: string;
-  content: string;
+  content: string | { content: string };  // Hỗ trợ cả object content
   user_id: number;
   created_at: string;
   conversation_id?: number;
   read?: boolean;
   read_at?: string;
+  image_url?: string; // Thêm trường cho URL hình ảnh
+  type?: string; // Thêm trường cho loại tin nhắn
+  payment_info?: any; // Thông tin thanh toán
+  metadata?: any; // Metadata khác
 }
 
 const ConversationPage: React.FC = () => {
@@ -50,6 +64,12 @@ const ConversationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [userRole, setUserRole] = useState<"farmer" | "trader" | null>(null);
+  const [pendingAction, setPendingAction] = useState<'schedule' | 'payment' | null>(null);
+  const [currentHarvest, setCurrentHarvest] = useState<any>(null);
   const navigate = useNavigate();
 
   const getCurrentUserId = () => {
@@ -114,6 +134,18 @@ const ConversationPage: React.FC = () => {
     }
   }, [selectedConversationId]);
 
+  // Xác định vai trò người dùng dựa vào conversation hiện tại
+  useEffect(() => {
+    if (selectedConversation) {
+      // Nếu người dùng hiện tại là người tạo sản phẩm -> farmer
+      if (selectedConversation.product_listing.user_id === currentUserId) {
+        setUserRole("farmer");
+      } else {
+        setUserRole("trader");
+      }
+    }
+  }, [selectedConversation, currentUserId]);
+
   // Callback để xử lý tin nhắn mới từ Firebase listener
   const handleNewMessages = useCallback(
     (newMessages: Message[]) => {
@@ -131,7 +163,11 @@ const ConversationPage: React.FC = () => {
               ? {
                   ...conv,
                   last_message: {
-                    content: latestMessage.content,
+                    // Xử lý trường hợp content là object
+                    content:
+                      typeof latestMessage.content === "object"
+                        ? latestMessage.content.content
+                        : latestMessage.content,
                     created_at: latestMessage.created_at,
                   },
                   // Nếu người gửi không phải là current user, tăng unread_count
@@ -148,22 +184,28 @@ const ConversationPage: React.FC = () => {
     [selectedConversationId, currentUserId]
   );
 
-  const handleSendMessage = async (message: string) => {
+  // Cập nhật hàm handleSendMessage
+  const handleSendMessage = async (message: string, image?: File) => {
     if (!selectedConversationId) return;
 
     try {
-      const data = await sendMessage(selectedConversationId, message);
+      let data;
+      
+      if (image) {
+        // Tạo FormData nếu có hình ảnh
+        const formData = new FormData();
+        formData.append('message', message);
+        formData.append('image', image);
+        
+        data = await sendMessage(selectedConversationId, formData);
+      } else {
+        // Gửi tin nhắn text thông thường
+        data = await sendMessage(selectedConversationId, message);
+      }
 
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          id: data.message_id || `temp-${Date.now()}`,
-          content: message,
-          user_id: currentUserId,
-          created_at: new Date().toISOString(),
-          read: false,
-        },
-      ]);
+      // Không cần thêm tin nhắn vào state nếu đang dùng Firebase listener
+      // Firebase sẽ tự động cập nhật tin nhắn mới
+      console.log("Tin nhắn đã gửi thành công:", data);
 
       // Cập nhật danh sách hội thoại với tin nhắn mới nhất
       setConversations((prevConversations) =>
@@ -172,7 +214,7 @@ const ConversationPage: React.FC = () => {
             ? {
                 ...conv,
                 last_message: {
-                  content: message,
+                  content: message, // Tin nhắn mới gửi luôn là string
                   created_at: new Date().toISOString(),
                 },
               }
@@ -185,6 +227,97 @@ const ConversationPage: React.FC = () => {
       console.error("Error sending message:", err);
       throw err;
     }
+  };
+
+  const handleScheduleHarvest = async (scheduleData: {
+    scheduled_date: string;
+    location: string;
+    estimated_quantity?: number;
+  }) => {
+    if (!selectedConversationId) return;
+
+    try {
+      const message = `Đã lên lịch thu hoạch vào ngày ${new Date(scheduleData.scheduled_date).toLocaleDateString('vi-VN')} tại ${scheduleData.location}`;
+      
+      await sendHarvestScheduleMessage(
+        selectedConversationId,
+        message,
+        scheduleData
+      );
+      
+      setShowScheduleModal(false);
+    } catch (error) {
+      console.error("Error sending harvest schedule:", error);
+    }
+  };
+
+  const handleConfirmPayment = async (paymentData: {
+    amount: number;
+    date: string;
+    notes?: string;
+  }, paymentImage?: File) => {
+    if (!selectedConversationId) return;
+
+    try {
+      const message = `Đã thanh toán ${paymentData.amount.toLocaleString('vi-VN')}đ vào ngày ${new Date(paymentData.date).toLocaleDateString('vi-VN')}`;
+      
+      if (paymentImage) {
+        const formData = new FormData();
+        formData.append('message', message);
+        formData.append('image', paymentImage);
+        formData.append('payment_info', JSON.stringify(paymentData));
+        formData.append('type', 'payment');
+        
+        await sendMessage(selectedConversationId, formData);
+      } else {
+        await sendPaymentMessage(selectedConversationId, message, paymentData);
+      }
+      
+      setShowPaymentModal(false);
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+    }
+  };
+
+  // Chỉnh sửa các hàm xử lý nút
+  const handleScheduleButtonClick = () => {
+    setPendingAction('schedule');
+    setShowVerificationModal(true);
+  };
+
+  const handlePaymentButtonClick = async () => {
+    if (!selectedConversation) return;
+    
+    try {
+      // Lấy lịch thu hoạch mới nhất cho sản phẩm này
+      const response = await getActiveHarvest(selectedConversation.product_listing.id);
+      
+      if (response && (response as { harvest?: any }).harvest) {
+        setCurrentHarvest((response as { harvest: any }).harvest);
+        setPendingAction('payment');
+        setShowVerificationModal(true);
+      } else {
+        message.error('Chưa có lịch thu hoạch cho sản phẩm này');
+      }
+    } catch (error) {
+      console.error('Error fetching harvest:', error);
+      message.error('Không thể tải thông tin lịch thu hoạch');
+    }
+  };
+
+  // Xử lý sau khi xác thực thành công
+  const handleVerificationSuccess = () => {
+    setShowVerificationModal(false);
+    
+    // Thực hiện hành động tiếp theo dựa trên pendingAction
+    if (pendingAction === 'schedule') {
+      setShowScheduleModal(true);
+    } else if (pendingAction === 'payment') {
+      setShowPaymentModal(true);
+    }
+    
+    // Reset pending action
+    setPendingAction(null);
   };
 
   return (
@@ -277,10 +410,26 @@ const ConversationPage: React.FC = () => {
                   </p>
                 </div>
 
+                {/* Menu chức năng dựa trên vai trò */}
                 <div className="flex space-x-2">
-                  <button className="text-gray-500 hover:text-gray-700 p-1">
-                    <PhoneIcon className="h-5 w-5" />
-                  </button>
+                  {userRole === "trader" && (
+                    <button 
+                      className="text-blue-500 hover:text-blue-700 p-1 flex items-center"
+                      onClick={handleScheduleButtonClick}
+                    >
+                      <CalendarIcon className="h-5 w-5 mr-1" />
+                      <span className="text-sm">Lên lịch</span>
+                    </button>
+                  )}
+                  {userRole && (
+                    <button 
+                      className="text-green-500 hover:text-green-700 p-1 flex items-center"
+                      onClick={handlePaymentButtonClick}
+                    >
+                      <CurrencyDollarIcon className="h-5 w-5 mr-1" />
+                      <span className="text-sm">Thanh toán</span>
+                    </button>
+                  )}
                   <button className="text-gray-500 hover:text-gray-700 p-1">
                     <InformationCircleIcon className="h-5 w-5" />
                   </button>
@@ -329,7 +478,50 @@ const ConversationPage: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+
+        {showScheduleModal && selectedConversation && (
+          <ScheduleHarvestModal
+            visible={showScheduleModal}
+            onClose={() => setShowScheduleModal(false)}
+            productListingId={selectedConversation.product_listing.id}
+            traderId={
+          currentUserId === selectedConversation.sender.user_id
+            ? selectedConversation.receiver.user_id
+            : selectedConversation.sender.user_id
+            }
+            onSuccess={() => {
+          setShowScheduleModal(false);
+          // Handle success logic if needed
+            }}
+            />
+
+            )}
+
+            {showPaymentModal && selectedConversation && currentHarvest && (
+            <TransactionConfirmModal
+              visible={showPaymentModal}
+              onClose={() => setShowPaymentModal(false)}
+              harvestId={currentHarvest.id} // Truyền đúng harvest ID
+              onSuccess={() => {
+                handleConfirmPayment({ amount: currentHarvest.final_price || 0, date: new Date().toISOString() });
+                setCurrentHarvest(null); // Reset sau khi hoàn thành
+              }}
+            />
+            )}
+
+            {showVerificationModal && selectedConversation && (
+            <UserVerification
+              userId={
+              currentUserId === selectedConversation.sender.user_id
+                ? selectedConversation.receiver.user_id
+                : selectedConversation.sender.user_id
+              }
+              visible={showVerificationModal}
+              onClose={() => setShowVerificationModal(false)}
+              onVerified={handleVerificationSuccess}
+            />
+            )}
+      </div>
   );
 };
 

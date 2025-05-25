@@ -72,10 +72,26 @@ Rails.application.routes.draw do
 
         resources :product_orders, only: [:index, :show, :create, :update]
 
-        resources :conversations, only: [:index, :show, :create] do
+        resources :conversations do
           member do
             get :messages
             post :messages, to: 'conversations#add_message'
+          end
+        end
+
+        resources :marketplace_harvests, path: 'harvests' do
+          collection do
+            get :active_by_product
+          end
+          
+          member do
+            post :payment_proof, to: 'marketplace_harvests#upload_payment_proof'
+          end
+        end
+        
+        resources :users, only: [] do
+          member do
+            get :verify, to: 'user_verification#verify'
           end
         end
       end

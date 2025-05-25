@@ -4,15 +4,22 @@ import {
   CheckIcon,
   CheckCircleIcon,
   UserCircleIcon,
+  PhotoIcon,
+  CurrencyDollarIcon,
+  CalendarIcon
 } from "@heroicons/react/24/solid";
 
 interface Message {
   id: string;
-  content: string;
+  content: string | { content: string }; // Cập nhật kiểu để hỗ trợ cả object
   user_id: number;
   created_at: string;
   read?: boolean;
   read_at?: string;
+  image_url?: string; // Hỗ trợ ảnh
+  type?: string; // Loại tin nhắn
+  payment_info?: any; // Thông tin thanh toán
+  metadata?: any; // Metadata khác
 }
 
 interface Props {
@@ -42,6 +49,63 @@ const MessageList: React.FC<Props> = ({
   const isSameUser = (id1: any, id2: any): boolean => {
     return Number(id1) === Number(id2);
   };
+  
+  // Hàm xử lý nội dung tin nhắn
+  const renderMessageContent = (message: Message) => {
+    const content = getMessageContent(message);
+    
+    // Nếu là tin nhắn hình ảnh
+    if (message.image_url || message.type === 'image') {
+      return (
+        <div>
+          <p>{content}</p>
+          {message.image_url && (
+            <img 
+              src={message.image_url} 
+              alt="Message image" 
+              className="mt-2 rounded-md max-w-[200px] max-h-[200px] object-cover cursor-pointer"
+              onClick={() => window.open(message.image_url, '_blank')} 
+            />
+          )}
+        </div>
+      );
+    }
+    
+    // Nếu là tin nhắn thanh toán
+    if (message.type === 'payment' && message.payment_info) {
+      return (
+        <div className="payment-message">
+          <p>{content}</p>
+          <div className="mt-2 text-xs bg-white bg-opacity-20 p-2 rounded">
+            <div>Số tiền: {message.payment_info.amount?.toLocaleString('vi-VN')} đ</div>
+            <div>Ngày: {new Date(message.payment_info.date).toLocaleDateString('vi-VN')}</div>
+          </div>
+          {message.image_url && (
+            <img 
+              src={message.image_url} 
+              alt="Payment proof" 
+              className="mt-2 rounded-md max-w-[200px] max-h-[200px] object-cover cursor-pointer"
+              onClick={() => window.open(message.image_url, '_blank')} 
+            />
+          )}
+        </div>
+      );
+    }
+    
+    // Tin nhắn thông thường
+    return <p>{content}</p>;
+  };
+
+  // Hàm xử lý nội dung tin nhắn
+  const getMessageContent = (message: Message): string => {
+    if (typeof message.content === 'object') {
+      // Nếu content là object thì lấy thuộc tính content của nó
+      return message.content.content || JSON.stringify(message.content);
+    }
+    
+    // Nếu content là string thì trả về trực tiếp
+    return message.content;
+  };
 
   // Debug info khi component render
   useEffect(() => {
@@ -63,7 +127,14 @@ const MessageList: React.FC<Props> = ({
   useEffect(() => {
     if (!isInitializedRef.current && messages.length > 0) {
       console.log("Initializing localMessages from props:", messages.length);
-      setLocalMessages(messages);
+      
+      // Chuẩn hóa messages để đảm bảo nội dung là string
+      const normalizedMessages = messages.map(msg => {
+        // Nếu content là object, giữ nguyên để xử lý trong renderMessageContent
+        return msg;
+      });
+      
+      setLocalMessages(normalizedMessages);
       isInitializedRef.current = true;
     }
   }, [messages]);
@@ -261,7 +332,9 @@ const MessageList: React.FC<Props> = ({
                           : "bg-white border border-gray-200"
                       }`}
                   >
-                    <p className="text-sm">{message.content}</p>
+                    {/* Sử dụng hàm renderMessageContent để xử lý nội dung tin nhắn */}
+                    {renderMessageContent(message)}
+                    
                     <div
                       className={`flex items-center mt-1 text-xs ${
                         isSent ? "text-green-100" : "text-gray-400"
