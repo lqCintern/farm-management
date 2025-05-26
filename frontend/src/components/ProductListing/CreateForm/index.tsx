@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { Button, Card, Steps } from "antd";
+import { useState, useEffect, useMemo } from "react";
+import { Button, Card, Form, Tabs, Divider } from "antd";
+import { useCreateForm } from "./useCreateForm";
 import BasicInfoSection from "./BasicInfoSection";
 import PricingSection from "./PricingSection";
 import LocationSection from "./LocationSection";
 import HarvestInfoSection from "./HarvestInfoSection";
 import ImageUploadSection from "./ImageUploadSection";
-import { useCreateForm } from "./useCreateForm";
+import dayjs from "dayjs";
 
 export function CreateProductListingForm() {
-  const [current, setCurrent] = useState(0);
   const {
     formValues,
     isLoading,
@@ -21,101 +21,192 @@ export function CreateProductListingForm() {
     uploadedImages,
   } = useCreateForm();
 
-  const steps = [
-    {
-      title: "Thông tin cơ bản",
-      content: (
-        <BasicInfoSection
-          formValues={formValues}
-          setFormValues={setFormValues}
-          errors={errors}
-        />
-      ),
-    },
-    {
-      title: "Giá cả & Số lượng",
-      content: (
-        <PricingSection
-          formValues={formValues}
-          setFormValues={setFormValues}
-          errors={errors}
-        />
-      ),
-    },
-    {
-      title: "Vị trí",
-      content: (
-        <LocationSection
-          formValues={formValues}
-          setFormValues={setFormValues}
-          errors={errors}
-        />
-      ),
-    },
-    {
-      title: "Thời gian thu hoạch",
-      content: (
-        <HarvestInfoSection
-          formValues={formValues}
-          setFormValues={setFormValues}
-          errors={errors}
-        />
-      ),
-    },
-    {
-      title: "Hình ảnh",
-      content: (
-        <ImageUploadSection
-          onUpload={handleImageUpload}
-          onRemove={handleRemoveImage}
-        />
-      ),
-    },
-  ];
+  // Preview panel scroll state
+  const [previewFixed, setPreviewFixed] = useState(false);
+  
+  // Handle scroll for fixing preview panel
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100) {
+        setPreviewFixed(true);
+      } else {
+        setPreviewFixed(false);
+      }
+    };
 
-  const next = () => {
-    setCurrent(current + 1);
-  };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const prev = () => {
-    setCurrent(current - 1);
-  };
+  // Tạo previewUrls từ uploadedImages
+  const previewUrls = useMemo(() => {
+    return uploadedImages.map(file => URL.createObjectURL(file));
+  }, [uploadedImages]);
 
-  const items = steps.map((item) => ({ key: item.title, title: item.title }));
+  // Dọn dẹp URLs khi component unmount hoặc uploadedImages thay đổi
+  useEffect(() => {
+    return () => {
+      // Giải phóng URL objects để tránh rò rỉ bộ nhớ
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
+  function formatHarvestEndDate(harvest_end_date: string) {
+    throw new Error("Function not implemented.");
+  }
 
   return (
-    <Card
-      title="Đăng sản phẩm mới"
-      className="w-full max-w-4xl mx-auto shadow-md"
-    >
-      <Steps current={current} items={items} className="mb-8" />
+    <div className="w-full max-w-7xl mx-auto px-4">
+      <h1 className="text-2xl font-medium mb-6">Đăng sản phẩm mới</h1>
+      
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Left side - Form */}
+        <div className="flex-1">
+          <Card className="shadow-sm mb-6">
+            <Tabs
+              defaultActiveKey="basic"
+              items={[
+                {
+                  key: 'basic',
+                  label: 'Thông tin cơ bản',
+                  children: (
+                    <BasicInfoSection
+                      formValues={formValues}
+                      setFormValues={setFormValues}
+                      errors={errors}
+                    />
+                  ),
+                },
+                {
+                  key: 'pricing',
+                  label: 'Giá cả & Số lượng',
+                  children: (
+                    <PricingSection
+                      formValues={formValues}
+                      setFormValues={setFormValues}
+                      errors={errors}
+                    />
+                  ),
+                },
+                {
+                  key: 'location',
+                  label: 'Vị trí',
+                  children: (
+                    <LocationSection
+                      formValues={formValues}
+                      setFormValues={setFormValues}
+                      errors={errors}
+                    />
+                  ),
+                },
+                {
+                  key: 'harvest',
+                  label: 'Thời gian thu hoạch',
+                  children: (
+                    <HarvestInfoSection
+                      formValues={formValues}
+                      setFormValues={setFormValues}
+                      errors={errors}
+                    />
+                  ),
+                },
+              ]}
+            />
+          </Card>
 
-      <div className="p-4 bg-gray-50 rounded-md min-h-[300px]">
-        {steps[current].content}
-      </div>
-
-      <div className="flex justify-between mt-6">
-        {current > 0 && <Button onClick={prev}>Quay lại</Button>}
-
-        <div className="flex gap-2 ml-auto">
-          <Button onClick={saveDraft} disabled={isLoading}>
-            Lưu nháp
-          </Button>
-
-          {current < steps.length - 1 && (
-            <Button type="primary" onClick={next}>
-              Tiếp theo
+          <Card title="Hình ảnh sản phẩm" className="shadow-sm mb-6">
+            <ImageUploadSection
+              uploadedImages={uploadedImages.map((file) => ({
+                url: URL.createObjectURL(file),
+                name: file.name,
+                uid: file.name,
+              }))}
+              onUpload={handleImageUpload}
+              onRemove={handleRemoveImage}
+            />
+          </Card>
+          
+          <div className="flex gap-4 mb-6">
+            <Button size="large" onClick={saveDraft} disabled={isLoading}>
+              Lưu nháp
             </Button>
-          )}
-
-          {current === steps.length - 1 && (
-            <Button type="primary" onClick={handleSubmit} loading={isLoading}>
+            <Button 
+              type="primary" 
+              size="large" 
+              onClick={handleSubmit} 
+              loading={isLoading}
+            >
               Đăng bài
             </Button>
-          )}
+          </div>
+        </div>
+
+        {/* Right side - Preview */}
+        <div className="md:w-[400px]">
+          <div 
+            className={`bg-white rounded-lg shadow-sm p-4 ${previewFixed ? 'md:sticky md:top-4' : ''}`}
+          >
+            <div className="text-lg font-medium mb-2">Xem trước</div>
+            
+            {/* Phần xem trước */}
+            {uploadedImages.length > 0 ? (
+              <div className="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden mb-4">
+                <img 
+                  src={previewUrls[0]} 
+                  alt="Ảnh sản phẩm"
+                  className="object-cover w-full h-full" 
+                />
+              </div>
+            ) : (
+              <div className="aspect-w-4 aspect-h-3 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-gray-400">Chưa có ảnh sản phẩm</span>
+              </div>
+            )}
+            
+            <h2 className="text-xl font-bold">{formValues.title || "Tiêu đề"}</h2>
+            <div className="text-lg font-semibold text-green-600 mt-1">
+              {formValues.price_expectation ? `${Number(formValues.price_expectation).toLocaleString()} đ/kg` : "Giá"}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              {formValues.address || "Vị trí"}
+            </div>
+            
+            <Divider className="my-3" />
+            
+            <div className="mb-3">
+              <div className="text-sm font-medium mb-1">Chi tiết</div>
+              <div className="text-sm">
+                {formValues.description || "Thông tin chi tiết sản phẩm"}
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <div className="text-sm font-medium mb-1">Số lượng</div>
+              <div className="text-sm">
+                {formValues.quantity ? `${formValues.quantity} kg` : "Chưa có thông tin"}
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <div className="text-sm font-medium mb-1">Thời gian thu hoạch dự kiến</div>
+              <div className="text-sm">
+                {formValues.harvest_end_date ? dayjs(formValues.harvest_end_date).format('DD/MM/YYYY') : "Chưa có thông tin"}
+              </div>
+            </div>
+            
+            <Divider className="my-3" />
+            
+            <div className="flex items-center">
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+              <div className="ml-3">
+                <div className="font-medium">Người bán</div>
+                <div className="text-sm text-gray-500">Thông tin liên hệ</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 

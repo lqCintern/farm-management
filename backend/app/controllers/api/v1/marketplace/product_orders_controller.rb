@@ -32,7 +32,14 @@ module Api
               },
               buyer: { only: [:user_id, :user_name, :fullname, :phone] }
             }),
-            pagination: pagy_metadata(@pagy),
+            pagination: {
+              count: @pagy.count,
+              page: @pagy.page,
+              pages: @pagy.pages,
+              last: @pagy.last,
+              next: @pagy.next,
+              prev: @pagy.prev
+            },
             statistics: order_statistics
           }, status: :ok
         end
@@ -118,8 +125,7 @@ module Api
                   return render json: { error: "Chỉ người bán mới được chấp nhận đơn hàng" }, status: :forbidden
                 end
                 
-                @product_order.accepted!
-                message = "Đã chấp nhận đơn đặt hàng"
+                @product_order.update( status: :accepted )
                 
                 # Tìm và thông báo qua tin nhắn
                 send_order_notification(@product_order, "Tôi đã chấp nhận đơn đặt hàng của bạn!")
@@ -221,20 +227,22 @@ module Api
         
         def order_statistics
           if current_user.farmer?
+            base_orders = ProductOrder.for_seller(current_user.user_id)
             {
-              pending: ProductOrder.for_seller(current_user.user_id).pending.count,
-              accepted: ProductOrder.for_seller(current_user.user_id).accepted.count,
-              completed: ProductOrder.for_seller(current_user.user_id).completed.count,
-              rejected: ProductOrder.for_seller(current_user.user_id).rejected.count,
-              total: ProductOrder.for_seller(current_user.user_id).count
+              pending: base_orders.pending_orders.count,
+              accepted: base_orders.accepted_orders.count,
+              completed: base_orders.completed_orders.count,
+              rejected: base_orders.rejected_orders.count,
+              total: base_orders.count
             }
           else
+            base_orders = current_user.product_orders
             {
-              pending: current_user.product_orders.pending.count,
-              accepted: current_user.product_orders.accepted.count,
-              completed: current_user.product_orders.completed.count,
-              rejected: current_user.product_orders.rejected.count,
-              total: current_user.product_orders.count
+              pending: base_orders.pending_orders.count,
+              accepted: base_orders.accepted_orders.count,
+              completed: base_orders.completed_orders.count,
+              rejected: base_orders.rejected_orders.count,
+              total: base_orders.count
             }
           end
         end

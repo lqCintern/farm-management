@@ -249,7 +249,11 @@ export default function EditProductListing() {
           )}
 
           <ImageUploadSection
-            uploadedImages={uploadedImages}
+            uploadedImages={uploadedImages.map((file) => ({
+                url: URL.createObjectURL(file),
+                name: file.name,
+                uid: file.name,
+              }))}
             onUpload={handleImageUpload}
             onRemove={handleRemoveImage}
           />
