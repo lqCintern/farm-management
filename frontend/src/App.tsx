@@ -35,6 +35,9 @@ import PineappleActivityTemplates from "./pages/PineappleActivityTemplates";
 import ActivityTemplateDetail from "./pages/PineappleActivityTemplates/ActivityTemplateDetail";
 import PineappleCrops from "./pages/PineappleCrop";
 
+import OrderList from './pages/Orders/OrderList';
+import OrderDetail from './pages/Orders/OrderDetail';
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path={routes.index} element={<MainLayout />}>
@@ -72,6 +75,12 @@ const router = createBrowserRouter(
       <Route path="/pineapple/:id/activities" element={<PineappleCropActivities />} />
       <Route path="/activity-templates" element={<PineappleActivityTemplates />} />
       <Route path="/activity-templates/:id" element={<ActivityTemplateDetail />} />
+
+      {/* Orders */}
+            <Route path="orders">
+              <Route index element={<OrderList />} />
+              <Route path=":id" element={<OrderDetail />} />
+            </Route>
     </Route>
   )
 );

@@ -3,24 +3,21 @@ class ProductOrder < ApplicationRecord
   belongs_to :product_listing
   belongs_to :buyer, class_name: 'User', foreign_key: 'buyer_id', primary_key: 'user_id'
 
-  # Định nghĩa trạng thái bằng hằng số
-  STATUS_PENDING = 0
-  STATUS_ACCEPTED = 1
-  STATUS_REJECTED = 2
-  STATUS_COMPLETED = 3
+  # Định nghĩa trạng thái bằng enum
+  enum :status, {
+    pending: 0,
+    accepted: 1,
+    rejected: 2,
+    completed: 3
+  }, prefix: true  # Thêm prefix để tránh xung đột
 
-  STATUS_OPTIONS = {
-    pending: STATUS_PENDING,
-    accepted: STATUS_ACCEPTED,
-    rejected: STATUS_REJECTED,
-    completed: STATUS_COMPLETED
-  }.freeze
-
-  # Validation
-  validates :status, inclusion: { in: STATUS_OPTIONS.values }
+  # Validation - sửa validation để sử dụng giá trị từ enum
   validates :quantity, presence: true, numericality: { greater_than: 0 }
   validate :buyer_cannot_be_seller
   validate :check_listing_status, on: :create
+
+  # LOẠI BỎ dòng này:
+  # validates :status, inclusion: { in: STATUS_OPTIONS.values }
 
   # Callbacks
   after_create :update_product_listing_order_count
@@ -31,15 +28,15 @@ class ProductOrder < ApplicationRecord
     joins(:product_listing).where(product_listings: { user_id: user_id })
   }
 
-  scope :for_buyer, ->(buyer_id) { where(buyer_id: buyer_id) }
+  # Thêm scope cho từng trạng thái để sử dụng trong controller
+  scope :pending_orders, -> { where(status: statuses[:pending]) }
+  scope :accepted_orders, -> { where(status: statuses[:accepted]) }
+  scope :rejected_orders, -> { where(status: statuses[:rejected]) }
+  scope :completed_orders, -> { where(status: statuses[:completed]) }
 
   # Instance methods
   def seller
     product_listing.user
-  end
-
-  def status_name
-    STATUS_OPTIONS.key(status).to_s
   end
 
   def create_notification
@@ -66,17 +63,20 @@ class ProductOrder < ApplicationRecord
   end
 
   def update_product_listing_status
-    # Nếu đơn hàng được chấp nhận, chuyển trạng thái listing sang "sold"
-    if status == STATUS_ACCEPTED
+    # Sử dụng các giá trị từ enum thay vì hằng số không tồn tại
+    if status == self.class.statuses[:accepted]
       product_listing.update(status: :sold)
 
       # Từ chối tự động tất cả các đơn hàng khác của sản phẩm này
-      product_listing.product_orders.where.not(id: id).where(status: STATUS_PENDING).each do |order|
-        order.update(
-          status: STATUS_REJECTED,
-          rejection_reason: "Đơn hàng đã được bán cho người khác"
-        )
-      end
+      product_listing.product_orders
+        .where.not(id: id)
+        .where(status: self.class.statuses[:pending])
+        .each do |order|
+          order.update(
+            status: self.class.statuses[:rejected],
+            rejection_reason: "Đơn hàng đã được bán cho người khác"
+          )
+        end
 
       # Có thể tạo transaction để ghi nhận sale
       create_sale_record

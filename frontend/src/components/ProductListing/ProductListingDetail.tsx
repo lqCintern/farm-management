@@ -28,9 +28,11 @@ import {
   EyeOutlined,
   MessageOutlined,
   ExclamationCircleOutlined,
+  ShoppingCartOutlined,
 } from "@ant-design/icons";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { createOrFindConversation } from "@/services/marketplace/conversationService";
+import CreateOrderForm from "@/components/ProductOrder/CreateOrderForm";
 
 const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;
@@ -44,6 +46,7 @@ export default function ProductListingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState<boolean>(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [orderModalVisible, setOrderModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -162,6 +165,26 @@ export default function ProductListingDetail() {
     } finally {
       setChatLoading(false);
     }
+  };
+
+  const userRole = "trader"; // Giả lập vai trò người dùng, thay thế bằng giá trị thực tế từ context hoặc props
+
+  const renderBuyerActions = () => {
+    if (userRole === "trader") {
+      return (
+        <Button
+          type="primary"
+          size="large"
+          icon={<ShoppingCartOutlined />}
+          onClick={() => setOrderModalVisible(true)}
+          className="mt-4"
+          block
+        >
+          Đặt mua sản phẩm
+        </Button>
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -350,9 +373,21 @@ export default function ProductListingDetail() {
                 </Button>
               </Space>
             </Card>
+
+            {/* Buyer Action - Đặt mua sản phẩm */}
+            {renderBuyerActions()}
           </div>
         </div>
       </Card>
+
+      {/* Đặt hàng - Modal Form */}
+      {orderModalVisible && (
+        <CreateOrderForm
+          visible={orderModalVisible}
+          onClose={() => setOrderModalVisible(false)}
+          productListing={listing}
+        />
+      )}
     </div>
   );
 }

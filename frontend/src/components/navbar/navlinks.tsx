@@ -37,7 +37,7 @@ const navlinksConfig: Record<string, any[]> = {
       subLinks: [
         { name: "New Product", href: "/products/create" },
         { name: "Products", href: "/products" },
-        { name: "Categories", href: "/categories" },
+        { name: "Orders", href: "/orders" },
       ],
     },
     {
@@ -76,8 +76,6 @@ const navlinksConfig: Record<string, any[]> = {
         { name: "Homepage", href: "/calendar" },
         { name: "Chat", href: "/chat" },
         { name: "Field", href: "/fields" },
-        { name: "Tasks", href: "/tasks" },
-        { name: "Notes", href: "/notes" },
       ],
     },
     {

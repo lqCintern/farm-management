@@ -4,16 +4,17 @@ import type { RcFile, UploadProps } from "antd/es/upload";
 import { PlusOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd/es/upload/interface";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
+// Thay đổi interface để phù hợp với dữ liệu từ parent component
 interface ImageUploadProps {
-  uploadedImages: File[];
-  onUpload: (file: File) => boolean;
-  onRemove: (file: File) => void;
+  uploadedImages: Array<{ url: string; name?: string; uid?: string }>;
+  onUpload: (file: File) => void;
+  onRemove: (file: any) => void;
 }
 
 const ImageUploadSection: React.FC<ImageUploadProps> = ({
-  uploadedImages = [], // Thêm giá trị mặc định
+  uploadedImages = [],
   onUpload,
   onRemove,
 }) => {
@@ -26,48 +27,41 @@ const ImageUploadSection: React.FC<ImageUploadProps> = ({
     multiple: true,
     listType: "picture-card",
     accept: "image/*",
-    fileList: (uploadedImages || []).map( // Thêm kiểm tra null/undefined
-      (file, index) =>
-        ({
-          uid: `-${index}`,
-          name: file.name,
-          status: "done",
-          url: URL.createObjectURL(file),
-          originFileObj: file as RcFile,
-        } as UploadFile)
-    ),
+    // Sử dụng trực tiếp uploadedImages vì đã có cấu trúc phù hợp với Ant Design
+    fileList: uploadedImages.map((img, index) => ({
+      uid: img.uid || `-${index}`,
+      name: img.name || `image-${index}.jpg`,
+      status: "done",
+      url: img.url,
+    })),
     beforeUpload: (file) => {
       onUpload(file);
       return false; // Prevent default upload behavior
     },
     onRemove: (file) => {
-      if (file.originFileObj) {
-        onRemove(file.originFileObj as File);
-      }
+      onRemove(file);
     },
     onPreview: async (file) => {
-      const src = file.url || (await getBase64(file.originFileObj as RcFile));
-      setPreviewImage(src);
+      setPreviewImage(file.url || "");
       setPreviewOpen(true);
-      setPreviewTitle(file.name || "Image");
+      setPreviewTitle(file.name || "Hình ảnh");
     },
   };
 
-  const uploadButton = (
-    <div>
-      <PlusOutlined />
-      <div style={{ marginTop: 8 }}>Tải lên</div>
-    </div>
-  );
-
   return (
     <div className="my-4">
-      <Title level={4}>Hình ảnh sản phẩm</Title>
-      <Text type="secondary">Thêm hình ảnh của sản phẩm (tối đa 5 ảnh)</Text>
+      <div className="mb-4">
+        <Text type="secondary">Thêm hình ảnh của sản phẩm (tối đa 5 ảnh)</Text>
+      </div>
 
-      <div className="mt-4">
+      <div>
         <Upload {...uploadProps}>
-          {uploadedImages.length >= 5 ? null : uploadButton}
+          {uploadedImages.length >= 5 ? null : (
+            <div>
+              <PlusOutlined />
+              <div style={{ marginTop: 8 }}>Tải lên</div>
+            </div>
+          )}
         </Upload>
 
         <Modal
@@ -88,14 +82,5 @@ const ImageUploadSection: React.FC<ImageUploadProps> = ({
     </div>
   );
 };
-
-// Helper function để chuyển file thành base64
-const getBase64 = (file: RcFile): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
 
 export default ImageUploadSection;
