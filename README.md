@@ -75,3 +75,5 @@ npm run dev
 
 ## Liên hệ
 Nếu bạn gặp vấn đề hoặc cần hỗ trợ, vui lòng liên hệ qua email: `lqci.cql@gmail.com`.
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lqCintern/farm-management)
