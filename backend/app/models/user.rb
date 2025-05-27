@@ -27,6 +27,21 @@ class User < ApplicationRecord
     has_many :sent_conversations, class_name: 'Conversation', foreign_key: 'sender_id', primary_key: 'user_id'
     has_many :received_conversations, class_name: 'Conversation', foreign_key: 'receiver_id', primary_key: 'user_id'
 
+    has_one :labor_profile, class_name: "Labor::WorkerProfile", 
+          foreign_key: :user_id, primary_key: :user_id, dependent: :destroy
+          
+    has_one :labor_household_membership, class_name: "Labor::HouseholdWorker",
+            foreign_key: :worker_id, primary_key: :user_id, dependent: :destroy
+            
+    has_one :labor_household, through: :labor_household_membership, 
+            source: :household, class_name: "Labor::FarmHousehold"
+    
+    has_many :owned_labor_households, class_name: "Labor::FarmHousehold",
+            foreign_key: :owner_id, primary_key: :user_id, dependent: :destroy
+            
+    has_many :labor_assignments, class_name: "Labor::LaborAssignment",
+            foreign_key: :worker_id, primary_key: :user_id, dependent: :nullify
+    
     # Cập nhật định nghĩa enum user_type
     enum :user_type, { admin: 0, farmer: 1, supplier: 2, trader: 3 }
 
@@ -65,6 +80,10 @@ class User < ApplicationRecord
     # Lấy các đơn hàng đang xử lý (dành cho người mua)
     def processing_orders
         supply_orders.where(status: [:pending, :confirmed, :shipped])
+    end
+
+    def primary_labor_household
+      owned_labor_households.first || labor_household
     end
 
     private

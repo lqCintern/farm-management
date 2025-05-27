@@ -132,6 +132,66 @@ Rails.application.routes.draw do
         get 'suppliers/:id/reviews', to: 'supplier_reviews#supplier_reviews'
       end
 
+      # Module Labor
+      namespace :labor do
+        resources :farm_households do
+          resources :household_workers, shallow: true do
+            member do
+              post :update_status
+            end
+          end
+        end
+        
+        resources :worker_profiles do
+          collection do
+            get :my_profile
+            get :available_workers
+          end
+        end
+        
+        resources :labor_requests do
+          resources :labor_assignments, shallow: true
+          
+          member do
+            post :accept
+            post :decline
+            post :complete
+            post :cancel
+            post :join
+          end
+          
+          collection do
+            post :batch_assign
+            post :create_mixed
+            get :public_requests
+          end
+        end
+        
+        resources :labor_assignments, only: [] do
+          member do
+            post :complete
+            post :reject
+            post :missed
+            post :rate_worker
+            post :rate_farmer
+          end
+          
+          collection do
+            get :my_assignments
+          end
+        end
+        
+        resources :labor_exchanges, only: [:index, :show] do
+          member do
+            post :reset_balance
+          end
+          
+          collection do
+            get :summary
+          end
+        end
+      end
+      
       # Module Users
       namespace :users do
         post "/register", to: "auth#register"

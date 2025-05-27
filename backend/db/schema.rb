@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_25_003310) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_27_010638) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -119,6 +119,114 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_25_003310) do
     t.bigint "farm_activity_id"
     t.index ["farm_activity_id"], name: "index_harvests_on_farm_activity_id"
     t.index ["field_id"], name: "index_harvests_on_field_id"
+  end
+
+  create_table "labor_assignments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "labor_request_id", null: false
+    t.bigint "worker_id", null: false
+    t.bigint "home_household_id", null: false
+    t.date "work_date", null: false
+    t.time "start_time"
+    t.time "end_time"
+    t.decimal "hours_worked", precision: 5, scale: 2
+    t.integer "status", default: 0
+    t.text "notes"
+    t.integer "worker_rating"
+    t.integer "farmer_rating"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["home_household_id"], name: "index_labor_assignments_on_home_household_id"
+    t.index ["labor_request_id"], name: "index_labor_assignments_on_labor_request_id"
+    t.index ["work_date"], name: "index_labor_assignments_on_work_date"
+    t.index ["worker_id"], name: "index_labor_assignments_on_worker_id"
+  end
+
+  create_table "labor_exchange_transactions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "labor_exchange_id", null: false
+    t.bigint "labor_assignment_id", null: false
+    t.decimal "hours", precision: 5, scale: 2
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["labor_assignment_id"], name: "idx_labor_exchange_transactions_on_assignment_id"
+    t.index ["labor_exchange_id"], name: "index_labor_exchange_transactions_on_labor_exchange_id"
+  end
+
+  create_table "labor_exchanges", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "household_a_id", null: false
+    t.bigint "household_b_id", null: false
+    t.decimal "hours_balance", precision: 8, scale: 2, default: "0.0"
+    t.text "notes"
+    t.datetime "last_transaction_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_a_id", "household_b_id"], name: "index_labor_exchanges_on_households", unique: true
+    t.index ["household_b_id"], name: "fk_rails_21ece1a2c7"
+  end
+
+  create_table "labor_farm_households", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "owner_id", null: false
+    t.text "description"
+    t.string "province"
+    t.string "district"
+    t.string "ward"
+    t.string "address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_id"], name: "index_labor_farm_households_on_owner_id"
+  end
+
+  create_table "labor_household_workers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "household_id", null: false
+    t.bigint "worker_id", null: false
+    t.string "relationship"
+    t.boolean "is_active", default: true
+    t.date "joined_date"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id"], name: "index_labor_household_workers_on_household_id"
+    t.index ["worker_id"], name: "index_labor_household_workers_on_worker_id", unique: true
+  end
+
+  create_table "labor_requests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "requesting_household_id", null: false
+    t.bigint "providing_household_id"
+    t.bigint "farm_activity_id"
+    t.string "title", null: false
+    t.text "description"
+    t.integer "workers_needed"
+    t.integer "request_type", default: 0
+    t.decimal "rate", precision: 10, scale: 2
+    t.date "start_date"
+    t.date "end_date"
+    t.time "start_time"
+    t.time "end_time"
+    t.integer "status", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "request_group_id", comment: "ID nhóm cho các yêu cầu liên quan"
+    t.bigint "parent_request_id", comment: "ID của yêu cầu gốc trong nhóm"
+    t.boolean "is_public", default: false, comment: "Yêu cầu có thể được xem bởi tất cả"
+    t.integer "max_acceptors", comment: "Số lượng tối đa household được chấp nhận"
+    t.index ["farm_activity_id"], name: "index_labor_requests_on_farm_activity_id"
+    t.index ["is_public"], name: "index_labor_requests_on_is_public"
+    t.index ["parent_request_id"], name: "index_labor_requests_on_parent_request_id"
+    t.index ["providing_household_id"], name: "index_labor_requests_on_providing_household_id"
+    t.index ["request_group_id"], name: "index_labor_requests_on_request_group_id"
+    t.index ["requesting_household_id"], name: "index_labor_requests_on_requesting_household_id"
+  end
+
+  create_table "labor_worker_profiles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "skills"
+    t.decimal "daily_rate", precision: 10, scale: 2
+    t.decimal "hourly_rate", precision: 10, scale: 2
+    t.integer "availability", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_labor_worker_profiles_on_user_id", unique: true
   end
 
   create_table "marketplace_harvests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -394,6 +502,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_25_003310) do
   add_foreign_key "fields", "users", primary_key: "user_id"
   add_foreign_key "harvests", "farm_activities"
   add_foreign_key "harvests", "fields"
+  add_foreign_key "labor_assignments", "labor_farm_households", column: "home_household_id"
+  add_foreign_key "labor_assignments", "labor_requests"
+  add_foreign_key "labor_assignments", "users", column: "worker_id", primary_key: "user_id"
+  add_foreign_key "labor_exchange_transactions", "labor_assignments"
+  add_foreign_key "labor_exchange_transactions", "labor_exchanges"
+  add_foreign_key "labor_exchanges", "labor_farm_households", column: "household_a_id"
+  add_foreign_key "labor_exchanges", "labor_farm_households", column: "household_b_id"
+  add_foreign_key "labor_farm_households", "users", column: "owner_id", primary_key: "user_id"
+  add_foreign_key "labor_household_workers", "labor_farm_households", column: "household_id"
+  add_foreign_key "labor_household_workers", "users", column: "worker_id", primary_key: "user_id"
+  add_foreign_key "labor_requests", "farm_activities"
+  add_foreign_key "labor_requests", "labor_farm_households", column: "providing_household_id"
+  add_foreign_key "labor_requests", "labor_farm_households", column: "requesting_household_id"
+  add_foreign_key "labor_requests", "labor_requests", column: "parent_request_id"
+  add_foreign_key "labor_worker_profiles", "users", primary_key: "user_id"
   add_foreign_key "marketplace_harvests", "product_listings"
   add_foreign_key "marketplace_harvests", "product_orders"
   add_foreign_key "marketplace_harvests", "users", column: "trader_id", primary_key: "user_id"
