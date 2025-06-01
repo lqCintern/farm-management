@@ -4,7 +4,10 @@ import { format } from "date-fns";
 import { formatWithOptions } from "date-fns/fp";
 import { vi } from "date-fns/locale";
 import { getFarmActivities } from "@/services/farming/farmService";
-import { FarmActivity } from "@/types";
+import { getLaborRequests } from "@/services/labor/laborRequestService";
+import { FarmActivity } from "@/types/labor/types";
+import { LaborRequest } from "@/types/labor/laborRequest.types";
+
 
 export default function Calendar() {
   const [clickedDate, setClickedDate] = useState<string>(
@@ -12,26 +15,33 @@ export default function Calendar() {
   );
   const [events, setEvents] = useState<any[]>([]);
   const [farmActivities, setFarmActivities] = useState<FarmActivity[]>([]);
+  const [laborRequests, setLaborRequests] = useState<LaborRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch dữ liệu hoạt động
   useEffect(() => {
-    async function fetchActivities() {
+    async function fetchData() {
       try {
         setLoading(true);
-        const response = await getFarmActivities();
-        setFarmActivities(response.farm_activities);
+        // Fetch farm activities
+        const activitiesResponse = await getFarmActivities();
+        setFarmActivities(activitiesResponse.farm_activities);
+
+        // Fetch labor requests
+        const laborResponse = await getLaborRequests();
+        setLaborRequests(laborResponse.data);
+
         setError(null);
       } catch (err) {
-        console.error("Error fetching farm activities:", err);
-        setError("Không thể tải dữ liệu hoạt động");
+        console.error("Error fetching data:", err);
+        setError("Không thể tải dữ liệu");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchActivities();
+    fetchData();
   }, []);
 
   return (
@@ -61,6 +71,7 @@ export default function Calendar() {
               setClickedDate={setClickedDate}
               setEvents={setEvents}
               farmActivities={farmActivities}
+              laborRequests={laborRequests}
             />
           )}
         </div>

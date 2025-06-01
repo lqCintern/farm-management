@@ -134,10 +134,34 @@ Rails.application.routes.draw do
 
       # Module Labor
       namespace :labor do
+        # Đặt các custom routes trước resources
+        get 'labor_assignments/my_assignments', to: 'labor_assignments#my_assignments'
+        
+        # Sau đó định nghĩa resources thông thường
+        resources :labor_assignments do
+          collection do
+            get :my_assignments
+            get :household_assignments  # Thêm route mới
+            post :complete_multiple     # Thêm route mới
+            get :check_conflicts
+            get :stats
+            get :worker_availability
+          end
+          
+          member do
+            post :report_completion  # Endpoint mới cho worker
+            post :complete  # Chỉ dành cho farmer
+            post :reject    # Dành cho worker
+            post :missed    # Dành cho farmer
+            post :rate_worker
+            post :rate_farmer
+          end
+        end
+        
         resources :farm_households do
-          resources :household_workers, shallow: true do
+          resources :household_workers, only: [:index, :show, :create, :destroy] do
             member do
-              post :update_status
+              patch :update_status
             end
           end
         end
@@ -158,38 +182,44 @@ Rails.application.routes.draw do
             post :complete
             post :cancel
             post :join
+            get :group_status
+            get :suggest_workers
           end
           
           collection do
             post :batch_assign
             post :create_mixed
             get :public_requests
+            get :for_activity
           end
         end
         
-        resources :labor_assignments, only: [] do
-          member do
-            post :complete
-            post :reject
-            post :missed
-            post :rate_worker
-            post :rate_farmer
+        resources :labor_exchanges, path: 'exchanges' do
+          collection do
+            post 'initialize', to: 'labor_exchanges#initialize_exchanges'
+            post 'households/:household_id/recalculate', to: 'labor_exchanges#recalculate', as: :recalculate
+            post 'recalculate_all', to: 'labor_exchanges#recalculate_all', as: :recalculate_all
+            post 'adjust_balance', to: 'labor_exchanges#adjust_balance'
+            get 'transaction_history', to: 'labor_exchanges#transaction_history'
+            get 'households/:household_id', to: 'labor_exchanges#show_by_household', as: :by_household
           end
           
-          collection do
-            get :my_assignments
+          member do
+            post 'reset_balance'
           end
         end
         
-        resources :labor_exchanges, only: [:index, :show] do
-          member do
-            post :reset_balance
-          end
-          
-          collection do
-            get :summary
+        # Nested routes cho household workers
+        resources :farm_households do
+          resources :household_workers, only: [:index, :show, :create, :destroy] do
+            member do
+              patch :update_status
+            end
           end
         end
+        
+        # Route để lấy workers của household hiện tại (cho frontend)
+        get 'household/workers', to: 'household_workers#index'
       end
       
       # Module Users

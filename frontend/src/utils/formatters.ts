@@ -8,12 +8,27 @@ export const formatCurrency = (price: number): string => {
 };
 
 // Định dạng ngày tháng
-export const formatDate = (dateString: string): string => {
+export const formatDate = (dateString?: string) => {
+  if (!dateString) return "";
+
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
     day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+};
+
+export const formatDateTime = (dateString?: string) => {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
 };
 
@@ -47,4 +62,20 @@ export const getStatusColor = (status: number): string => {
     default:
       return "bg-gray-500";
   }
+};
+
+export const formatTime = (timeString?: string) => {
+  if (!timeString) return "";
+
+  // Nếu timeString có dạng HH:MM:SS
+  if (timeString.indexOf(":") > 0) {
+    return timeString.substring(0, 5); // Lấy chỉ HH:MM
+  }
+
+  // Nếu timeString là ISO string
+  const date = new Date(timeString);
+  return date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };

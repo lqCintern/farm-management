@@ -3,13 +3,34 @@ module Api
   module V1
     module Labor
       class HouseholdWorkersController < BaseController
-        before_action :set_household, only: [:index, :create]
+        before_action :set_household, only: [:create]
         before_action :require_household_owner, only: [:create, :destroy, :update_status]
         before_action :set_household_worker, only: [:show, :destroy, :update_status]
         
         def index
-          @workers = @household.household_workers.includes(:worker)
-          render_success_response(@workers)
+          # Kiểm tra xem có farm_household_id không
+          if params[:farm_household_id]
+            @household = ::Labor::FarmHousehold.find(params[:farm_household_id])
+          else
+            # Sử dụng current_household từ BaseController
+            @household = current_household
+          end
+          
+          @workers = @household.household_workers.includes(:worker).active
+          
+          # Định dạng kết quả trả về để phù hợp với frontend
+          formatted_workers = @workers.map do |hw|
+            worker_profile = ::Labor::WorkerProfile.find_by(user_id: hw.worker.id)
+            {
+              id: hw.worker.id,
+              name: hw.worker.fullname || hw.worker.user_name,
+              relationship: hw.relationship,
+              skills: worker_profile&.skills || [],
+              joined_date: hw.joined_date
+            }
+          end
+          
+          render_success_response(formatted_workers)
         end
         
         def show

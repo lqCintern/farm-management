@@ -1,5 +1,5 @@
 import axiosInstance from "@/utils/axiosConfig";
-import { FarmActivityResponse } from "@/types";
+import { FarmActivityResponse } from "@/types/labor/types";
 
 // Farm Activities API
 export const getFarmActivities = async (): Promise<FarmActivityResponse> => {

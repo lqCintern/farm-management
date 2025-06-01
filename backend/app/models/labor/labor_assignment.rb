@@ -22,7 +22,7 @@ module Labor
     validate :worker_availability
     
     # Enums
-    enum :status, { assigned: 0, completed: 1, missed: 2, rejected: 3 }
+    enum :status, { assigned: 0, worker_reported: 1, completed: 2, missed: 3, rejected: 4 }
     
     # Callbacks
     after_create :update_worker_availability
@@ -95,6 +95,8 @@ module Labor
     def process_labor_exchange
       return unless completed?
       return if hours_worked.blank? || hours_worked <= 0
+      # Thêm kiểm tra để tránh xử lý trùng lặp
+      return if exchange_processed?
       
       # Chỉ xử lý đổi công nếu yêu cầu là loại exchange hoặc mixed
       return unless ["exchange", "mixed"].include?(labor_request.request_type)
@@ -105,8 +107,12 @@ module Labor
         requesting_household.id
       )
       
-      # Ghi nhận giao dịch đổi công
-      exchange.add_transaction(self, hours_worked)
+      # Sử dụng work_units thay vì hours_worked cho đổi công
+      # Hoặc tiếp tục sử dụng hours_worked nếu muốn tính chính xác theo giờ
+      exchange.add_transaction(self, work_units || hours_worked)
+      
+      # Đánh dấu đã xử lý để tránh trùng lặp
+      update_column(:exchange_processed, true)
     end
   end
 end

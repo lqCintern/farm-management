@@ -5,6 +5,9 @@ class FarmActivitySerializer
   attributes :id, :activity_type, :description, :frequency, :status,
              :start_date, :end_date, :crop_animal_id, :created_at, :updated_at
   
+  # Thêm định nghĩa quan hệ
+  has_many :farm_materials
+  
   # Thêm các thuộc tính được tính toán
   attribute :status_label do |activity|
     case activity.status

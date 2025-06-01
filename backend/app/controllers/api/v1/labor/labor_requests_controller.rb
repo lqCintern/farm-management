@@ -210,6 +210,43 @@ module Api
           end
         end
         
+        # Thêm endpoint để gợi ý người lao động
+        def suggest_workers
+          max_suggestions = params[:limit].to_i || 5
+          
+          workers = ::Labor::LaborRequestService.suggest_workers(
+            @labor_request, 
+            max_suggestions
+          )
+          
+          render_success_response({
+            request_id: @labor_request.id,
+            suggested_workers: workers.map { |w| 
+              {
+                id: w.id,
+                name: w.fullname || w.user_name,
+                skills: w.worker_profile&.skills || [],
+                profile_image: w.profile_image_url,
+              }
+            }
+          })
+        end
+        
+        # Bổ sung endpoint để lọc yêu cầu theo hoạt động nông nghiệp
+        def for_activity
+          @farm_activity_id = params[:farm_activity_id]
+          unless @farm_activity_id
+            render_error_response("Missing farm_activity_id", :bad_request)
+            return
+          end
+          
+          @requests = ::Labor::LaborRequest.where(farm_activity_id: @farm_activity_id.to_i)
+                                         .where(requesting_household_id: current_household.id)
+                                         .or(::Labor::LaborRequest.where(providing_household_id: current_household.id))
+          
+          render_success_response(@requests.as_json)
+        end
+        
         private
         
         def set_labor_request

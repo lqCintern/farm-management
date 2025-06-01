@@ -4,7 +4,7 @@ import {
   PineappleCropCreateParams,
   PineappleCropPreviewResponse,
   FarmActivityResponse
-} from "@/types";
+} from "@/types/labor/types";
 
 // Lấy danh sách vụ trồng dứa
 export const getPineappleCrops = async (params: any = {}) => {

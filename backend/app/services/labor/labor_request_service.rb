@@ -192,6 +192,17 @@ module Labor
         
         request.status = :completed
         
+        # Thêm code để tìm các assignment liên quan và xử lý đổi công
+        if [:exchange, :mixed].include?(request.request_type.to_sym)
+          assignments = request.assignments.where(status: :completed)
+          assignments.each do |assignment|
+            exchange_result = Labor::ExchangeService.process_completed_assignment(assignment)
+            unless exchange_result[:success]
+              result[:exchange_errors] ||= []
+              result[:exchange_errors] << exchange_result[:errors]
+            end
+          end
+        end
       else
         result[:errors] << "Hành động không được hỗ trợ"
         return result
@@ -264,6 +275,18 @@ module Labor
       elsif siblings.count > 0 && siblings.where(status: :declined).count == siblings.count
         parent.update(status: :declined)
       end
+    end
+    
+    def self.suggest_workers(request, max_suggestions = 5)
+      return [] unless request.requesting_household
+      
+      # Tìm các worker có kỹ năng phù hợp và đang khả dụng vào thời gian cần
+      available_workers = Labor::WorkerProfile.where(availability: :available)
+        .joins(:user)
+        .where.not(users: { id: request.requesting_household.workers.pluck(:worker_id) })
+        .limit(max_suggestions)
+      
+      available_workers.map(&:user)
     end
   end
 end

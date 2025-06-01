@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFarmActivities } from "@/services/farming/farmService";
-import { FarmActivity, Pagination } from "@/types";
+import { FarmActivity, Pagination } from "@/types/labor/types";
 
 export default function FarmActivityList() {
   const [activities, setActivities] = useState<FarmActivity[]>([]);

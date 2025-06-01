@@ -7,7 +7,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import viLocale from "@fullcalendar/core/locales/vi";
-import { FarmActivity } from "@/types";
+import { FarmActivity } from "@/types/labor/types";
 import { format } from "date-fns";
 
 // Import các component con và util
@@ -21,15 +21,17 @@ import {
 } from "@/utils/eventUtils";
 
 interface BigCalendarProps {
-  setClickedDate: (date: string) => void;
-  setEvents: (events: any[]) => void;
+  setClickedDate: React.Dispatch<React.SetStateAction<string>>;
+  setEvents: React.Dispatch<React.SetStateAction<any[]>>;
   farmActivities: FarmActivity[];
+  laborRequests?: any[]; // Thêm prop này
 }
 
 export default function BigCalendar({
   setClickedDate,
   setEvents,
   farmActivities,
+  laborRequests,
 }: BigCalendarProps) {
   const calendarRef = useRef<FullCalendar | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<FarmActivity | null>(null);
@@ -81,6 +83,55 @@ export default function BigCalendar({
   const handleViewChange = (viewName: string) => {
     setView(viewName);
   };
+
+  // Trong xử lý dữ liệu
+  useEffect(() => {
+    // Xử lý Farm Activities
+    const farmActivityEvents = farmActivities.map((activity) => {
+      // Mã xử lý hiện tại
+      return {
+        id: `activity-${activity.id}`,
+        title: activity.description,
+        start: new Date(activity.start_date),
+        end: new Date(activity.end_date),
+        backgroundColor: "#E3F2FD",
+        borderColor: "#1E88E5",
+        textColor: "#0277BD",
+        extendedProps: {
+          type: "farm_activity",
+          activity_type: activity.activity_type,
+          status: activity.status,
+          icon: "🌱",
+        },
+      };
+    });
+
+    // Xử lý Labor Requests nếu có
+    const laborRequestEvents = laborRequests
+      ? laborRequests.map((request) => {
+          return {
+            id: `labor-${request.id}`,
+            title: request.title,
+            start: new Date(request.start_date),
+            end: new Date(request.end_date),
+            backgroundColor: "#FCE4EC",
+            borderColor: "#EC407A",
+            textColor: "#AD1457",
+            extendedProps: {
+              type: "labor_request",
+              request_type: request.request_type,
+              status: request.status,
+              icon: "👥",
+            },
+          };
+        })
+      : [];
+
+    // Kết hợp cả hai loại sự kiện
+    const allEvents = [...farmActivityEvents, ...laborRequestEvents];
+
+    setEvents(allEvents);
+  }, [farmActivities, laborRequests]);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 w-full">

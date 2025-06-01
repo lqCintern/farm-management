@@ -1,12 +1,15 @@
-import { FarmActivity } from "@/types";
+import { FarmActivity } from "@/types/labor/types";
 import { parseDate } from "./dateUtils";
 import { activityTypeColors } from "@/constants/activityColors";
 
 // Biến đổi dữ liệu hoạt động thành sự kiện lịch
 export const transformActivitiesToEvents = (farmActivities: FarmActivity[]) => {
   return farmActivities.map((activity) => {
+    // Đảm bảo activityType luôn là number hoặc string hợp lệ
     const activityType = activity.activity_type || 1;
-    const styling = activityTypeColors[activityType] || {
+    
+    // Chỉ định kiểu cho activityTypeColors để tránh lỗi index
+    const styling = activityTypeColors[activityType as keyof typeof activityTypeColors] || {
       background: "#ECEFF1",
       text: "#607D8B",
       icon: "📝",
@@ -22,13 +25,15 @@ export const transformActivitiesToEvents = (farmActivities: FarmActivity[]) => {
     endDateForDisplay.setDate(endDateForDisplay.getDate() + 1);
 
     return {
-      id: activity.id.toString(),
-      title: activity.description,
+      // Kiểm tra null/undefined cho activity.id
+      id: activity.id ? activity.id.toString() : `temp-${Date.now()}`,
+      title: activity.description || '',
       start: startDate,
       end: endDateForDisplay,
       extendedProps: {
         activity_type: activity.activity_type,
-        status: activity.status_label || activity.status_label,
+        // Fix lỗi status_label không tồn tại trong FarmActivity
+        status: activity.status || '', // Thay thế status_label bằng status
         icon: styling.icon,
       },
       backgroundColor: styling.background,

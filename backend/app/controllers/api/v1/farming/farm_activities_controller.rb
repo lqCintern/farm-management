@@ -23,11 +23,36 @@ module Api
         end
 
         def show
-          options = { include: [:activity_materials] }
+          options = { include: [:farm_materials] }
           
-          render json: {
-            data: ApiRendererService.render_farm_activities([@farm_activity], nil, options)[:farm_activities].first
-          }, status: :ok
+          begin
+            result = ApiRendererService.render_farm_activities([@farm_activity], nil, options)
+            
+            if result && result[:farm_activities] && result[:farm_activities].first
+              render json: {
+                data: result[:farm_activities].first
+              }, status: :ok
+            else
+              # Fallback khi ApiRendererService không trả về kết quả mong đợi
+              render json: {
+                data: @farm_activity.as_json(except: [:created_at, :updated_at])
+              }, status: :ok
+            end
+          rescue => e
+            Rails.logger.error("Error in show farm activity: #{e.message}")
+            
+            # Trả về basic version của farm activity
+            render json: {
+              data: {
+                id: @farm_activity.id,
+                description: @farm_activity.description,
+                activity_type: @farm_activity.activity_type,
+                start_date: @farm_activity.start_date,
+                end_date: @farm_activity.end_date,
+                status: @farm_activity.status
+              }
+            }, status: :ok
+          end
         end
 
         def create
@@ -146,6 +171,22 @@ module Api
             stage: crop.current_stage,
             pagination: pagy_metadata(@pagy)
           }, status: :ok
+        end
+
+        # API để debug thông tin farm activity
+        def debug
+          begin
+            render json: {
+              farm_activity: @farm_activity.as_json,
+              serializer_version: FarmActivitySerializer.instance_methods(false),
+              has_activity_materials: @farm_activity.respond_to?(:farm_materials),
+              activity_materials: @farm_activity.respond_to?(:farm_materials) ? 
+                                  @farm_activity.activity_materials.as_json : "Not available",
+              raw_serialized: FarmActivitySerializer.new(@farm_activity).serializable_hash.as_json
+            }, status: :ok
+          rescue => e
+            render json: { error: e.message, backtrace: e.backtrace.first(10) }, status: :internal_server_error
+          end
         end
 
         private
