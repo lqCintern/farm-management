@@ -15,12 +15,12 @@ class CreateLaborRequests < ActiveRecord::Migration[8.0]
       t.time :end_time
       t.integer :status, default: 0
       t.timestamps
-      
-      t.index [:requesting_household_id], name: "index_labor_requests_on_requesting_household_id"
-      t.index [:providing_household_id], name: "index_labor_requests_on_providing_household_id"
-      t.index [:farm_activity_id], name: "index_labor_requests_on_farm_activity_id"
+
+      t.index [ :requesting_household_id ], name: "index_labor_requests_on_requesting_household_id"
+      t.index [ :providing_household_id ], name: "index_labor_requests_on_providing_household_id"
+      t.index [ :farm_activity_id ], name: "index_labor_requests_on_farm_activity_id"
     end
-    
+
     add_foreign_key :labor_requests, :farm_households, column: :requesting_household_id
     add_foreign_key :labor_requests, :farm_households, column: :providing_household_id
     add_foreign_key :labor_requests, :farm_activities, column: :farm_activity_id

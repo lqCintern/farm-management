@@ -20,8 +20,14 @@ const FieldPolygons: React.FC<FieldPolygonsProps> = ({
       {fields.map((field) => {
         // Lấy mùa vụ hiện tại từ mảng currentCrop
         const currentCrop: PineappleCrop | undefined = Array.isArray(field.currentCrop)
-          ? field.currentCrop.find((crop) => crop.status === "harvesting") || field.currentCrop[0] // Ưu tiên mùa vụ đang thu hoạch, nếu không lấy mùa vụ đầu tiên
+          ? field.currentCrop.find((crop) => crop.status === "harvesting") || field.currentCrop[0]
           : undefined;
+          
+        // Kiểm tra xem field.coordinates có phải là mảng không
+        if (!field.coordinates || !Array.isArray(field.coordinates)) {
+          console.error(`Field ${field.id} (${field.name}) có coordinates không hợp lệ:`, field.coordinates);
+          return null; // Bỏ qua field này nếu không có coordinates hợp lệ
+        }
 
         return (
           <Polygon

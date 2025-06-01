@@ -5,7 +5,7 @@ class AuthenticateUser
 
   def call(env)
     request = Rack::Request.new(env)
-    
+
     # Danh sách các đường dẫn không cần xác thực - cập nhật để khớp với routes
     public_paths = [
       "/api/v1/users/login",
@@ -13,19 +13,19 @@ class AuthenticateUser
       "/api/v1/users/auth/forgot_password",
       "/api/v1/users/auth/reset_password"
     ]
-    
+
     # Logging để debug
     Rails.logger.info "Current path: #{request.path}"
-    
+
     # Bỏ qua xác thực cho Active Storage và public paths
     if request.path.start_with?("/rails/active_storage") || public_paths.include?(request.path)
       Rails.logger.info "Skipping authentication for public path: #{request.path}"
       return @app.call(env)
     end
-    
+
     auth_header = request.get_header("HTTP_AUTHORIZATION")
     Rails.logger.info "Authorization Header: #{auth_header}"
-    
+
     token = auth_header.split(" ").last if auth_header
     Rails.logger.info "Token: #{token}"
 

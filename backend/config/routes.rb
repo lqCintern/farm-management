@@ -7,7 +7,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       # Module Farming
       namespace :farming do
-        resources :farm_activities, only: [:index, :show, :create, :update, :destroy] do
+        resources :farm_activities, only: [ :index, :show, :create, :update, :destroy ] do
           member do
             post :complete
           end
@@ -70,28 +70,28 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :product_orders, only: [:index, :show, :create, :update]
+        resources :product_orders, only: [ :index, :show, :create, :update ]
 
         resources :conversations do
           member do
             get :messages
-            post :messages, to: 'conversations#add_message'
+            post :messages, to: "conversations#add_message"
           end
         end
 
-        resources :marketplace_harvests, path: 'harvests' do
+        resources :marketplace_harvests, path: "harvests" do
           collection do
             get :active_by_product
           end
-          
+
           member do
-            post :payment_proof, to: 'marketplace_harvests#upload_payment_proof'
+            post :payment_proof, to: "marketplace_harvests#upload_payment_proof"
           end
         end
-        
+
         resources :users, only: [] do
           member do
-            get :verify, to: 'user_verification#verify'
+            get :verify, to: "user_verification#verify"
           end
         end
       end
@@ -105,38 +105,38 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :supply_orders, only: [:index, :show, :update] do
+        resources :supply_orders, only: [ :index, :show, :update ] do
           member do
             patch :cancel
             patch :complete
           end
         end
 
-        get 'dashboard', to: 'supply_orders#dashboard'
+        get "dashboard", to: "supply_orders#dashboard"
 
         # Routes cho nông dân
-        resources :farmer_supply_listings, only: [:index, :show] do
+        resources :farmer_supply_listings, only: [ :index, :show ] do
           collection do
             get :categories
           end
         end
 
-        resources :farmer_supply_orders, only: [:index, :show, :create] do
+        resources :farmer_supply_orders, only: [ :index, :show, :create ] do
           member do
             patch :cancel
             patch :complete
           end
         end
 
-        resources :supplier_reviews, only: [:create]
-        get 'suppliers/:id/reviews', to: 'supplier_reviews#supplier_reviews'
+        resources :supplier_reviews, only: [ :create ]
+        get "suppliers/:id/reviews", to: "supplier_reviews#supplier_reviews"
       end
 
       # Module Labor
       namespace :labor do
         # Đặt các custom routes trước resources
-        get 'labor_assignments/my_assignments', to: 'labor_assignments#my_assignments'
-        
+        get "labor_assignments/my_assignments", to: "labor_assignments#my_assignments"
+
         # Sau đó định nghĩa resources thông thường
         resources :labor_assignments do
           collection do
@@ -147,7 +147,7 @@ Rails.application.routes.draw do
             get :stats
             get :worker_availability
           end
-          
+
           member do
             post :report_completion  # Endpoint mới cho worker
             post :complete  # Chỉ dành cho farmer
@@ -157,25 +157,25 @@ Rails.application.routes.draw do
             post :rate_farmer
           end
         end
-        
+
         resources :farm_households do
-          resources :household_workers, only: [:index, :show, :create, :destroy] do
+          resources :household_workers, only: [ :index, :show, :create, :destroy ] do
             member do
               patch :update_status
             end
           end
         end
-        
+
         resources :worker_profiles do
           collection do
             get :my_profile
             get :available_workers
           end
         end
-        
+
         resources :labor_requests do
           resources :labor_assignments, shallow: true
-          
+
           member do
             post :accept
             post :decline
@@ -185,7 +185,7 @@ Rails.application.routes.draw do
             get :group_status
             get :suggest_workers
           end
-          
+
           collection do
             post :batch_assign
             post :create_mixed
@@ -193,35 +193,35 @@ Rails.application.routes.draw do
             get :for_activity
           end
         end
-        
-        resources :labor_exchanges, path: 'exchanges' do
+
+        resources :labor_exchanges, path: "exchanges" do
           collection do
-            post 'initialize', to: 'labor_exchanges#initialize_exchanges'
-            post 'households/:household_id/recalculate', to: 'labor_exchanges#recalculate', as: :recalculate
-            post 'recalculate_all', to: 'labor_exchanges#recalculate_all', as: :recalculate_all
-            post 'adjust_balance', to: 'labor_exchanges#adjust_balance'
-            get 'transaction_history', to: 'labor_exchanges#transaction_history'
-            get 'households/:household_id', to: 'labor_exchanges#show_by_household', as: :by_household
+            post "initialize", to: "labor_exchanges#initialize_exchanges"
+            post "households/:household_id/recalculate", to: "labor_exchanges#recalculate", as: :recalculate
+            post "recalculate_all", to: "labor_exchanges#recalculate_all", as: :recalculate_all
+            post "adjust_balance", to: "labor_exchanges#adjust_balance"
+            get "transaction_history", to: "labor_exchanges#transaction_history"
+            get "households/:household_id", to: "labor_exchanges#show_by_household", as: :by_household
           end
-          
+
           member do
-            post 'reset_balance'
+            post "reset_balance"
           end
         end
-        
+
         # Nested routes cho household workers
         resources :farm_households do
-          resources :household_workers, only: [:index, :show, :create, :destroy] do
+          resources :household_workers, only: [ :index, :show, :create, :destroy ] do
             member do
               patch :update_status
             end
           end
         end
-        
+
         # Route để lấy workers của household hiện tại (cho frontend)
-        get 'household/workers', to: 'household_workers#index'
+        get "household/workers", to: "household_workers#index"
       end
-      
+
       # Module Users
       namespace :users do
         post "/register", to: "auth#register"

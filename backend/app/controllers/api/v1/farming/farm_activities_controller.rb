@@ -4,7 +4,7 @@ module Api
       class FarmActivitiesController < BaseController
         include PaginationHelper
 
-        before_action :set_farm_activity, only: [:show, :update, :destroy, :complete]
+        before_action :set_farm_activity, only: [ :show, :update, :destroy, :complete ]
 
         def index
           activities = current_user.farm_activities
@@ -23,11 +23,11 @@ module Api
         end
 
         def show
-          options = { include: [:farm_materials] }
-          
+          options = { include: [ :farm_materials ] }
+
           begin
-            result = ApiRendererService.render_farm_activities([@farm_activity], nil, options)
-            
+            result = ApiRendererService.render_farm_activities([ @farm_activity ], nil, options)
+
             if result && result[:farm_activities] && result[:farm_activities].first
               render json: {
                 data: result[:farm_activities].first
@@ -35,12 +35,12 @@ module Api
             else
               # Fallback khi ApiRendererService không trả về kết quả mong đợi
               render json: {
-                data: @farm_activity.as_json(except: [:created_at, :updated_at])
+                data: @farm_activity.as_json(except: [ :created_at, :updated_at ])
               }, status: :ok
             end
           rescue => e
             Rails.logger.error("Error in show farm activity: #{e.message}")
-            
+
             # Trả về basic version của farm activity
             render json: {
               data: {
@@ -62,7 +62,7 @@ module Api
           if farm_activity.errors.empty?
             render json: {
               message: "Lịch chăm sóc đã được tạo thành công",
-              data: ApiRendererService.render_farm_activities([farm_activity], nil)[:farm_activities].first
+              data: ApiRendererService.render_farm_activities([ farm_activity ], nil)[:farm_activities].first
             }, status: :created
           else
             render json: { errors: farm_activity.errors.full_messages }, status: :unprocessable_entity
@@ -81,7 +81,7 @@ module Api
           if farm_activity.errors.empty?
             render json: {
               message: "Lịch chăm sóc đã được cập nhật thành công",
-              data: ApiRendererService.render_farm_activities([farm_activity], nil)[:farm_activities].first
+              data: ApiRendererService.render_farm_activities([ farm_activity ], nil)[:farm_activities].first
             }, status: :ok
           else
             render json: { errors: farm_activity.errors.full_messages }, status: :unprocessable_entity
@@ -104,16 +104,16 @@ module Api
         def complete
           # Validate và tìm activity
           @farm_activity = current_user.farm_activities.find(params[:id])
-        
+
           # Gọi service để xử lý hoàn thành
           service = FarmActivityService.new(@farm_activity, current_user)
           result = service.complete_activity(completion_params)
-        
+
           # Kiểm tra kết quả từ service
           if result[:success]
             render json: {
               message: "Đã đánh dấu hoàn thành hoạt động",
-              data: ApiRendererService.render_farm_activities([@farm_activity], nil)[:farm_activities].first,
+              data: ApiRendererService.render_farm_activities([ @farm_activity ], nil)[:farm_activities].first,
               suggestion: result[:suggestion]
             }, status: :ok
           else
@@ -127,8 +127,8 @@ module Api
           year = params[:year].present? ? params[:year].to_i : Date.today.year
           month = params[:month].present? ? params[:month].to_i : Date.today.month
           quarter = params[:quarter].present? ? params[:quarter].to_i : ((Date.today.month - 1) / 3 + 1)
-          period = %w[month quarter year].include?(params[:period]) ? params[:period] : 'month'
-          
+          period = %w[month quarter year].include?(params[:period]) ? params[:period] : "month"
+
           stats_service = FarmActivityStatsService.new(
             current_user.farm_activities,
             period,
@@ -136,9 +136,9 @@ module Api
             month,
             quarter
           )
-          
+
           stats = stats_service.generate_stats
-          
+
           render json: { statistics: stats }, status: :ok
         end
 
@@ -159,13 +159,13 @@ module Api
         # API để lấy danh sách hoạt động theo giai đoạn
         def stage_activities
           crop = PineappleCrop.find(params[:pineapple_crop_id])
-        
+
           # Gọi service để xử lý logic
           result = FarmActivityService.new(nil, current_user)
                     .get_stage_activities(crop, params[:current_stage_only])
-                    
+
           @pagy, activities = pagy(result, items: 10)
-        
+
           render json: {
             data: ApiRendererService.render_farm_activities(activities, @pagy),
             stage: crop.current_stage,
@@ -180,7 +180,7 @@ module Api
               farm_activity: @farm_activity.as_json,
               serializer_version: FarmActivitySerializer.instance_methods(false),
               has_activity_materials: @farm_activity.respond_to?(:farm_materials),
-              activity_materials: @farm_activity.respond_to?(:farm_materials) ? 
+              activity_materials: @farm_activity.respond_to?(:farm_materials) ?
                                   @farm_activity.activity_materials.as_json : "Not available",
               raw_serialized: FarmActivitySerializer.new(@farm_activity).serializable_hash.as_json
             }, status: :ok
@@ -198,12 +198,12 @@ module Api
 
         def farm_activity_params
           params.require(:farm_activity).permit(
-            :activity_type, 
-            :description, 
-            :frequency, 
-            :status, 
-            :start_date, 
-            :end_date, 
+            :activity_type,
+            :description,
+            :frequency,
+            :status,
+            :start_date,
+            :end_date,
             :crop_animal_id,
             :field_id,
             materials: {}

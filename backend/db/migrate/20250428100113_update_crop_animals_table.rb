@@ -22,7 +22,7 @@ class UpdateCropAnimalsTable < ActiveRecord::Migration[8.0]
     add_column :crop_animals, :source, :string
 
     # Thêm các indexes
-    add_index :crop_animals, [:user_id, :crop_type]
-    add_index :crop_animals, [:user_id, :status]
+    add_index :crop_animals, [ :user_id, :crop_type ]
+    add_index :crop_animals, [ :user_id, :status ]
   end
 end

@@ -5,10 +5,10 @@ class CreateSupplyImages < ActiveRecord::Migration[8.0]
       t.integer :position, default: 0
       t.timestamps
     end
-    
+
     add_index :supply_images, :supply_listing_id
-    add_index :supply_images, [:supply_listing_id, :position]
-    
+    add_index :supply_images, [ :supply_listing_id, :position ]
+
     add_foreign_key :supply_images, :supply_listings
   end
 end

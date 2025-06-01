@@ -3,8 +3,8 @@ module Api
     module Marketplace
       class ProductListingsController < BaseController
         before_action :authenticate_user!
-        before_action :set_product_listing, only: [:show, :update, :destroy, :mark_as_sold, :mark_as_hidden]
-        before_action :authorize_user!, only: [:update, :destroy, :mark_as_sold, :mark_as_hidden]
+        before_action :set_product_listing, only: [ :show, :update, :destroy, :mark_as_sold, :mark_as_hidden ]
+        before_action :authorize_user!, only: [ :update, :destroy, :mark_as_sold, :mark_as_hidden ]
 
         # GET /api/v1/product_listings
         def index
@@ -32,12 +32,12 @@ module Api
         def show
           # Tăng lượt xem khi xem chi tiết
           @product_listing.increment_view_count! unless current_user&.id == @product_listing.user_id
-          
+
           # Lấy thông tin bổ sung từ pineapple_crop nếu có
           if @product_listing.crop_animal_id.present?
             pineapple_crop = PineappleCrop.find_by(id: @product_listing.crop_animal_id)
             @product_listing_data = @product_listing.as_json.merge(
-              pineapple_crop: pineapple_crop.as_json(only: [:variety, :planting_date, :field_id, :current_stage])
+              pineapple_crop: pineapple_crop.as_json(only: [ :variety, :planting_date, :field_id, :current_stage ])
             )
           else
             @product_listing_data = @product_listing
@@ -45,7 +45,7 @@ module Api
 
           render json: {
             product_listing: @product_listing_data,
-            seller: @product_listing.user.as_json(only: [:id, :user_name, :fullname, :avatar_url]),
+            seller: @product_listing.user.as_json(only: [ :id, :user_name, :fullname, :avatar_url ]),
             product_images: @product_listing.product_images.map(&:image_url)
           }
         end
@@ -54,18 +54,18 @@ module Api
         def create
           # Tạo sản phẩm mới từ dữ liệu được gửi lên
           @product_listing = current_user.product_listings.new(product_listing_params)
-          
+
           # Xử lý trường min_size và max_size để tính average_size
           if params[:product_listing][:min_size].present? && params[:product_listing][:max_size].present?
             min_size = params[:product_listing][:min_size].to_f
             max_size = params[:product_listing][:max_size].to_f
             @product_listing.average_size = (min_size + max_size) / 2
           end
-          
+
           # Thêm các trường bổ sung không có trong strong parameters
           @product_listing.variety = params[:product_listing][:variety] if params[:product_listing][:variety].present?
           @product_listing.location_note = params[:product_listing][:locationNote] if params[:product_listing][:locationNote].present?
-          
+
           # Xử lý coordinates nếu được gửi lên
           if params[:product_listing][:coordinates].present?
             begin
@@ -105,14 +105,14 @@ module Api
         # PUT /api/v1/product_listings/:id
         def update
           # Cập nhật thông tin sản phẩm
-          
+
           # Xử lý trường min_size và max_size để tính average_size
           if params[:product_listing][:min_size].present? && params[:product_listing][:max_size].present?
             min_size = params[:product_listing][:min_size].to_f
             max_size = params[:product_listing][:max_size].to_f
             params[:product_listing][:average_size] = (min_size + max_size) / 2
           end
-          
+
           if @product_listing.update(product_listing_params)
             render json: {
               message: "Sản phẩm đã được cập nhật thành công",
@@ -159,24 +159,24 @@ module Api
         # GET /api/v1/product_listings/my_listings
         def my_listings
           @product_listings = current_user.product_listings.order(created_at: :desc)
-          
+
           # Lọc theo trạng thái nếu có
           if params[:status].present?
             case params[:status]
-            when 'active'
+            when "active"
               @product_listings = @product_listings.published
-            when 'sold'
+            when "sold"
               @product_listings = @product_listings.sold
-            when 'hidden'
+            when "hidden"
               @product_listings = @product_listings.hidden
-            when 'draft'
+            when "draft"
               @product_listings = @product_listings.draft
             end
           end
-          
+
           # Áp dụng phân trang
           @pagy, @product_listings = pagy(@product_listings, items: params[:per_page] || 10)
-          
+
           render json: {
             product_listings: @product_listings,
             pagination: {
@@ -191,7 +191,7 @@ module Api
         def drafts
           @drafts = current_user.product_listings.draft.order(created_at: :desc)
           @pagy, @drafts = pagy(@drafts, items: params[:per_page] || 10)
-          
+
           render json: {
             drafts: @drafts,
             pagination: {
@@ -203,27 +203,27 @@ module Api
         end
 
         private
-        
+
         def set_product_listing
           @product_listing = ProductListing.find(params[:id])
         rescue ActiveRecord::RecordNotFound
           render json: { error: "Không tìm thấy sản phẩm" }, status: :not_found
         end
-        
+
         def authorize_user!
           unless @product_listing.user_id == current_user.id
             render json: { error: "Bạn không có quyền truy cập sản phẩm này" }, status: :forbidden
           end
         end
-        
+
         def product_listing_params
           params.require(:product_listing).permit(
-            :title, :description, :status, :product_type, :quantity, 
+            :title, :description, :status, :product_type, :quantity,
             :total_weight, :average_size, :price_expectation,
             :province, :district, :ward, :address, :latitude, :longitude,
             :harvest_start_date, :harvest_end_date, :crop_animal_id,
             :min_size, :max_size, :variety, :location_note, # Thêm các trường mới
-            product_images_attributes: [:id, :image_path, :position, :_destroy]
+            product_images_attributes: [ :id, :image_path, :position, :_destroy ]
           )
         end
       end

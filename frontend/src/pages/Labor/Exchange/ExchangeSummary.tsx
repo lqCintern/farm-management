@@ -5,10 +5,14 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { toast } from 'react-hot-toast';
 
-interface ExchangeSummary {
-  household_id: number;
-  household_name: string;
-  balance: number;
+interface ExchangeSummaryResponse {
+  exchange_id: number;
+  other_household: {
+    id: number;
+    name: string;
+    // ...các trường khác
+  };
+  balance: string; // API trả về dạng string ("-2.5")
   last_transaction_date: string;
 }
 
@@ -21,7 +25,7 @@ interface RecalculationResult {
 }
 
 const ExchangeSummary = () => {
-  const [exchanges, setExchanges] = useState<ExchangeSummary[]>([]);
+  const [exchanges, setExchanges] = useState<ExchangeSummaryResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showRecalculateModal, setShowRecalculateModal] = useState<boolean>(false);
@@ -55,16 +59,16 @@ const ExchangeSummary = () => {
       // Tính toán lần lượt cho từng hộ
       for (const exchange of exchanges) {
         try {
-          const response = await recalculateExchangeBalance(exchange.household_id);
+          const response = await recalculateExchangeBalance(exchange.other_household.id);
           results.push({
-            household_id: exchange.household_id,
-            household_name: exchange.household_name,
+            household_id: exchange.other_household.id,
+            household_name: exchange.other_household.name,
             old_balance: response.data.old_balance,
             new_balance: response.data.new_balance,
             difference: response.data.difference
           });
         } catch (err) {
-          console.error(`Error recalculating for household ${exchange.household_id}:`, err);
+          console.error(`Error recalculating for household ${exchange.other_household.id}:`, err);
         }
       }
 
@@ -156,22 +160,22 @@ const ExchangeSummary = () => {
             </div>
           ) : (
             exchanges.map((exchange) => (
-              <Card key={exchange.household_id} className="hover:shadow-lg transition-shadow">
+              <Card key={exchange.other_household.id} className="hover:shadow-lg transition-shadow">
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-medium text-lg">{exchange.household_name}</h3>
+                    <h3 className="font-medium text-lg">{exchange.other_household.name}</h3>
                     <span 
                       className={`px-2 py-1 rounded text-sm font-medium ${
-                        exchange.balance > 0 
+                        Number(exchange.balance) > 0 
                           ? 'bg-green-100 text-green-800' 
-                          : exchange.balance < 0 
+                          : Number(exchange.balance) < 0 
                             ? 'bg-red-100 text-red-800' 
                             : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {exchange.balance > 0 
+                      {Number(exchange.balance) > 0 
                         ? `+${exchange.balance} giờ` 
-                        : exchange.balance < 0 
+                        : Number(exchange.balance) < 0 
                           ? `${exchange.balance} giờ` 
                           : 'Cân bằng'}
                     </span>
@@ -184,10 +188,10 @@ const ExchangeSummary = () => {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <Link to={`/labor/exchanges/${exchange.household_id}`}>
+                    <Link to={`/labor/exchanges/${exchange.other_household.id}`}>
                       <Button buttonType="text">Chi tiết</Button>
                     </Link>
-                    <Link to={`/labor/exchanges/${exchange.household_id}/history`}>
+                    <Link to={`/labor/exchanges/${exchange.other_household.id}/history`}>
                       <Button buttonType="text">Lịch sử</Button>
                     </Link>
                   </div>

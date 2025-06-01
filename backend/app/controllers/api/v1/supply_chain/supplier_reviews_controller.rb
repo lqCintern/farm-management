@@ -3,15 +3,15 @@ module Api
     module SupplyChain
       class SupplierReviewsController < BaseController
         before_action :authenticate_user!
-        before_action :set_supply_order, only: [:create]
+        before_action :set_supply_order, only: [ :create ]
 
         # POST /api/v1/supply_chain/supplier_reviews
         def create
           # Kiểm tra xem đơn hàng đã hoàn thành chưa
           unless @supply_order.completed?
             render json: {
-              status: 'error',
-              message: 'Chỉ có thể đánh giá đơn hàng đã hoàn thành'
+              status: "error",
+              message: "Chỉ có thể đánh giá đơn hàng đã hoàn thành"
             }, status: :unprocessable_entity
             return
           end
@@ -19,8 +19,8 @@ module Api
           # Kiểm tra xem đã đánh giá chưa
           if SupplierReview.exists?(supply_order_id: @supply_order.id, reviewer_id: current_user.user_id)
             render json: {
-              status: 'error',
-              message: 'Bạn đã đánh giá đơn hàng này rồi'
+              status: "error",
+              message: "Bạn đã đánh giá đơn hàng này rồi"
             }, status: :unprocessable_entity
             return
           end
@@ -33,8 +33,8 @@ module Api
 
           if @review.save
             render json: {
-              status: 'success',
-              message: 'Đánh giá thành công',
+              status: "success",
+              message: "Đánh giá thành công",
               data: {
                 id: @review.id,
                 rating: @review.rating,
@@ -44,8 +44,8 @@ module Api
             }, status: :created
           else
             render json: {
-              status: 'error',
-              message: 'Không thể đánh giá',
+              status: "error",
+              message: "Không thể đánh giá",
               errors: @review.errors
             }, status: :unprocessable_entity
           end
@@ -67,7 +67,7 @@ module Api
           average_rating = @supplier.average_rating
 
           render json: {
-            status: 'success',
+            status: "success",
             data: {
               supplier: {
                 id: @supplier.user_id,
@@ -91,8 +91,8 @@ module Api
           @supply_order = current_user.supply_orders.find(params[:supply_order_id])
         rescue ActiveRecord::RecordNotFound
           render json: {
-            status: 'error',
-            message: 'Không tìm thấy đơn hàng'
+            status: "error",
+            message: "Không tìm thấy đơn hàng"
           }, status: :not_found
         end
 

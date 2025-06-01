@@ -9,12 +9,12 @@ class CreateSupplierReviews < ActiveRecord::Migration[8.0]
       t.text :content
       t.timestamps
     end
-    
+
     add_index :supplier_reviews, :supply_listing_id
     add_index :supplier_reviews, :supply_order_id
     add_index :supplier_reviews, :reviewer_id
     add_index :supplier_reviews, :supplier_id
-    
+
     add_foreign_key :supplier_reviews, :supply_listings
     add_foreign_key :supplier_reviews, :supply_orders
     add_foreign_key :supplier_reviews, :users, column: :reviewer_id, primary_key: :user_id

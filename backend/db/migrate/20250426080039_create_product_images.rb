@@ -8,6 +8,6 @@ class CreateProductImages < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :product_images, [:product_listing_id, :position]
+    add_index :product_images, [ :product_listing_id, :position ]
   end
 end

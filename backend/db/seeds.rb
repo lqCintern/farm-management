@@ -1,6 +1,6 @@
 if User.exists?
   user = User.first
-  
+
   # Tạo vụ trồng dứa vụ Xuân-Hè
   PineappleCrop.create!(
     user_id: user.id,
@@ -16,7 +16,7 @@ if User.exists?
     variety: "Queen",
     source: "Tự nhân giống"
   )
-  
+
   # Tạo vụ trồng dứa vụ Thu-Đông
   PineappleCrop.create!(
     user_id: user.id,
@@ -68,7 +68,7 @@ default_templates = [
     is_required: true,
     season_specific: nil
   },
-  
+
   # Giai đoạn chuẩn bị giống (seedling_preparation)
   {
     name: "Thu gom chồi giống",
@@ -100,7 +100,7 @@ default_templates = [
     is_required: true,
     season_specific: nil
   },
-  
+
   # Giai đoạn trồng (planting)
   {
     name: "Trồng chồi",
@@ -112,7 +112,7 @@ default_templates = [
     is_required: true,
     season_specific: nil
   },
-  
+
   # Giai đoạn chăm sóc (growing)
   {
     name: "Buộc lá",
@@ -164,7 +164,7 @@ default_templates = [
     is_required: true,
     season_specific: nil
   },
-  
+
   # Giai đoạn ra hoa (flowering)
   {
     name: "Cắt dây buộc cây",
@@ -196,7 +196,7 @@ default_templates = [
     is_required: true,
     season_specific: nil
   },
-  
+
   # Giai đoạn phát triển quả (fruiting)
   {
     name: "Buộc tránh nắng/Che lưới đen",
@@ -238,7 +238,7 @@ default_templates = [
     is_required: true,
     season_specific: nil
   },
-  
+
   # Giai đoạn thu hoạch (harvesting)
   {
     name: "Chuẩn bị dụng cụ thu hoạch",
@@ -270,7 +270,7 @@ default_templates = [
     is_required: false,
     season_specific: nil
   },
-  
+
   # Giai đoạn sau thu hoạch (completed)
   {
     name: "Tách chồi giống",

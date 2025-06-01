@@ -2,7 +2,7 @@ module Api
   module V1
     module Farming
       class FieldsController < BaseController
-        before_action :set_field, only: [:show, :update, :destroy, :activities, :harvests, :pineapple_crops]
+        before_action :set_field, only: [ :show, :update, :destroy, :activities, :harvests, :pineapple_crops ]
 
         # GET /api/v1/fields
         def index
@@ -64,12 +64,12 @@ module Api
         # DELETE /api/v1/fields/:id
         def destroy
           if @field.pineapple_crops.exists? || @field.farm_activities.exists? || @field.harvests.exists?
-            render json: { 
-              error: "Cannot delete field. It has associated pineapple crops, activities or harvests." 
+            render json: {
+              error: "Cannot delete field. It has associated pineapple crops, activities or harvests."
             }, status: :unprocessable_entity
             return
           end
-          
+
           @field.destroy
           render json: {
             message: "Field deleted successfully"
@@ -81,7 +81,7 @@ module Api
           activities = @field.farm_activities
                             .includes(:pineapple_crop, :user)
                             .order(start_date: :desc)
-          
+
           render json: {
             message: "Field activities retrieved successfully",
             data: activities.map { |a| activity_response(a) }
@@ -93,7 +93,7 @@ module Api
           harvests = @field.harvests
                           .includes(:pineapple_crop, :user)
                           .order(harvest_date: :desc)
-          
+
           render json: {
             message: "Field harvests retrieved successfully",
             data: harvests.map { |h| harvest_response(h) }
@@ -114,25 +114,25 @@ module Api
         def stats
           # Thống kê theo diện tích
           total_area = current_user.fields.sum(:area)
-          
+
           # Thống kê theo vụ trồng dứa
           crops_by_field = current_user.fields
                                       .joins(:pineapple_crops)
                                       .group("fields.id")
                                       .count("pineapple_crops.id")
-          
+
           # Thống kê hoạt động
           activities_by_field = current_user.fields
                                           .joins(:farm_activities)
                                           .group("fields.id")
                                           .count("farm_activities.id")
-          
+
           # Thống kê thu hoạch
           harvests_by_field = current_user.fields
                                         .joins(:harvests)
                                         .group("fields.id")
                                         .sum("harvests.quantity")
-          
+
           render json: {
             message: "Field statistics retrieved successfully",
             data: {
@@ -155,11 +155,11 @@ module Api
 
         def field_params
           params.require(:field).permit(
-            :name, 
-            :description, 
+            :name,
+            :description,
             :location,
             :area,
-            coordinates: [[:lat, :lng]]
+            coordinates: [ [ :lat, :lng ] ]
           )
         end
 

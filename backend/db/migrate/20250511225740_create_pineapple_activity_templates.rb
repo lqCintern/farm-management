@@ -11,7 +11,7 @@ class CreatePineappleActivityTemplates < ActiveRecord::Migration[8.0]
       t.string :season_specific       # Áp dụng cho vụ nào (Xuân-Hè, Thu-Đông, hoặc cả hai)
       t.boolean :is_required, default: true  # Có bắt buộc không
       t.references :user, null: true  # Nếu user_id = null thì đây là template mặc định
-      
+
       t.timestamps
     end
   end

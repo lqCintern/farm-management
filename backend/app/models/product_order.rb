@@ -1,7 +1,7 @@
 # app/models/product_order.rb
 class ProductOrder < ApplicationRecord
   belongs_to :product_listing
-  belongs_to :buyer, class_name: 'User', foreign_key: 'buyer_id', primary_key: 'user_id'
+  belongs_to :buyer, class_name: "User", foreign_key: "buyer_id", primary_key: "user_id"
 
   # Định nghĩa trạng thái bằng enum
   enum :status, {

@@ -1,4 +1,4 @@
-require 'rgeo'
+require "rgeo"
 
 class Field < ApplicationRecord
   # Quan hệ
@@ -6,21 +6,21 @@ class Field < ApplicationRecord
   has_many :pineapple_crop
   has_many :farm_activities
   has_many :harvests
-  
+
   # Validation
   validates :name, presence: true
   validates :coordinates, presence: true
   validates :user_id, presence: true
-  
+
   # Callbacks
   before_save :calculate_area_from_coordinates, if: -> { area.blank? && coordinates_changed? }
-  
+
   # Tính diện tích từ tọa độ
   def calculate_area_from_coordinates
     self.area = calculate_area
   end
-  
-  # Method để tính diện tích từ tọa độ
+
+# Method để tính diện tích từ tọa độ
 def calculate_area
   return 0 unless coordinates.present? && coordinates.size > 2
 
@@ -37,7 +37,7 @@ rescue => e
   Rails.logger.error "Error calculating area with RGeo: #{e.message}"
   0
 end
-  
+
   # Kiểm tra cánh đồng có bao phủ một điểm không
   def contains_point?(lat, lng)
     return false unless coordinates.present?

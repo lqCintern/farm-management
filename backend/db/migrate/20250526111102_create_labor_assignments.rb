@@ -13,13 +13,13 @@ class CreateLaborAssignments < ActiveRecord::Migration[8.0]
       t.integer :worker_rating
       t.integer :farmer_rating
       t.timestamps
-      
-      t.index [:labor_request_id], name: "index_labor_assignments_on_labor_request_id"
-      t.index [:worker_id], name: "index_labor_assignments_on_worker_id"
-      t.index [:home_household_id], name: "index_labor_assignments_on_home_household_id"
-      t.index [:work_date], name: "index_labor_assignments_on_work_date"
+
+      t.index [ :labor_request_id ], name: "index_labor_assignments_on_labor_request_id"
+      t.index [ :worker_id ], name: "index_labor_assignments_on_worker_id"
+      t.index [ :home_household_id ], name: "index_labor_assignments_on_home_household_id"
+      t.index [ :work_date ], name: "index_labor_assignments_on_work_date"
     end
-    
+
     add_foreign_key :labor_assignments, :labor_requests, column: :labor_request_id
     add_foreign_key :labor_assignments, :users, column: :worker_id, primary_key: :user_id
     add_foreign_key :labor_assignments, :farm_households, column: :home_household_id

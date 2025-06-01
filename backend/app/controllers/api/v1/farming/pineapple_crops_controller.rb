@@ -3,7 +3,7 @@ module Api
     module Farming
       class PineappleCropsController < BaseController
         include PaginationHelper
-        before_action :set_pineapple_crop, only: [:show, :update, :destroy, :generate_plan, :advance_stage, :record_harvest, :confirm_plan, :clean_activities]
+        before_action :set_pineapple_crop, only: [ :show, :update, :destroy, :generate_plan, :advance_stage, :record_harvest, :confirm_plan, :clean_activities ]
 
         def index
           pineapple_crops = current_user.pineapple_crops
@@ -28,7 +28,7 @@ module Api
 
         def create
           # Kiểm tra xem field đã có mùa vụ hiện tại hay chưa
-          existing_crop = PineappleCrop.find_by(field_id: pineapple_crop_params[:field_id], status: 'active')
+          existing_crop = PineappleCrop.find_by(field_id: pineapple_crop_params[:field_id], status: "active")
 
           if existing_crop
             render json: { error: "Field này đã có một mùa vụ đang hoạt động" }, status: :unprocessable_entity
