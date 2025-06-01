@@ -8,15 +8,15 @@ class FarmActivityService
   def create_activity(params)
     ActiveRecord::Base.transaction do
       @farm_activity.assign_attributes(params.except(:materials))
-      
+
       # Xử lý lịch trình lặp lại
-      process_recurring_schedule(params) if @farm_activity.frequency != 'once'
-      
+      process_recurring_schedule(params) if @farm_activity.frequency != "once"
+
       # Xử lý vật tư
       if params[:materials].present?
         process_materials(params[:materials])
       end
-      
+
       @farm_activity.save!
     end
     @farm_activity
@@ -29,20 +29,20 @@ class FarmActivityService
   def update_activity(params)
     ActiveRecord::Base.transaction do
       # Lưu trữ vật tư cũ để hoàn trả về kho nếu cần
-      old_materials = @farm_activity.activity_materials.map { |am| [am.material_id, am.planned_quantity] }.to_h
-      
+      old_materials = @farm_activity.activity_materials.map { |am| [ am.material_id, am.planned_quantity ] }.to_h
+
       # Cập nhật thông tin cơ bản
       @farm_activity.assign_attributes(params.except(:materials))
-      
+
       # Xử lý vật tư mới
       if params[:materials].present?
         # Trả lại vật tư cũ vào kho
         return_materials_to_inventory(old_materials)
-        
+
         # Xử lý vật tư mới
         process_materials(params[:materials])
       end
-      
+
       @farm_activity.save!
     end
     @farm_activity
@@ -55,9 +55,9 @@ class FarmActivityService
   def destroy_activity
     ActiveRecord::Base.transaction do
       # Trả lại vật tư nếu đã trừ trước đó
-      old_materials = @farm_activity.activity_materials.map { |am| [am.material_id, am.planned_quantity] }.to_h
+      old_materials = @farm_activity.activity_materials.map { |am| [ am.material_id, am.planned_quantity ] }.to_h
       return_materials_to_inventory(old_materials)
-      
+
       # Cập nhật trạng thái thành đã hủy
       @farm_activity.update!(status: :cancelled)
     end
@@ -69,12 +69,12 @@ class FarmActivityService
       @farm_activity.status = :completed
       @farm_activity.actual_completion_date = Date.today
       @farm_activity.actual_notes = params[:actual_notes] if params[:actual_notes].present?
-      
+
       # Xử lý số lượng vật tư thực tế sử dụng
       if params[:actual_materials].present?
         process_actual_materials(params[:actual_materials])
       end
-      
+
       @farm_activity.save!
     end
     @farm_activity
@@ -92,17 +92,17 @@ class FarmActivityService
       unless material
         raise ActiveRecord::RecordInvalid, "Vật tư không tồn tại"
       end
-      
+
       if material.quantity < quantity.to_i
         raise ActiveRecord::RecordInvalid, "Không đủ vật tư #{material.name} trong kho (cần: #{quantity}, còn: #{material.quantity})"
       end
-      
+
       # Trừ vật tư từ kho
       material.update!(quantity: material.quantity - quantity.to_i)
-      
+
       # Tạo liên kết giữa hoạt động và vật tư
       @farm_activity.activity_materials.build(
-        material: material, 
+        material: material,
         planned_quantity: quantity.to_i
       )
     end
@@ -112,7 +112,7 @@ class FarmActivityService
   def process_actual_materials(actual_materials)
     actual_materials.each do |material_id, quantity|
       activity_material = @farm_activity.activity_materials.find_by(material_id: material_id)
-      
+
       if activity_material
         # Nếu sử dụng ít hơn dự kiến, trả lại phần còn thừa vào kho
         if quantity.to_i < activity_material.planned_quantity
@@ -120,7 +120,7 @@ class FarmActivityService
           material = activity_material.material
           material.update!(quantity: material.quantity + difference)
         end
-        
+
         # Cập nhật số lượng thực tế
         activity_material.update!(actual_quantity: quantity.to_i)
       end
@@ -138,21 +138,21 @@ class FarmActivityService
   # Xử lý lịch trình lặp lại
   def process_recurring_schedule(params)
     case @farm_activity.frequency
-    when 'daily'
+    when "daily"
       interval_days = 1
-    when 'weekly'
+    when "weekly"
       interval_days = 7
-    when 'monthly'
+    when "monthly"
       interval_days = 30
     else
       return
     end
-    
+
     # Tạo lịch lặp lại cho 3 lần tiếp theo
     3.times do |i|
       next_start_date = @farm_activity.start_date + interval_days * (i + 1)
       next_end_date = @farm_activity.end_date + interval_days * (i + 1) if @farm_activity.end_date
-      
+
       # Tạo bản ghi con liên quan
       FarmActivity.create!(
         user: @user,
@@ -162,7 +162,7 @@ class FarmActivityService
         status: :pending,
         start_date: next_start_date,
         end_date: next_end_date,
-        frequency: 'once', # Các bản ghi con không tự tạo thêm
+        frequency: "once", # Các bản ghi con không tự tạo thêm
         parent_activity_id: @farm_activity.id
       )
     end

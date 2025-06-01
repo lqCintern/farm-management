@@ -38,11 +38,11 @@ class CropAnimal < ApplicationRecord
   def status=(value)
     super(STATUS[value.to_sym] || value)
   end
-    # Method để lấy tọa độ từ field
+  # Method để lấy tọa độ từ field
   def coordinates
     field&.coordinates
   end
-  
+
   # Method để lấy area từ field
   def area
     field&.area || 0

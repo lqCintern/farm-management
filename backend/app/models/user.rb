@@ -23,25 +23,25 @@ class User < ApplicationRecord
 
     # Thêm relations cho tính năng bán nông sản
     has_many :product_listings, foreign_key: :user_id, dependent: :destroy
-    has_many :product_orders, foreign_key: 'buyer_id', primary_key: 'user_id'
-    has_many :sent_conversations, class_name: 'Conversation', foreign_key: 'sender_id', primary_key: 'user_id'
-    has_many :received_conversations, class_name: 'Conversation', foreign_key: 'receiver_id', primary_key: 'user_id'
+    has_many :product_orders, foreign_key: "buyer_id", primary_key: "user_id"
+    has_many :sent_conversations, class_name: "Conversation", foreign_key: "sender_id", primary_key: "user_id"
+    has_many :received_conversations, class_name: "Conversation", foreign_key: "receiver_id", primary_key: "user_id"
 
-    has_one :labor_profile, class_name: "Labor::WorkerProfile", 
+    has_one :labor_profile, class_name: "Labor::WorkerProfile",
           foreign_key: :user_id, primary_key: :user_id, dependent: :destroy
-          
+
     has_one :labor_household_membership, class_name: "Labor::HouseholdWorker",
             foreign_key: :worker_id, primary_key: :user_id, dependent: :destroy
-            
-    has_one :labor_household, through: :labor_household_membership, 
+
+    has_one :labor_household, through: :labor_household_membership,
             source: :household, class_name: "Labor::FarmHousehold"
-    
+
     has_many :owned_labor_households, class_name: "Labor::FarmHousehold",
             foreign_key: :owner_id, primary_key: :user_id, dependent: :destroy
-            
+
     has_many :labor_assignments, class_name: "Labor::LaborAssignment",
             foreign_key: :worker_id, primary_key: :user_id, dependent: :nullify
-    
+
     # Cập nhật định nghĩa enum user_type
     enum :user_type, { admin: 0, farmer: 1, supplier: 2, trader: 3 }
 
@@ -62,10 +62,10 @@ class User < ApplicationRecord
     end
 
     # Thêm các mối quan hệ với chức năng mua bán vật tư
-    has_many :supply_listings, foreign_key: 'user_id', primary_key: 'user_id', dependent: :destroy
-    has_many :supply_orders, foreign_key: 'user_id', primary_key: 'user_id', dependent: :destroy
-    has_many :supplier_reviews_received, class_name: 'SupplierReview', foreign_key: 'supplier_id', primary_key: 'user_id'
-    has_many :supplier_reviews_given, class_name: 'SupplierReview', foreign_key: 'reviewer_id', primary_key: 'user_id'
+    has_many :supply_listings, foreign_key: "user_id", primary_key: "user_id", dependent: :destroy
+    has_many :supply_orders, foreign_key: "user_id", primary_key: "user_id", dependent: :destroy
+    has_many :supplier_reviews_received, class_name: "SupplierReview", foreign_key: "supplier_id", primary_key: "user_id"
+    has_many :supplier_reviews_given, class_name: "SupplierReview", foreign_key: "reviewer_id", primary_key: "user_id"
 
     # Lấy trung bình đánh giá của nhà cung cấp
     def average_rating
@@ -79,7 +79,7 @@ class User < ApplicationRecord
 
     # Lấy các đơn hàng đang xử lý (dành cho người mua)
     def processing_orders
-        supply_orders.where(status: [:pending, :confirmed, :shipped])
+        supply_orders.where(status: [ :pending, :confirmed, :shipped ])
     end
 
     def primary_labor_household

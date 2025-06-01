@@ -7,7 +7,7 @@ class CreateActivityMaterials < ActiveRecord::Migration[6.1]
       t.float :actual_quantity
       t.timestamps
     end
-    
-    add_index :activity_materials, [:farm_activity_id, :farm_material_id], unique: true, name: 'idx_activity_materials_on_activity_and_material'
+
+    add_index :activity_materials, [ :farm_activity_id, :farm_material_id ], unique: true, name: 'idx_activity_materials_on_activity_and_material'
   end
 end

@@ -6,7 +6,7 @@ module Api
         include Pagy::Backend
 
         before_action :authenticate_user!
-        before_action :set_conversation, only: [:show, :messages, :add_message]
+        before_action :set_conversation, only: [ :show, :messages, :add_message ]
 
         # GET /api/v1/conversations
         def index
@@ -19,11 +19,11 @@ module Api
               conversation.as_json(
                 include: {
                   product_listing: {
-                    include: { product_images: { methods: [:image_url], limit: 1 } },
-                    only: [:id, :title, :status]
+                    include: { product_images: { methods: [ :image_url ], limit: 1 } },
+                    only: [ :id, :title, :status ]
                   },
-                  sender: { only: [:user_id, :user_name, :fullname] },
-                  receiver: { only: [:user_id, :user_name, :fullname] }
+                  sender: { only: [ :user_id, :user_name, :fullname ] },
+                  receiver: { only: [ :user_id, :user_name, :fullname ] }
                 }
               ).merge(unread_count: conversation.unread_count(current_user.user_id))
             end,
@@ -40,14 +40,14 @@ module Api
             conversation: @conversation.as_json(include: {
               product_listing: {
                 include: {
-                  user: { only: [:user_id, :user_name, :fullname] },
-                  product_images: { methods: [:image_url], limit: 1 }
+                  user: { only: [ :user_id, :user_name, :fullname ] },
+                  product_images: { methods: [ :image_url ], limit: 1 }
                 },
-                only: [:id, :title, :status, :product_type, :quantity, :price_expectation]
+                only: [ :id, :title, :status, :product_type, :quantity, :price_expectation ]
               },
-              sender: { only: [:user_id, :user_name, :fullname] },
-              receiver: { only: [:user_id, :user_name, :fullname] }
-            }, methods: [:unread_count_for_current_user])
+              sender: { only: [ :user_id, :user_name, :fullname ] },
+              receiver: { only: [ :user_id, :user_name, :fullname ] }
+            }, methods: [ :unread_count_for_current_user ])
           }, status: :ok
         end
 
@@ -105,7 +105,7 @@ module Api
           # Thêm tin nhắn đầu tiên bằng FirebaseMessageService
           if params[:message].present?
             Rails.logger.info "Saving first message to conversation #{conversation.id} using FirebaseMessageService"
-            
+
             message_id = FirebaseMessageService.save_message(conversation.id, {
               user_id: current_user.user_id,
               content: params[:message],
@@ -132,12 +132,12 @@ module Api
           unless @conversation.sender_id == current_user.user_id || @conversation.receiver_id == current_user.user_id
             return render json: { error: "Không có quyền truy cập cuộc trò chuyện này" }, status: :forbidden
           end
-          
+
           # Kiểm tra nội dung tin nhắn
           if params[:message].blank? && params[:image].blank? && !params[:payment_info].present?
             return render json: { error: "Tin nhắn không được để trống" }, status: :bad_request
           end
-          
+
           # Chuẩn bị dữ liệu tin nhắn
           message_data = {
             user_id: current_user.user_id,
@@ -145,42 +145,42 @@ module Api
             created_at: Time.now.to_i * 1000, # Milliseconds
             type: params[:type] || "text"
           }
-          
+
           # Xử lý hình ảnh nếu có
           if params[:image].present?
             message_data[:image] = params[:image]
             message_data[:type] = "image" if message_data[:type] == "text"
-            
+
             Rails.logger.info "Processing image upload for message in conversation #{@conversation.id}"
           end
-          
+
           # Xử lý thông tin thanh toán nếu có
           if params[:payment_info].present?
             message_data[:payment_info] = params[:payment_info]
             message_data[:type] = "payment"
-            
+
             Rails.logger.info "Processing payment info for message in conversation #{@conversation.id}"
           end
-          
+
           # Xử lý thông tin lịch trình thu hoạch
           if params[:harvest_info].present?
             message_data[:metadata] = { harvest_info: params[:harvest_info] }
             message_data[:type] = "schedule"
-            
+
             Rails.logger.info "Processing harvest schedule info for message in conversation #{@conversation.id}"
           end
 
           # Lưu tin nhắn với FirebaseMessageService
           Rails.logger.info "Adding #{message_data[:type]} message to conversation #{@conversation.id}"
-          
+
           message_id = FirebaseMessageService.save_message(@conversation.id, message_data)
 
           if message_id
             # Cập nhật thời gian của conversation
             @conversation.touch
-            
+
             Rails.logger.info "Successfully added message with ID: #{message_id}"
-            render json: { 
+            render json: {
               message_id: message_id,
               message_type: message_data[:type]
             }, status: :created

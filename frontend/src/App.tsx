@@ -127,10 +127,7 @@ const router = createBrowserRouter(
       {/* Farm Activity Routes */}
       <Route path="farm-activities">
         <Route path=":id" element={<FarmActivityDetail />} />
-        {/* Thêm các route khác nếu cần */}
       </Route>
-
-      {/* Các route khác... */}
     </Route>
   )
 );

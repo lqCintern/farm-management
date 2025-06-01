@@ -1,10 +1,10 @@
 class MarketplaceHarvest < ApplicationRecord
   # Quan hệ
   belongs_to :product_listing
-  belongs_to :trader, class_name: 'User', foreign_key: 'trader_id', primary_key: 'user_id'
+  belongs_to :trader, class_name: "User", foreign_key: "trader_id", primary_key: "user_id"
   belongs_to :product_order, optional: true
   has_one_attached :payment_proof_image
-  
+
   # Enum cho trạng thái
   enum :status, {
     scheduled: 0,   # Đã lên lịch
@@ -12,23 +12,23 @@ class MarketplaceHarvest < ApplicationRecord
     completed: 2,   # Đã hoàn thành
     cancelled: 3    # Đã hủy
   }
-  
+
   # Validation
   validates :scheduled_date, presence: true
   validates :location, presence: true
   validates :trader_id, presence: true
   validates :product_listing_id, presence: true
-  
+
   # Lấy thông tin farmer từ product_listing
   def farmer
     @farmer ||= User.find_by(user_id: product_listing.user_id)
   end
-  
+
   # Kiểm tra quyền truy cập
   def can_be_managed_by?(user)
     product_listing.user_id == user.user_id || trader_id == user.user_id
   end
-  
+
   # Lấy URL của hình ảnh thanh toán
   def payment_proof_url
     if payment_proof_image.attached?
@@ -37,13 +37,13 @@ class MarketplaceHarvest < ApplicationRecord
       nil
     end
   end
-  
+
   # Gửi thông báo khi lịch thu hoạch được tạo/cập nhật
   def send_notification_message(user_id, action_type = :created)
     # Tìm cuộc trò chuyện
     conversation = find_conversation
     return unless conversation
-    
+
     # Xác định nội dung tin nhắn
     case action_type
     when :created
@@ -59,7 +59,7 @@ class MarketplaceHarvest < ApplicationRecord
       content = "Đã hoàn thành thanh toán #{final_price} đồng cho sản phẩm #{product_listing.title}"
       message_type = "payment"
     end
-    
+
     # Gửi tin nhắn thông báo
     FirebaseMessageService.save_message(conversation.id, {
       user_id: user_id,
@@ -68,12 +68,12 @@ class MarketplaceHarvest < ApplicationRecord
       created_at: Time.now.to_i * 1000
     })
   end
-  
+
   private
-  
+
   def find_conversation
     farmer_id = product_listing.user_id
-    
+
     Conversation.find_by(
       product_listing_id: product_listing_id,
       sender_id: trader_id,

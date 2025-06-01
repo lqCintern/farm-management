@@ -2,7 +2,7 @@ module Api
   module V1
     module Farming
       class HarvestsController < BaseController
-        before_action :set_harvest, only: [:show, :update, :destroy]
+        before_action :set_harvest, only: [ :show, :update, :destroy ]
 
         # GET /api/v1/harvests
         def index
@@ -27,12 +27,12 @@ module Api
         # POST /api/v1/harvests
         def create
           harvest = current_user.harvests.new(harvest_params)
-          
+
           # Tự động lấy field_id từ crop_animal nếu không được cung cấp
           if harvest.field_id.blank? && harvest.crop_animal&.field_id.present?
             harvest.field_id = harvest.crop_animal.field_id
           end
-          
+
           if harvest.save
             render json: {
               message: "Harvest created successfully",
@@ -132,12 +132,12 @@ module Api
 
         def harvest_params
           params.require(:harvest).permit(
-            :quantity, 
-            :harvest_date, 
-            :crop_id, 
-            :field_id, 
+            :quantity,
+            :harvest_date,
+            :crop_id,
+            :field_id,
             :farm_activity_id,
-            coordinates: [:lat, :lng]
+            coordinates: [ :lat, :lng ]
           )
         end
 

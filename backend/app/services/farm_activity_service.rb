@@ -48,21 +48,21 @@ class FarmActivityService
     # Bổ sung: Kiểm tra chuyển giai đoạn
     suggestion = check_stage_completion if @farm_activity.save
 
-    return { success: true, suggestion: suggestion }
+    { success: true, suggestion: suggestion }
   rescue => e
-    return { success: false, error: e.message }
+    { success: false, error: e.message }
   end
 
   # Lấy hoạt động theo giai đoạn
   def get_stage_activities(crop, current_stage_only = false)
     activities = @user.farm_activities.where(crop_animal_id: crop.id)
-    
-    if current_stage_only == 'true'
+
+    if current_stage_only == "true"
       stage_templates = PineappleActivityTemplate.where(stage: crop.current_stage)
       stage_activity_types = stage_templates.pluck(:activity_type).uniq
       activities = activities.where(activity_type: stage_activity_types)
     end
-    
+
     activities.order(start_date: :asc)
   end
 
@@ -78,9 +78,9 @@ class FarmActivityService
 
     # Cập nhật thông tin cây dứa dựa trên loại hoạt động
     case @farm_activity.activity_type
-    when 'planting'
+    when "planting"
       pineapple_crop.update(planting_date: @farm_activity.start_date) if pineapple_crop.planting_date.nil?
-    when 'fertilizing'
+    when "fertilizing"
       # Xử lý các loại hoạt động khác...
     end
   end
@@ -97,7 +97,7 @@ class FarmActivityService
     current_stage = pineapple_crop.current_stage
     remaining_activities = FarmActivity.where(
       crop_animal_id: pineapple_crop.id,
-      status: [:pending, :in_progress]
+      status: [ :pending, :in_progress ]
     )
 
     # Nếu không còn hoạt động nào đang chờ hoặc đang thực hiện, chuyển sang giai đoạn tiếp theo
@@ -108,9 +108,9 @@ class FarmActivityService
 
     # Cập nhật các mốc quan trọng dựa trên loại hoạt động
     case @farm_activity.activity_type
-    when 'flower_treatment'
+    when "flower_treatment"
       pineapple_crop.update(actual_flower_date: @farm_activity.actual_completion_date)
-    when 'harvesting'
+    when "harvesting"
       # Xử lý hoạt động thu hoạch...
     end
   end
@@ -118,20 +118,20 @@ class FarmActivityService
   # Kiểm tra xem có nên chuyển giai đoạn hay không
   def check_stage_completion
     return nil unless @farm_activity.crop_animal_id.present?
-    
+
     crop = PineappleCrop.find_by(id: @farm_activity.crop_animal_id)
     return nil unless crop
-    
+
     # Kiểm tra nếu tất cả hoạt động của giai đoạn hiện tại đã hoàn thành
     stage_templates = PineappleActivityTemplate.where(stage: crop.current_stage)
     stage_activities = @user.farm_activities
-                        .where(crop_animal_id: crop.id, 
+                        .where(crop_animal_id: crop.id,
                                 activity_type: stage_templates.pluck(:activity_type))
-    
-    if stage_activities.where.not(status: 'completed').empty?
+
+    if stage_activities.where.not(status: "completed").empty?
       return "Tất cả hoạt động của giai đoạn hiện tại đã hoàn thành. Bạn có thể chuyển sang giai đoạn tiếp theo."
     end
-    
+
     nil
   end
 end

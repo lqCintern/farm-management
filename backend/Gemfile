@@ -25,9 +25,9 @@ gem "solid_cache"
 gem "solid_queue"
 gem "solid_cable"
 gem "pagy"
-gem 'firebase', '~> 0.2.8' 
-gem 'google-cloud-firestore'
-gem 'rgeo'
+gem "firebase", "~> 0.2.8"
+gem "google-cloud-firestore"
+gem "rgeo"
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false

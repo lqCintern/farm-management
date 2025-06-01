@@ -2,7 +2,7 @@ module Api
   module V1
     module Farming
       class PineappleActivityTemplatesController < BaseController
-        before_action :set_template, only: [:show, :update, :destroy]
+        before_action :set_template, only: [ :show, :update, :destroy ]
 
         def index
           # Lấy cả templates mặc định và của user
@@ -97,7 +97,7 @@ module Api
 
           permitted[:activity_type] = permitted[:activity_type].to_i if permitted[:activity_type].present?
           permitted[:stage] = permitted[:stage].to_i if permitted[:stage].present?
-          
+
           permitted
         end
       end

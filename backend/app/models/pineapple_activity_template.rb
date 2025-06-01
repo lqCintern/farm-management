@@ -15,10 +15,10 @@ class PineappleActivityTemplate < ApplicationRecord
     sprout_collection: 10,      # Tách chồi giống
     field_cleaning: 11          # Dọn vườn
   }, prefix: true
-  
+
   enum :activity_type, {
     soil_preparation: 0,
-    planting: 1, 
+    planting: 1,
     fertilizing: 2,
     watering: 3,
     pesticide: 4,
@@ -27,10 +27,10 @@ class PineappleActivityTemplate < ApplicationRecord
     harvesting: 7,
     other: 8
   }, prefix: true
-  
+
   validates :name, :activity_type, :stage, presence: true
   validates :day_offset, :duration_days, presence: true
-  
+
   scope :default_templates, -> { where(user_id: nil) }
   scope :for_stage, ->(stage) { where(stage: stage) }
   scope :for_season, ->(season) { where("season_specific IS NULL OR season_specific = ?", season) }

@@ -13,12 +13,12 @@ class CreateMarketplaceHarvests < ActiveRecord::Migration[8.0]
       t.decimal :final_price
       t.integer :status, default: 0
       t.datetime :payment_date
-      
+
       t.timestamps
     end
-    
+
     add_foreign_key :marketplace_harvests, :users, column: :trader_id, primary_key: :user_id
-    
+
     # Thêm index cho tìm kiếm nhanh
     add_index :marketplace_harvests, :trader_id
     add_index :marketplace_harvests, :status

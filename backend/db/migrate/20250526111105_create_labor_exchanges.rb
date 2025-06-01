@@ -7,10 +7,10 @@ class CreateLaborExchanges < ActiveRecord::Migration[8.0]
       t.text :notes
       t.datetime :last_transaction_date
       t.timestamps
-      
-      t.index [:household_a_id, :household_b_id], name: "index_labor_exchanges_on_households", unique: true
+
+      t.index [ :household_a_id, :household_b_id ], name: "index_labor_exchanges_on_households", unique: true
     end
-    
+
     add_foreign_key :labor_exchanges, :farm_households, column: :household_a_id
     add_foreign_key :labor_exchanges, :farm_households, column: :household_b_id
   end

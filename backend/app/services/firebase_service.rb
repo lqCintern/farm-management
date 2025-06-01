@@ -1,22 +1,21 @@
 # app/services/firebase_service.rb
 # require 'firebase_admin'
-require 'google/cloud/firestore'
+require "google/cloud/firestore"
 
 class FirebaseService
   def self.initialize_firebase
     return if @initialized
-    
-    firebase_credentials = JSON.parse(File.read(ENV['FIREBASE_CREDENTIALS_PATH']))
-    
+
+    firebase_credentials = JSON.parse(File.read(ENV["FIREBASE_CREDENTIALS_PATH"]))
+
     FirebaseAdmin::Messaging.configure(
       credentials: firebase_credentials
     )
-    
+
     @initialized = true
   end
-  
-  def self.save_message(conversation_id, message_data)
 
+  def self.save_message(conversation_id, message_data)
     message_ref = FIREBASE_FIRESTORE.col("conversations").doc(conversation_id.to_s).col("messages").add(
       user_id: message_data[:user_id],
       content: message_data[:content],
@@ -27,7 +26,7 @@ class FirebaseService
     # Trả về ID của document vừa tạo trong Firestore
     message_ref.document_id
   end
-  
+
   def self.mark_message_as_read(conversation_id, message_id)
     # Đánh dấu tin nhắn đã đọc trong Firestore
     FIREBASE_FIRESTORE.col("conversations").doc(conversation_id.to_s).col("messages").doc(message_id).update(
@@ -35,7 +34,7 @@ class FirebaseService
       read_at: Time.now.utc.iso8601
     )
   end
-  
+
   def self.mark_messages_as_read(conversation_id, user_id)
     # Lấy tất cả tin nhắn chưa đọc
     messages = FIREBASE_FIRESTORE.col("conversations")
@@ -55,7 +54,7 @@ class FirebaseService
       end
     end
   end
-  
+
   def self.get_messages(conversation_id, limit = 50)
     messages = FIREBASE_FIRESTORE.col("conversations")
                                .doc(conversation_id.to_s)
@@ -70,7 +69,7 @@ class FirebaseService
       message_data
     end
   end
-  
+
   def self.get_unread_count(conversation_id, user_id)
     messages = FIREBASE_FIRESTORE.col("conversations")
                                .doc(conversation_id.to_s)

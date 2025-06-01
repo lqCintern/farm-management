@@ -5,11 +5,11 @@ class Ability
     return unless user # Nếu chưa đăng nhập, không có quyền
 
     case user.user_type
-    when 'admin'
+    when "admin"
       # Admin có toàn quyền
       can :manage, :all
 
-    when 'farmer'
+    when "farmer"
       # Quyền cho hộ sản xuất
       can :manage, FarmMaterial, user_id: user.id
       can :manage, FarmActivity, user_id: user.id
@@ -21,14 +21,14 @@ class Ability
       can :read, SupplyListing
       can :create, SupplyOrder, user_id: user.id
 
-    when 'supplier'
+    when "supplier"
       # Quyền cho nhà cung cấp vật tư
       can :manage, SupplyListing, user_id: user.id
       can :read, SupplyOrder, supply_listing: { user_id: user.id }
       can :update, SupplyOrder, supply_listing: { user_id: user.id }
       can :read, SupplierReview, supplier_id: user.id
 
-    when 'trader'
+    when "trader"
       # Quyền cho thương lái
       can :read, ProductListing
       can :create, ProductOrder, user_id: user.id

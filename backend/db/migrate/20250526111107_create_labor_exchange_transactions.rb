@@ -6,11 +6,11 @@ class CreateLaborExchangeTransactions < ActiveRecord::Migration[8.0]
       t.decimal :hours, precision: 5, scale: 2
       t.text :description
       t.timestamps
-      
-      t.index [:labor_exchange_id], name: "index_labor_exchange_transactions_on_labor_exchange_id"
-      t.index [:labor_assignment_id], name: "idx_labor_exchange_transactions_on_assignment_id"
+
+      t.index [ :labor_exchange_id ], name: "index_labor_exchange_transactions_on_labor_exchange_id"
+      t.index [ :labor_assignment_id ], name: "idx_labor_exchange_transactions_on_assignment_id"
     end
-    
+
     add_foreign_key :labor_exchange_transactions, :labor_exchanges, column: :labor_exchange_id
     add_foreign_key :labor_exchange_transactions, :labor_assignments, column: :labor_assignment_id
   end

@@ -1,15 +1,15 @@
 # app/models/message.rb
 class Message < ApplicationRecord
   belongs_to :conversation
-  belongs_to :user, primary_key: 'user_id'
-  
+  belongs_to :user, primary_key: "user_id"
+
   validates :content, presence: true
-  
+
   # Scope
-  scope :unread_for, -> (user_id) { 
+  scope :unread_for, ->(user_id) {
     where.not(user_id: user_id).where(read: false)
   }
-  
+
   # Methods
   def mark_as_read!
     update(read: true) unless read?
