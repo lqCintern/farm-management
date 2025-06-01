@@ -116,7 +116,6 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
             step={1000}
             formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             parser={(value: string | undefined) => {
-              // @ts-ignore - Bỏ qua lỗi TypeScript
               return value ? Number(value.replace(/[^\d]/g, '')) : 0;
             }}
             placeholder="VD: 25,000"

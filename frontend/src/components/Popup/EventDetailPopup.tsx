@@ -1,5 +1,5 @@
 import React from "react";
-import { FarmActivity } from "@/types";
+import { FarmActivity } from "@/types/labor/types";
 import "@/styles/popup.css";
 
 interface EventDetailPopupProps {

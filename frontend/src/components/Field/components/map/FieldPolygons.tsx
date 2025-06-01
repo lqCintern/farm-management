@@ -2,7 +2,7 @@ import React from "react";
 import { Polygon, Tooltip, Popup } from "react-leaflet";
 import { Link } from "react-router-dom";
 import { Field } from "@/components/Field/types";
-import { PineappleCrop } from "@/types"; // Import PineappleCrop interface
+import { PineappleCrop } from "@/types/labor/types"; // Import PineappleCrop interface
 
 interface FieldPolygonsProps {
   fields: Field[];

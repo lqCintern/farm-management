@@ -6,7 +6,7 @@ import {
 } from 'react-icons/fa';
 import * as pineappleCropService from '@/services/farming/pineappleCropService';
 import * as farmService from '@/services/farming/farmService';
-import { PineappleCrop, FarmActivity } from '@/types';
+import { PineappleCrop, FarmActivity } from '@/types/labor/types';
 import Modal from '@/components/common/Modal';
 
 const STAGE_COLORS = {
@@ -386,7 +386,7 @@ const PineappleCropDetailPage: React.FC = () => {
                             {new Date(activity.end_date).toLocaleDateString('vi-VN')}
                           </span>
                           <Link
-                            to={`/farm_activities/${activity.id}`}
+                            to={`/farm-activities/${activity.id}`}
                             className="text-blue-600 hover:text-blue-800"
                           >
                             Chi tiết
@@ -398,7 +398,7 @@ const PineappleCropDetailPage: React.FC = () => {
                     {pendingActivities.length > 5 && (
                       <div className="text-center pt-2">
                         <Link
-                          to={`/farm_activities?crop_animal_id=${id}&status=pending`}
+                          to={`/farmactivities?crop_animal_id=${id}&status=pending`}
                           className="text-blue-600 hover:text-blue-800 text-sm"
                         >
                           Xem tất cả {pendingActivities.length} công việc →
@@ -422,7 +422,7 @@ const PineappleCropDetailPage: React.FC = () => {
                 <h2 className="text-lg font-semibold">Lịch chăm sóc</h2>
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => navigate(`/farm_activities/new?crop_animal_id=${id}`)}
+                    onClick={() => navigate(`/farm-activities/new?crop_animal_id=${id}`)}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
                   >
                     <FaPlus className="mr-2" />
@@ -484,13 +484,13 @@ const PineappleCropDetailPage: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <Link 
-                              to={`/farm_activities/${activity.id}`} 
+                              to={`/farm-activities/${activity.id}`} 
                               className="text-blue-600 hover:text-blue-900 mr-3"
                             >
                               Chi tiết
                             </Link>
                             <Link 
-                              to={`/farm_activities/${activity.id}/edit`} 
+                              to={`/farm-activities/${activity.id}/edit`} 
                               className="text-gray-600 hover:text-gray-900"
                             >
                               Chỉnh sửa
@@ -506,7 +506,7 @@ const PineappleCropDetailPage: React.FC = () => {
                   <FaList className="mx-auto text-gray-400 text-3xl mb-2" />
                   <p>Chưa có hoạt động nào được tạo</p>
                   <button
-                    onClick={() => navigate(`/farm_activities/new?crop_animal_id=${id}`)}
+                    onClick={() => navigate(`/farm-activities/new?crop_animal_id=${id}`)}
                     className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                   >
                     Thêm công việc mới

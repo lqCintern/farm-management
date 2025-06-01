@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_27_010638) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_01_000523) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -135,6 +135,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_27_010638) do
     t.integer "farmer_rating"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "work_units", precision: 5, scale: 2, default: "0.0"
+    t.boolean "exchange_processed", default: false
     t.index ["home_household_id"], name: "index_labor_assignments_on_home_household_id"
     t.index ["labor_request_id"], name: "index_labor_assignments_on_labor_request_id"
     t.index ["work_date"], name: "index_labor_assignments_on_work_date"

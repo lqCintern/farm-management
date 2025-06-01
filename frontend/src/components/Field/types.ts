@@ -1,4 +1,4 @@
-import { PineappleCrop } from "@/types";
+import { PineappleCrop } from "@/types/labor/types";
 
 export interface Field {
     id: string;

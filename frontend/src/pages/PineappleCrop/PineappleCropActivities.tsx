@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FaCheckCircle, FaEdit, FaTrash, FaPlus, FaCalendarAlt } from 'react-icons/fa';
 import * as farmService from '@/services/farming/farmService';
-import { FarmActivity } from '@/types';
+import { FarmActivity } from '@/types/labor/types';
 
 const STATUS_BADGES = {
   pending: { class: 'bg-yellow-100 text-yellow-800', text: 'Chờ thực hiện' },

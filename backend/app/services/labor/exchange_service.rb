@@ -158,5 +158,137 @@ module Labor
         { success: false, errors: ["Lỗi hệ thống: #{e.message}"] }
       end
     end
+    
+    def self.get_transaction_history(household_a_id, household_b_id, options = {})
+      exchange = Labor::LaborExchange.find_by_household_ids(household_a_id, household_b_id)
+      return { success: false, errors: ["Không tìm thấy giao dịch giữa hai hộ"] } unless exchange
+      
+      transactions = exchange.transactions
+        .order(created_at: :desc)
+        .limit(options[:limit] || 50)
+        .offset(options[:offset] || 0)
+      
+      { success: true, transactions: transactions, total: exchange.transactions.count }
+    end
+    
+    def self.manual_adjust_balance(household_a_id, household_b_id, hours, notes)
+      exchange = Labor::LaborExchange.find_by_household_ids(household_a_id, household_b_id)
+      return { success: false, errors: ["Không tìm thấy giao dịch giữa hai hộ"] } unless exchange
+      
+      transaction = Labor::LaborExchangeTransaction.new(
+        labor_exchange: exchange,
+        hours: hours,
+        description: "Điều chỉnh thủ công: #{notes}"
+      )
+      
+      if transaction.save
+        exchange.hours_balance += hours
+        exchange.last_transaction_date = Time.current
+        exchange.save
+        
+        { success: true, exchange: exchange, transaction: transaction }
+      else
+        { success: false, errors: transaction.errors.full_messages }
+      end
+    end
+    
+    def self.recalculate_balance(household_a_id, household_b_id)
+      result = { success: false, errors: [], old_balance: 0, new_balance: 0 }
+      
+      # Tìm hoặc tạo labor_exchange
+      exchange = Labor::LaborExchange.find_or_create_between(household_a_id, household_b_id)
+      result[:old_balance] = exchange.hours_balance
+      
+      # Lưu tất cả giao dịch hiện có để lịch sử
+      old_transactions = exchange.transactions.to_a
+      
+      begin
+        Labor::LaborExchange.transaction do
+          # Reset balance và xóa tất cả transactions hiện có
+          exchange.hours_balance = 0
+          exchange.transactions.delete_all
+          
+          # Tìm tất cả assignments đã hoàn thành liên quan đến hai hộ
+          completed_assignments = Labor::LaborAssignment.includes(:labor_request)
+            .where(status: :completed)
+            .where('hours_worked > 0 OR work_units > 0')
+            .where(
+              'home_household_id IN (?, ?) AND labor_requests.requesting_household_id IN (?, ?)',
+              household_a_id, household_b_id, household_a_id, household_b_id
+            )
+            .where(
+              'labor_requests.request_type IN (?)', 
+              ['exchange', 'mixed']
+            )
+            .references(:labor_request)
+            .order(work_date: :asc, created_at: :asc)
+          
+          # Tạo lại các transactions và tính toán lại balance
+          completed_assignments.each do |assignment|
+            # Tự động tính hours_worked nếu không có giá trị
+            if (assignment.hours_worked.blank? || assignment.hours_worked == 0) && 
+               assignment.start_time.present? && assignment.end_time.present?
+              
+              hours_diff = ((assignment.end_time - assignment.start_time) / 3600).round(1)
+              
+              # Cập nhật hours_worked và work_units
+              assignment.update_columns(
+                hours_worked: hours_diff,
+                work_units: hours_diff >= 6 ? 1.0 : 0.5
+              )
+              
+              # Đánh dấu đã được xử lý
+              assignment.update_column(:exchange_processed, true) if assignment.respond_to?(:exchange_processed)
+            end
+            
+            # Bỏ qua nếu không liên quan trực tiếp đến hai hộ
+            next unless (assignment.home_household_id == household_a_id || assignment.home_household_id == household_b_id) &&
+                       (assignment.labor_request.requesting_household_id == household_a_id || 
+                        assignment.labor_request.requesting_household_id == household_b_id)
+            
+            # Tính công (ưu tiên work_units nếu có, nếu không thì dùng hours_worked)
+            units = assignment.work_units.present? && assignment.work_units > 0 ? 
+                    assignment.work_units : 
+                    (assignment.hours_worked >= 6 ? 1.0 : 0.5)
+            
+            # Tính toán giờ công: nếu worker từ household_b làm việc cho household_a, balance tăng
+            # Nếu worker từ household_a làm việc cho household_b, balance giảm
+            if assignment.home_household_id == household_b_id && assignment.labor_request.requesting_household_id == household_a_id
+              hours = units
+            elsif assignment.home_household_id == household_a_id && assignment.labor_request.requesting_household_id == household_b_id
+              hours = -units
+            else
+              next # Bỏ qua nếu không xác định được hướng
+            end
+            
+            # Cập nhật balance
+            exchange.hours_balance += hours
+            
+            # Tạo transaction mới
+            transaction = Labor::LaborExchangeTransaction.create!(
+              labor_exchange: exchange,
+              labor_assignment_id: assignment.id,
+              hours: hours,
+              description: "Tính lại: Công từ #{assignment.worker&.fullname || 'Worker'} ngày #{assignment.work_date}"
+            )
+            
+            # Đánh dấu assignment đã được xử lý
+            assignment.update_column(:exchange_processed, true) if assignment.respond_to?(:exchange_processed)
+          end
+          
+          exchange.last_transaction_date = Time.current
+          exchange.save!
+          
+          result[:new_balance] = exchange.hours_balance
+          result[:success] = true
+          result[:exchange] = exchange
+          result[:diff] = result[:new_balance] - result[:old_balance]
+        end
+      rescue => e
+        result[:errors] << "Lỗi khi tính toán lại số dư: #{e.message}"
+      end
+      
+      result
+    end
   end
 end

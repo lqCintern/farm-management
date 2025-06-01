@@ -1,4 +1,4 @@
-import { FarmActivity } from "@/types";
+import { FarmActivity } from "@/types/labor/types";
 
 function parseDate(dateString: string): string {
   const [day, month, year] = dateString.split("-");
@@ -15,37 +15,26 @@ export default function FarmActivityItem({ activity }: Props) {
       <h2 className="text-lg font-semibold">{activity.activity_type}</h2>
       <p className="text-sm text-gray-600">{activity.description}</p>
       <p className="text-sm text-gray-600">
-        Start Date:{" "}
-        {new Date(parseDate(activity.start_date)).toLocaleDateString("en-GB")}
+      Start Date:{" "}
+      {new Date(parseDate(activity.start_date)).toLocaleDateString("en-GB")}
       </p>
       <p className="text-sm text-gray-600">
-        End Date:{" "}
-        {new Date(parseDate(activity.end_date)).toLocaleDateString("en-GB")}
+      End Date:{" "}
+      {new Date(parseDate(activity.end_date)).toLocaleDateString("en-GB")}
       </p>
       <p
-        className={`text-sm font-bold ${
-          activity.status_label === "Overdue"
-            ? "text-red-600"
-            : activity.status_label === "Starting Soon"
-            ? "text-yellow-600"
-            : activity.status_label === "Ending Soon"
-            ? "text-blue-600"
-            : "text-green-600"
-        }`}
+      className={`text-sm font-bold ${
+        activity.status === "Overdue"
+      ? "text-red-600"
+      : activity.status === "Starting Soon"
+      ? "text-yellow-600"
+      : activity.status === "Ending Soon"
+      ? "text-blue-600"
+      : "text-green-600"
+      }`}
       >
-        Status: {activity.status_label}
+      Status: {activity.status}
       </p>
-      {activity.status_details.overdue && (
-        <p className="text-sm text-red-600">
-          Overdue by {activity.status_details.overdue_days} days
-        </p>
-      )}
-      {activity.status_details.starting_soon && (
-        <p className="text-sm text-yellow-600">Starting Soon</p>
-      )}
-      {activity.status_details.ending_soon && (
-        <p className="text-sm text-blue-600">Ending Soon</p>
-      )}
     </li>
   );
 }

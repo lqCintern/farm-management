@@ -16,24 +16,25 @@ const navlinksConfig: Record<string, any[]> = {
       id: 1,
       name: "Home",
       subLinks: [
-        { name: "Homepage", href: "/calendar" },
-        { name: "Chat", href: "/chat" },
+        { name: "Lịch trình", href: "/calendar" },
+        { name: "Trò chuyện", href: "/chat" },
         { name: "Theo dõi cánh đồng", href: "/fields" },
-        { name: "Quy trình chung", href: "/activity-templates" },
         { name: "Các mùa vụ", href: "/pineapple" },
       ],
     },
     {
       id: 2,
       name: "Activity",
-      subLinks: [{ name: "Farm Activities", href: "/farm-activities" },
-        { name: "Template", href: "/activity-templates" },
+      subLinks: [
+        { name: "Hoạt động", href: "/farm-activities" },
+        { name: "Đổi công", href: "/labor" },
+        { name: "Quy trình chung", href: "/activity-templates" },
       ],
       
     },
     {
       id: 3,
-      name: "Shop",
+      name: "Đăng tải",
       subLinks: [
         { name: "New Product", href: "/products/create" },
         { name: "Products", href: "/products" },

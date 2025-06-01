@@ -13,7 +13,7 @@ class FarmActivity < ApplicationRecord
   has_many :child_activities, class_name: "FarmActivity", foreign_key: :parent_activity_id, dependent: :destroy
   
   # Enum định nghĩa
-  enum :status, { pending: 0, completed: 1, cancelled: 2 }, prefix: true
+  enum :status, { pending: 0, completed: 1, cancelled: 2 }
   enum :frequency, { once: 0, daily: 1, weekly: 2, monthly: 3 }, prefix: true
   
   # Định nghĩa các loại hoạt động nông nghiệp

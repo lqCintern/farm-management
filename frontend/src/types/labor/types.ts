@@ -20,6 +20,13 @@ export interface FarmActivity {
   field_id: number;
   crop_animal_id?: number;
   materials?: Record<string, any>;
+    labor_requests?: {
+    id: number;
+    title: string;
+    status: string;
+    start_date: string;
+    end_date: string;
+  }[];
 }
 
 export interface Pagination {

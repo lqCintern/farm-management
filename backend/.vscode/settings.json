@@ -1,0 +1,5 @@
+{
+  "ruby.useLanguageServer": true,
+  "ruby.lsp.use": true,
+  "ruby.intellisense": true
+}

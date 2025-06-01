@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaSave, FaTimes, FaArrowLeft, FaCalendarAlt, FaEdit, FaCheck } from 'react-icons/fa';
 import * as pineappleCropService from '@/services/farming/pineappleCropService';
 import fieldService from '@/services/farming/fieldService';
-import { PineappleCrop, FarmActivity } from '@/types';
+import { PineappleCrop, FarmActivity } from '@/types/labor/types';
 
 const SEASON_TYPES = [
   { value: 'spring_summer', label: 'Xuân-Hè' },

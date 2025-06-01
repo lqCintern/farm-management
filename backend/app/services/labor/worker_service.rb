@@ -90,5 +90,48 @@ module Labor
         average_rating: average_rating
       }
     end
+    
+    def self.check_schedule_conflicts(worker_id, date, start_time, end_time)
+      # Tìm các assignment cùng ngày
+      assignments = Labor::LaborAssignment.where(
+        worker_id: worker_id,
+        work_date: date,
+        status: [:pending, :accepted]
+      )
+      
+      # Kiểm tra xung đột giờ làm việc
+      conflicts = assignments.select do |assignment|
+        # Kiểm tra xem các khoảng thời gian có giao nhau không
+        (assignment.start_time < end_time) && (assignment.end_time > start_time)
+      end
+      
+      { conflicts: conflicts, has_conflict: conflicts.any? }
+    end
+    
+    def self.get_availability_forecast(worker_id, start_date, end_date)
+      dates = (start_date.to_date..end_date.to_date).to_a
+      
+      # Lấy tất cả assignment trong khoảng thời gian
+      assignments = Labor::LaborAssignment.where(
+        worker_id: worker_id,
+        work_date: start_date..end_date,
+        status: [:pending, :accepted]
+      ).order(:work_date, :start_time)
+      
+      # Map các ngày với thông tin khả dụng
+      availability = dates.map do |date|
+        day_assignments = assignments.select { |a| a.work_date == date }
+        total_hours = day_assignments.sum { |a| (a.end_time - a.start_time) / 3600 }
+        
+        {
+          date: date,
+          assignments_count: day_assignments.size,
+          total_hours: total_hours,
+          is_fully_booked: total_hours >= 8
+        }
+      end
+      
+      { success: true, availability: availability }
+    end
   end
 end
