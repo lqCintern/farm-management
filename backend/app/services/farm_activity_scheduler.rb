@@ -167,4 +167,45 @@ class FarmActivityService
       )
     end
   end
+
+  def self.check_upcoming_activities
+    # Kiểm tra các hoạt động diễn ra trong vòng 1 ngày tới
+    tomorrow = Date.tomorrow.beginning_of_day
+    tomorrow_end = Date.tomorrow.end_of_day
+
+    FarmActivity.includes(:user, :field)
+                .where("start_date BETWEEN ? AND ?", tomorrow, tomorrow_end)
+                .where(status: [ "pending", "in_progress" ])
+                .find_each do |activity|
+      # Kiểm tra xem đã nhắc nhở trong vòng 24h chưa
+      last_reminder = Notification.where(
+        notifiable_type: "FarmActivity",
+        notifiable_id: activity.id,
+        event_type: "activity_reminder"
+      ).where("created_at > ?", 24.hours.ago).exists?
+
+      unless last_reminder
+        Notification::FarmNotificationService.new.activity_reminder(activity, 1)
+      end
+    end
+
+    # Kiểm tra các hoạt động quá hạn
+    yesterday = Date.yesterday.end_of_day
+
+    FarmActivity.includes(:user, :field)
+                .where("end_date < ?", yesterday)
+                .where.not(status: "completed")
+                .find_each do |activity|
+      # Kiểm tra xem đã cảnh báo trong vòng 24h chưa
+      last_alert = Notification.where(
+        notifiable_type: "FarmActivity",
+        notifiable_id: activity.id,
+        event_type: "activity_overdue"
+      ).where("created_at > ?", 24.hours.ago).exists?
+
+      unless last_alert
+        Notification::FarmNotificationService.new.activity_overdue(activity)
+      end
+    end
+  end
 end

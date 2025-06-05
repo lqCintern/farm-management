@@ -86,6 +86,47 @@ class User < ApplicationRecord
       owned_labor_households.first || labor_household
     end
 
+    has_many :notifications, foreign_key: "recipient_id", dependent: :destroy
+    has_many :notification_settings, dependent: :destroy
+
+    # Lấy các thông báo chưa đọc
+    def unread_notifications
+      notifications.unread.recent
+    end
+
+    # Đếm số thông báo chưa đọc
+    def unread_notifications_count
+      notifications.unread.count
+    end
+
+    # Tạo cài đặt thông báo mặc định cho người dùng mới
+    def create_default_notification_settings
+      # Cài đặt tổng thể
+      notification_settings.find_or_create_by(
+        category: "all",
+        event_type: nil,
+        email_enabled: true,
+        push_enabled: true,
+        in_app_enabled: true
+      )
+
+      # Cài đặt cho từng loại
+      %w[farm labor marketplace supply system].each do |category|
+        notification_settings.find_or_create_by(
+          category: category,
+          event_type: nil,
+          email_enabled: true,
+          push_enabled: true,
+          in_app_enabled: true
+        )
+      end
+    end
+
+    # Kiểm tra kênh được bật cho thông báo
+    def notification_channel_enabled?(category, event_type, channel)
+      NotificationSetting.user_enabled_channel?(id, category, event_type, channel)
+    end
+
     private
 
     def password_required?

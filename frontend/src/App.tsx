@@ -58,6 +58,9 @@ import FarmAssignments from "./pages/Labor/Assignment/FarmAssignments"; // Thêm
 import LaborAssignment from "./pages/Labor/Assignment/LaborAssignment";
 import CreateAssignment from "./pages/Labor/Assignment/CreateAssignment";
 import AssignmentStats from "./pages/Labor/Assignment/AssignmentStats";
+import NotificationsPage from "./pages/Notifications/NotificationsPage";
+import NotificationSettingsPage from "./pages/Notifications/NotificationSettingsPage";
+import NotificationDetailPage from "./pages/Notifications/NotificationDetailPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -128,6 +131,11 @@ const router = createBrowserRouter(
       <Route path="farm-activities">
         <Route path=":id" element={<FarmActivityDetail />} />
       </Route>
+
+      {/* Notification Routes */}
+      <Route path="notifications" element={<NotificationsPage />} />
+      <Route path="notifications/:id" element={<NotificationDetailPage />} />
+      <Route path="notifications/settings" element={<NotificationSettingsPage />} />
     </Route>
   )
 );
