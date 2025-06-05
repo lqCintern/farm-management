@@ -101,6 +101,9 @@ module Api
             # Gửi thông báo
             product_order.create_notification
 
+            # Thêm thông báo về đơn hàng mới
+            Notification::MarketplaceNotificationService.new.new_order(product_order)
+
             render json: {
               message: "Đã gửi yêu cầu đặt mua thành công",
               order: product_order.as_json(include: {
@@ -118,6 +121,8 @@ module Api
           # Cập nhật trạng thái
           if params[:status].present?
             begin
+              old_status = @product_order.status # Lưu trạng thái cũ để thông báo
+
               case params[:status]
               when "accept"
                 # Chỉ người bán mới được accept
@@ -126,6 +131,12 @@ module Api
                 end
 
                 @product_order.update(status: :accepted)
+
+                # Thêm thông báo cho người mua
+                Notification::MarketplaceNotificationService.new.order_status_updated(
+                  @product_order,
+                  old_status
+                )
 
                 # Tìm và thông báo qua tin nhắn
                 send_order_notification(@product_order, "Tôi đã chấp nhận đơn đặt hàng của bạn!")
@@ -139,6 +150,12 @@ module Api
                 @product_order.update(
                   status: :rejected,
                   rejection_reason: params[:reason]
+                )
+
+                # Thêm thông báo cho người mua
+                Notification::MarketplaceNotificationService.new.order_status_updated(
+                  @product_order,
+                  old_status
                 )
 
                 message = "Đã từ chối đơn đặt hàng"
@@ -160,6 +177,13 @@ module Api
                 end
 
                 @product_order.completed!
+
+                # Thêm thông báo hoàn thành cho các bên
+                Notification::MarketplaceNotificationService.new.order_status_updated(
+                  @product_order,
+                  old_status
+                )
+
                 message = "Đã hoàn thành đơn hàng"
 
                 # Thông báo qua tin nhắn

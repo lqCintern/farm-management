@@ -230,6 +230,27 @@ Rails.application.routes.draw do
         post "auth/reset_password", to: "auth#reset_password"
         get "/auth/profile", to: "auth#profile"
       end
+
+      # Module Notifications
+      namespace :notifications do
+        resources :notifications, only: [ :index, :show, :destroy ] do
+          member do
+            post :mark_as_read
+            post :mark_as_unread
+          end
+
+          collection do
+            post :mark_all_as_read
+            get :unread_count
+          end
+        end
+
+        resources :settings, only: [ :index, :create, :update ] do
+          collection do
+            post :reset_to_default
+          end
+        end
+      end
     end
   end
 end

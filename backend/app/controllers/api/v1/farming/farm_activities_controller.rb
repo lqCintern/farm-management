@@ -60,6 +60,11 @@ module Api
           farm_activity = service.create_activity(farm_activity_params)
 
           if farm_activity.errors.empty?
+            # Thêm thông báo nhắc nhở nếu hoạt động sắp diễn ra
+            if farm_activity.start_date.present? && farm_activity.start_date < 7.days.from_now
+              Notification::FarmNotificationService.new.activity_reminder(farm_activity)
+            end
+
             render json: {
               message: "Lịch chăm sóc đã được tạo thành công",
               data: ApiRendererService.render_farm_activities([ farm_activity ], nil)[:farm_activities].first
@@ -79,6 +84,21 @@ module Api
           farm_activity = service.update_activity(farm_activity_params)
 
           if farm_activity.errors.empty?
+            # Nếu thay đổi ngày hoặc thông tin quan trọng, tạo thông báo cập nhật
+            if farm_activity.saved_change_to_start_date? || farm_activity.saved_change_to_description?
+              # Tạo thông báo cho người được phân công
+              if farm_activity.try(:assignments).present?
+                farm_activity.assignments.each do |assignment|
+                  if assignment.worker&.user
+                    Notification::FarmNotificationService.new.activity_updated(
+                      farm_activity,
+                      assignment.worker.user
+                    )
+                  end
+                end
+              end
+            end
+
             render json: {
               message: "Lịch chăm sóc đã được cập nhật thành công",
               data: ApiRendererService.render_farm_activities([ farm_activity ], nil)[:farm_activities].first
@@ -111,6 +131,9 @@ module Api
 
           # Kiểm tra kết quả từ service
           if result[:success]
+            # Tạo thông báo hoạt động đã hoàn thành
+            Notification::FarmNotificationService.new.activity_completed(@farm_activity)
+
             render json: {
               message: "Đã đánh dấu hoàn thành hoạt động",
               data: ApiRendererService.render_farm_activities([ @farm_activity ], nil)[:farm_activities].first,

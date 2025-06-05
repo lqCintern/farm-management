@@ -20,7 +20,11 @@ module Api
 
         # Hiển thị chi tiết của một yêu cầu
         def show
-          render_success_response(@labor_request)
+          response_data = @labor_request.as_json
+          response_data[:requesting_household] = @labor_request.requesting_household.as_json(only: [ :id, :name ]) if @labor_request.requesting_household
+          response_data[:providing_household] = @labor_request.providing_household.as_json(only: [ :id, :name ]) if @labor_request.providing_household
+
+          render_success_response(response_data)
         end
 
         # Tạo yêu cầu thông thường
@@ -31,6 +35,11 @@ module Api
           )
 
           if result[:success]
+            # Thêm thông báo cho người nhận yêu cầu
+            if result[:request].providing_household.present?
+              ::NotificationServices::LaborNotificationService.new.new_labor_request(result[:request])
+            end
+
             render_success_response(result[:request], :created)
           else
             render_error_response(result[:errors], :unprocessable_entity)
@@ -147,6 +156,12 @@ module Api
           )
 
           if result[:success]
+            # Thêm thông báo đã chấp nhận cho người tạo yêu cầu
+            ::NotificationServices::LaborNotificationService.new.labor_request_response(
+              @labor_request,
+              "accepted"
+            )
+
             render_success_response({
               request: result[:request],
               group_status: result[:group_status]
@@ -165,6 +180,12 @@ module Api
           )
 
           if result[:success]
+            # Thêm thông báo đã từ chối cho người tạo yêu cầu
+            ::NotificationServices::LaborNotificationService.new.labor_request_response(
+              @labor_request,
+              "rejected"
+            )
+
             render_success_response({
               request: result[:request],
               group_status: result[:group_status]
@@ -201,6 +222,12 @@ module Api
           )
 
           if result[:success]
+            # Thêm thông báo hoàn thành cho các bên liên quan
+            ::NotificationServices::LaborNotificationService.new.labor_request_response(
+              @labor_request,
+              "completed"
+            )
+
             render_success_response({
               request: result[:request],
               group_status: result[:group_status]
@@ -250,7 +277,7 @@ module Api
         private
 
         def set_labor_request
-          @labor_request = ::Labor::LaborRequest.find(params[:id])
+          @labor_request = ::Labor::LaborRequest.includes(:requesting_household, :providing_household).find(params[:id])
         end
 
         def labor_request_params

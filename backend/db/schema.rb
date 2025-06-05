@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_01_000523) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_05_181411) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -273,6 +273,42 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_01_000523) do
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
+  create_table "notification_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "category", null: false
+    t.string "event_type"
+    t.boolean "email_enabled", default: true
+    t.boolean "push_enabled", default: true
+    t.boolean "in_app_enabled", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "category", "event_type"], name: "unique_notification_setting", unique: true
+  end
+
+  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "recipient_id", null: false
+    t.bigint "sender_id"
+    t.string "notifiable_type"
+    t.bigint "notifiable_id"
+    t.string "category", null: false
+    t.string "event_type", null: false
+    t.string "title", null: false
+    t.text "message", null: false
+    t.json "metadata"
+    t.datetime "read_at"
+    t.datetime "sent_via_email_at"
+    t.datetime "sent_via_push_at"
+    t.integer "priority", default: 1
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_notifications_on_category"
+    t.index ["created_at"], name: "index_notifications_on_created_at"
+    t.index ["event_type"], name: "index_notifications_on_event_type"
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable_type_and_notifiable_id"
+    t.index ["recipient_id", "read_at"], name: "index_notifications_on_recipient_id_and_read_at"
+    t.index ["sender_id"], name: "fk_rails_8780923399"
+  end
+
   create_table "pineapple_activity_templates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -524,6 +560,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_01_000523) do
   add_foreign_key "marketplace_harvests", "users", column: "trader_id", primary_key: "user_id"
   add_foreign_key "messages", "conversations"
   add_foreign_key "messages", "users", primary_key: "user_id"
+  add_foreign_key "notification_settings", "users", primary_key: "user_id"
+  add_foreign_key "notifications", "users", column: "recipient_id", primary_key: "user_id"
+  add_foreign_key "notifications", "users", column: "sender_id", primary_key: "user_id", on_delete: :nullify
   add_foreign_key "pineapple_crops", "fields"
   add_foreign_key "product_images", "product_listings"
   add_foreign_key "product_listings", "pineapple_crops", column: "crop_animal_id"
