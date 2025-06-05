@@ -1,0 +1,46 @@
+/* CSS cho lịch bloc */
+.bloc-calendar {
+  font-family: 'Roboto', sans-serif;
+  perspective: 2000px;
+}
+
+.bloc-calendar-page {
+  transition: transform 0.5s;
+}
+
+.bloc-calendar-page:hover {
+  transform: translateZ(10px);
+}
+
+/* Style cho góc trang */
+.bloc-calendar .stf__page-content:before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.1) 100%);
+  z-index: 100;
+  pointer-events: none;
+  border-radius: 0 0 5px 0;
+}
+
+/* Hiệu ứng hover lật trang */
+.bloc-calendar .stf__block {
+  cursor: pointer;
+}
+
+/* Hiệu ứng shadow trang lật */
+.bloc-calendar .stf__shadow {
+  background: linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0.05));
+  border-radius: 5px;
+}
+
+/* Mobile styles */
+@media (max-width: 640px) {
+  .bloc-calendar {
+    max-width: 100% !important;
+    overflow: hidden;
+  }
+}
