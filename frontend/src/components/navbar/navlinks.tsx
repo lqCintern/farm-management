@@ -27,10 +27,22 @@ const navlinksConfig: Record<string, any[]> = {
       name: "Activity",
       subLinks: [
         { name: "Hoạt động", href: "/farm-activities" },
-        { name: "Đổi công", href: "/labor" },
         { name: "Quy trình chung", href: "/activity-templates" },
       ],
-      
+    },
+    {
+      id: 5, // Thêm ID mới để tránh xung đột
+      name: "Đổi công",
+      subLinks: [
+        { name: "Tổng quan", href: "/labor" },
+        { name: "Yêu cầu đổi công", href: "/labor/requests" },
+        { name: "Tạo yêu cầu đổi công", href: "/labor/requests/create" },
+        { name: "Yêu cầu công khai", href: "/labor/public-requests" },
+        { name: "Đổi công với hộ khác", href: "/labor/exchanges" },
+        { name: "Phân công lao động", href: "/labor/assignments" },
+        { name: "Phân công nông trại", href: "/labor/farm-assignments" },
+        { name: "Thống kê đổi công", href: "/labor/assignment-stats" },
+      ],
     },
     {
       id: 3,
