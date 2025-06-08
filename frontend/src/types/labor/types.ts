@@ -27,6 +27,11 @@ export interface FarmActivity {
     start_date: string;
     end_date: string;
   }[];
+  actual_notes?: string;
+    status_details?: {
+    starting_soon?: boolean;
+  };
+  actual_completion_date?: string;
 }
 
 export interface Pagination {

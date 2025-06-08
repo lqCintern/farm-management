@@ -1,15 +1,17 @@
 module Api
   module V1
     module SupplyChain
-      class SupplyListingsController < BaseController
-        before_action :authenticate_user!, except: [ :index, :show ]
-        before_action :set_supply_listing, only: [ :show ]
+      class FarmerSupplyListingsController < BaseController
+        include Pagy::Backend
+
+        before_action :authenticate_user!, except: [:index, :show]
+        before_action :set_supply_listing, only: [:show]
 
         # GET /api/v1/supply_listings
         def index
           @supply_listings = SupplyListing.where(status: :active)
-                                        .includes(:user, supply_images: { image_attachment: :blob })
-                                        .order(created_at: :desc)
+                                          .includes(:user, supply_images: { image_attachment: :blob })
+                                          .order(created_at: :desc)
 
           # Lọc theo danh mục
           @supply_listings = @supply_listings.where(category: params[:category]) if params[:category].present?
@@ -30,16 +32,14 @@ module Api
           # Tìm kiếm theo tên
           @supply_listings = @supply_listings.where("name LIKE ?", "%#{params[:name]}%") if params[:name].present?
 
-          # Phân trang
-          page = params[:page] || 1
-          per_page = params[:per_page] || 15
-          @supply_listings = @supply_listings.page(page).per(per_page)
+          # Phân trang với Pagy
+          @pagy, @supply_listings = pagy(@supply_listings, items: params[:per_page] || 15)
 
           render json: {
             status: "success",
-            total_pages: @supply_listings.total_pages,
-            current_page: @supply_listings.current_page,
-            total_count: @supply_listings.total_count,
+            total_pages: @pagy.pages,
+            current_page: @pagy.page,
+            total_count: @pagy.count,
             data: @supply_listings.map { |listing| supply_listing_json(listing) }
           }
         end
@@ -128,10 +128,10 @@ module Api
                 }
               end,
               similar_listings: SupplyListing.where(category: listing.category)
-                                          .where.not(id: listing.id)
-                                          .where(status: :active)
-                                          .limit(6)
-                                          .map { |l| supply_listing_json(l) }
+                                             .where.not(id: listing.id)
+                                             .where(status: :active)
+                                             .limit(6)
+                                             .map { |l| supply_listing_json(l) }
             })
           end
 

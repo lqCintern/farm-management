@@ -1,0 +1,11 @@
+vi:
+  activity_types:
+    fertilizing: "Bón phân"
+    pesticide: "Phun thuốc"
+    planting: "Trồng cây"
+    watering: "Tưới nước"
+    soil_preparation: "Chuẩn bị đất"
+    pruning: "Tỉa cây"
+    weeding: "Làm cỏ"
+    harvesting: "Thu hoạch"
+    other: "Khác"

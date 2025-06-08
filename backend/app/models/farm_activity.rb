@@ -115,4 +115,29 @@ class FarmActivity < ApplicationRecord
   def pineapple_crop_id=(value)
     self.crop_animal_id = value
   end
+
+  # Các hoạt động bắt buộc phải có vật tư
+  MATERIAL_REQUIRED_ACTIVITIES = %w[fertilizing pesticide].freeze
+
+  # Validation cho material
+  validate :validate_materials_requirement
+
+  # Thêm thuộc tính skip_materials_check
+  attr_accessor :skip_materials_check
+
+  # Sửa phương thức validate_materials_requirement
+  def validate_materials_requirement
+    # Bỏ qua kiểm tra nếu được yêu cầu
+    return if skip_materials_check
+    
+    # Kiểm tra nếu hoạt động yêu cầu vật tư nhưng không có
+    if MATERIAL_REQUIRED_ACTIVITIES.include?(activity_type) && activity_materials.empty?
+      errors.add(:base, "Hoạt động #{I18n.t("activity_types.#{activity_type}")} cần có ít nhất một vật tư")
+    end
+  end
+
+  # Helper method để check xem hoạt động có cần vật tư không
+  def requires_materials?
+    MATERIAL_REQUIRED_ACTIVITIES.include?(activity_type)
+  end
 end

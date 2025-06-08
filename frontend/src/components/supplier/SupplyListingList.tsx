@@ -246,7 +246,7 @@ const SupplyListingList: React.FC = () => {
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="mb-6 flex justify-between items-center">
         <Title level={2}>Quản lý vật tư nông nghiệp</Title>
-        <Link to="/supplier/listings/new">
+        <Link to="/supplier/listings/create">
           <Button type="primary" icon={<PlusOutlined />} size="large">
             Đăng vật tư mới
           </Button>

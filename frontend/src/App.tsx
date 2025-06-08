@@ -30,7 +30,6 @@ import PineappleCropFormPage  from "@/pages/PineappleCrop/PineappleCropForm";
 import PineappleCropDetailPage  from "@/pages/PineappleCrop/PineappleCropDetail";
 import PineappleCropActivities  from "@/pages/PineappleCrop/PineappleCropActivities";
 
-import SupplyListingsManagement from "@/components/supplier/SupplyListingsManagement";
 import PineappleActivityTemplates from "./pages/PineappleActivityTemplates";
 import ActivityTemplateDetail from "./pages/PineappleActivityTemplates/ActivityTemplateDetail";
 import PineappleCrops from "./pages/PineappleCrop";
@@ -62,6 +61,19 @@ import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import NotificationSettingsPage from "./pages/Notifications/NotificationSettingsPage";
 import NotificationDetailPage from "./pages/Notifications/NotificationDetailPage";
 
+import ListingsPage from './pages/SupplyChain/Farmer/ListingsPage';
+import ListingDetailPage from './pages/SupplyChain/Farmer/ListingDetailPage';
+import CreateOrderPage from './pages/SupplyChain/Farmer/CreateOrderPage';
+import FarmerMyOrdersPage from './pages/SupplyChain/Farmer/MyOrdersPage';
+import FarmerOrderDetailPage from './pages/SupplyChain/Farmer/OrderDetailPage';
+
+import SupplierDashboardPage from './pages/SupplyChain/Supplier/DashboardPage';
+import SupplierMyListingsPage from './pages/SupplyChain/Supplier/MyListingsPage';
+import SupplierCreateListingPage from './pages/SupplyChain/Supplier/CreateListingPage';
+import SupplierEditListingPage from './pages/SupplyChain/Supplier/EditListingPage';
+import SupplierOrdersReceivedPage from './pages/SupplyChain/Supplier/OrdersReceivedPage';
+import SupplierOrderDetailPage from './pages/SupplyChain/Supplier/OrderDetailPage';
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path={routes.index} element={<MainLayout />}>
@@ -88,10 +100,6 @@ const router = createBrowserRouter(
       <Route path="/fields/:id/edit" element={<FieldForm />} />
       <Route path="/supply-marketplace" element={<SupplyMarketplace />} />
       <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
-      <Route
-        path="/supplier/listings-management"
-        element={<SupplyListingsManagement />}
-      />
       <Route path="/supplier/listings" element={<SupplyListingList />} />
       <Route path="/pineapple" element={<PineappleCrops />} />
       <Route path="/pineapple/new" element={<PineappleCropFormPage />} />
@@ -136,6 +144,22 @@ const router = createBrowserRouter(
       <Route path="notifications" element={<NotificationsPage />} />
       <Route path="notifications/:id" element={<NotificationDetailPage />} />
       <Route path="notifications/settings" element={<NotificationSettingsPage />} />
+
+      {/* Supply Chain Routes */}
+      {/* Farmer Routes */}
+      <Route path="/farmer/listings" element={<ListingsPage />} />
+      <Route path="/farmer/listings/:id" element={<ListingDetailPage />} />
+      <Route path="/farmer/orders/create/:id" element={<CreateOrderPage />} />
+      <Route path="/farmer/orders" element={<FarmerMyOrdersPage />} />
+      <Route path="/farmer/orders/:id" element={<FarmerOrderDetailPage />} />
+
+      {/* Supplier Routes */}
+      <Route path="/supplier/dashboard" element={<SupplierDashboardPage />} />
+      <Route path="/supplier/listings" element={<SupplierMyListingsPage />} />
+      <Route path="/supplier/listings/create" element={<SupplierCreateListingPage />} />
+      <Route path="/supplier/listings/:id/edit" element={<SupplierEditListingPage />} />
+      <Route path="/supplier/orders" element={<SupplierOrdersReceivedPage />} />
+      <Route path="/supplier/orders/:id" element={<SupplierOrderDetailPage />} />
     </Route>
   )
 );

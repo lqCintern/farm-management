@@ -1,7 +1,7 @@
 module Api
   module V1
     module SupplyChain
-      class SupplyOrdersController < BaseController
+      class FarmerSupplyOrdersController < BaseController
         before_action :authenticate_user!
         before_action :set_supply_order, only: [ :show, :update, :complete, :cancel ]
 
@@ -31,36 +31,41 @@ module Api
         # POST /api/v1/supply_orders
         def create
           @supply_listing = SupplyListing.find(params[:supply_listing_id])
-
-          # Kiểm tra số lượng tồn kho
-          if @supply_listing.quantity < params[:quantity].to_f
+          
+          # Kiểm tra số lượng tồn kho và số lượng đang tạm giữ
+          available_quantity = @supply_listing.quantity - @supply_listing.pending_quantity
+          if available_quantity < params[:supply_order][:quantity].to_f
             render json: {
               status: "error",
-              message: "Số lượng vật tư không đủ"
+              message: "Số lượng vật tư không đủ. Hiện chỉ còn #{available_quantity} #{@supply_listing.unit} có thể đặt."
             }, status: :unprocessable_entity
             return
           end
-
-          @supply_order = current_user.supply_orders.build(supply_order_params)
-          @supply_order.supply_listing_id = @supply_listing.id
-          @supply_order.price = @supply_listing.price
-          @supply_order.purchase_date = Time.current
-
-          if @supply_order.save
-            # Tăng số lượng đơn hàng của vật tư
-            @supply_listing.increment!(:order_count)
-
-            render json: {
-              status: "success",
-              message: "Đặt hàng thành công",
-              data: supply_order_json(@supply_order)
-            }, status: :created
-          else
-            render json: {
-              status: "error",
-              message: "Không thể đặt hàng",
-              errors: @supply_order.errors
-            }, status: :unprocessable_entity
+          
+          ActiveRecord::Base.transaction do
+            @supply_order = current_user.supply_orders.build(supply_order_params)
+            @supply_order.supply_listing_id = @supply_listing.id
+            @supply_order.price = @supply_listing.price
+            @supply_order.purchase_date = Time.current
+            
+            if @supply_order.save
+              # Tăng số lượng đơn hàng và tạm giữ số lượng
+              @supply_listing.increment!(:order_count)
+              @supply_listing.increment!(:pending_quantity, @supply_order.quantity)
+              
+              render json: {
+                status: "success",
+                message: "Đặt hàng thành công",
+                data: supply_order_json(@supply_order)
+              }, status: :created
+            else
+              raise ActiveRecord::Rollback
+              render json: {
+                status: "error",
+                message: "Không thể đặt hàng",
+                errors: @supply_order.errors
+              }, status: :unprocessable_entity
+            end
           end
         end
 
@@ -68,18 +73,24 @@ module Api
         def cancel
           # Chỉ có thể hủy đơn hàng ở trạng thái pending
           if @supply_order.pending?
-            if @supply_order.update(status: :cancelled)
-              render json: {
-                status: "success",
-                message: "Hủy đơn hàng thành công",
-                data: { status: @supply_order.status }
-              }
-            else
-              render json: {
-                status: "error",
-                message: "Không thể hủy đơn hàng",
-                errors: @supply_order.errors
-              }, status: :unprocessable_entity
+            ActiveRecord::Base.transaction do
+              if @supply_order.update(status: :cancelled)
+                # Giảm số lượng đang tạm giữ
+                @supply_order.supply_listing.decrement!(:pending_quantity, @supply_order.quantity)
+                
+                render json: {
+                  status: "success",
+                  message: "Hủy đơn hàng thành công",
+                  data: { status: @supply_order.status }
+                }
+              else
+                raise ActiveRecord::Rollback
+                render json: {
+                  status: "error",
+                  message: "Không thể hủy đơn hàng",
+                  errors: @supply_order.errors
+                }, status: :unprocessable_entity
+              end
             end
           else
             render json: {
@@ -96,7 +107,10 @@ module Api
             if @supply_order.update(status: :completed)
               # Cập nhật farm_materials của người dùng
               update_farm_materials
-
+              
+              # Giảm số lượng vật tư của nhà cung cấp
+              update_supplier_inventory
+              
               render json: {
                 status: "success",
                 message: "Xác nhận nhận hàng thành công",
@@ -204,25 +218,53 @@ module Api
         end
 
         def update_farm_materials
-          supply = @supply_order.supply_listing
+          ActiveRecord::Base.transaction do
+            supply = @supply_order.supply_listing
 
-          # Tìm hoặc tạo farm_material tương ứng
-          farm_material = current_user.farm_materials.find_or_initialize_by(
-            name: supply.name,
-            unit: supply.unit,
-            category: supply.category
-          )
+            # Tìm hoặc tạo farm_material tương ứng
+            farm_material = current_user.farm_materials.find_or_initialize_by(
+              name: supply.name,
+              unit: supply.unit,
+              category: supply.category
+            )
 
-          if farm_material.new_record?
-            # Nếu là vật tư mới
-            farm_material.quantity = @supply_order.quantity
-            farm_material.material_id = supply.id # Lưu id của supply_listing gốc
-            farm_material.last_updated = Time.current
-            farm_material.save
-          else
-            # Nếu đã có vật tư, cộng thêm số lượng
-            farm_material.increment!(:quantity, @supply_order.quantity)
-            farm_material.update(last_updated: Time.current)
+            if farm_material.new_record?
+              # Nếu là vật tư mới
+              farm_material.quantity = @supply_order.quantity
+              farm_material.material_id = supply.id # Lưu id của supply_listing gốc
+              farm_material.last_updated = Time.current
+              farm_material.save
+            else
+              # Nếu đã có vật tư, cộng thêm số lượng
+              farm_material.increment!(:quantity, @supply_order.quantity)
+              farm_material.update(last_updated: Time.current)
+            end
+          end
+        end
+
+        # Thêm phương thức cập nhật số lượng vật tư của nhà cung cấp
+        def update_supplier_inventory
+          ActiveRecord::Base.transaction do
+            supply_listing = @supply_order.supply_listing
+            quantity_ordered = @supply_order.quantity
+            
+            # Tăng số lượng đã bán thành công
+            supply_listing.increment!(:sold_quantity, quantity_ordered)
+            
+            # Xóa khỏi số lượng đang chờ xác nhận
+            supply_listing.decrement!(:pending_quantity, quantity_ordered) if supply_listing.pending_quantity > 0
+            
+            # Log hoạt động
+            ActivityLog.create(
+              user_id: current_user.id,
+              action_type: 'complete_order',
+              target_type: 'SupplyOrder',
+              target_id: @supply_order.id,
+              details: {
+                quantity: quantity_ordered,
+                product_name: supply_listing.name
+              }
+            )
           end
         end
       end

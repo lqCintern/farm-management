@@ -4,51 +4,105 @@ class FarmActivityService
     @user = user
   end
 
-  # Tạo mới hoạt động nông trại
-  # Thêm xử lý cho các hoạt động liên quan đến pineapple
+  # Tạo mới hoạt động nông trại - thêm xử lý materials
   def create_activity(params)
-    # Chuyển đổi status nếu là enum
-    if FarmActivity.defined_enums["status"] && params[:status].present?
-        params[:status] = params[:status].downcase # Chuyển thành chữ thường
+    # Tách materials khỏi params để xử lý riêng
+    materials = params.delete(:materials)
+    
+    # Đặt skip_materials_check = true để tránh validate materials khi chưa lưu
+    @farm_activity.skip_materials_check = true
+    
+    # Sử dụng transaction để đảm bảo tính nhất quán dữ liệu
+    ActiveRecord::Base.transaction do
+      # Gán thuộc tính từ params
+      @farm_activity.assign_attributes(params)
+      
+      if @farm_activity.save
+        # Xử lý materials nếu có
+        process_materials(materials) if materials.present?
+        
+        # Kiểm tra lại sau khi xử lý vật tư
+        if @farm_activity.requires_materials? && @farm_activity.activity_materials.reload.empty?
+          @farm_activity.errors.add(:base, "Hoạt động cần có ít nhất một vật tư")
+          raise ActiveRecord::Rollback
+        end
+        
+        # Cập nhật PineappleCrop nếu cần
+        update_pineapple_crop_if_needed
+      else
+        # Không lưu được, rollback
+        raise ActiveRecord::Rollback
+      end
+    end
+    
+    # Kiểm tra nếu có lỗi sau khi xử lý
+    return @farm_activity unless @farm_activity.persisted?
+    
+    # Kiểm tra lại nếu hoạt động yêu cầu vật tư nhưng không có
+    if @farm_activity.requires_materials? && @farm_activity.activity_materials.reload.empty?
+      @farm_activity.errors.add(:base, "Hoạt động cần có ít nhất một vật tư")
+      # Xóa record đã tạo nếu không có vật tư
+      @farm_activity.destroy
+    end
+    
+    @farm_activity
+  end
+
+  # Cập nhật hoạt động nông trại - thêm xử lý materials
+  def update_activity(params)
+    # Tách materials khỏi params để xử lý riêng
+    materials_params = params.delete(:materials)
+
+    # Sử dụng transaction để đảm bảo tính nhất quán dữ liệu
+    ActiveRecord::Base.transaction do
+      # Cập nhật farm_activity
+      @farm_activity.assign_attributes(params)
+      
+      if @farm_activity.save
+        # Xử lý materials nếu có
+        process_materials(materials_params) if materials_params.present?
+        return @farm_activity
+      else
+        raise ActiveRecord::Rollback
+        return @farm_activity
+      end
     end
 
-    @farm_activity.assign_attributes(params)
-    @farm_activity.user_id = @user.id
-
-    # Nếu hoạt động này liên quan đến pineapple_crop
-    update_pineapple_crop_if_needed if @farm_activity.save
-
     @farm_activity
   end
 
-  # Cập nhật hoạt động nông trại
-  def update_activity(params)
-    @farm_activity.assign_attributes(params)
-    @farm_activity.save
-    @farm_activity
-  end
-
-  # Xóa hoạt động nông trại
-  def destroy_activity
-    @farm_activity.destroy
-  end
-
-  # Đánh dấu hoàn thành hoạt động
+  # Đánh dấu hoàn thành hoạt động - cập nhật để xử lý vật tư
   def complete_activity(params)
-    # Cập nhật thông tin hoàn thành - logic đã có
+    # Cập nhật thông tin hoàn thành
     @farm_activity.actual_completion_date = Date.today
     @farm_activity.actual_notes = params[:actual_notes] if params[:actual_notes].present?
     @farm_activity.status = :completed
 
-    # Cập nhật vật tư sử dụng thực tế - logic đã có
-    if params[:actual_materials].present?
-      update_actual_materials(params[:actual_materials])
+    # Sử dụng transaction để đảm bảo tính nhất quán dữ liệu
+    ActiveRecord::Base.transaction do
+      # Cập nhật vật tư sử dụng thực tế
+      if params[:actual_materials].present?
+        success = update_actual_materials(params[:actual_materials])
+        unless success
+          raise ActiveRecord::Rollback
+          return { success: false, error: "Không đủ vật tư để hoàn thành hoạt động" }
+        end
+      end
+
+      if @farm_activity.save
+        # Cập nhật pineapple_crop sau khi hoàn thành hoạt động
+        update_pineapple_crop_after_completion
+        
+        # Bổ sung: Kiểm tra chuyển giai đoạn
+        suggestion = check_stage_completion
+        
+        return { success: true, suggestion: suggestion }
+      else
+        raise ActiveRecord::Rollback
+        return { success: false, error: @farm_activity.errors.full_messages.join(", ") }
+      end
     end
 
-    # Bổ sung: Kiểm tra chuyển giai đoạn
-    suggestion = check_stage_completion if @farm_activity.save
-
-    { success: true, suggestion: suggestion }
   rescue => e
     { success: false, error: e.message }
   end
@@ -133,5 +187,99 @@ class FarmActivityService
     end
 
     nil
+  end
+
+  # Thêm phương thức xử lý materials khi tạo/cập nhật activity
+  def process_materials(materials)
+    Rails.logger.info("Processing materials: #{materials.inspect}")
+    
+    # Xóa các liên kết cũ nếu là update
+    @farm_activity.activity_materials.destroy_all if @farm_activity.activity_materials.exists?
+    
+    # Tạo mới các liên kết
+    materials.each do |material_id, quantity|
+      Rails.logger.info("Processing material_id: #{material_id} (#{material_id.class.name}), quantity: #{quantity}")
+      
+      # Chuyển đổi material_id từ string sang integer
+      material_id = material_id.to_i if material_id.is_a?(String)
+      
+      material = @user.farm_materials.find_by(id: material_id)
+      Rails.logger.info("Found material: #{material ? 'Yes' : 'No'}")
+      
+      if material.nil?
+        Rails.logger.warn("Material #{material_id} not found for user #{@user.id}")
+        next
+      end
+      
+      if quantity.to_f <= 0
+        Rails.logger.warn("Quantity #{quantity} is not positive")
+        next
+      end
+      
+      activity_material = @farm_activity.activity_materials.create(
+        farm_material_id: material_id,
+        planned_quantity: quantity.to_f
+      )
+      
+      Rails.logger.info("Created activity_material: #{activity_material.persisted? ? 'Yes' : 'No'}")
+      if !activity_material.persisted?
+        Rails.logger.error("Failed to create activity_material: #{activity_material.errors.full_messages}")
+      end
+    end
+    
+    # Kiểm tra lại sau khi tạo
+    Rails.logger.info("Activity has materials? #{!@farm_activity.activity_materials.reload.empty?}")
+    
+    # Kiểm tra nếu activity yêu cầu materials nhưng không có
+    validate_materials_requirement
+  end
+  
+  # Phương thức kiểm tra yêu cầu vật tư
+  def validate_materials_requirement
+    # Sử dụng danh sách từ model để đảm bảo nhất quán
+    required_activities = FarmActivity::MATERIAL_REQUIRED_ACTIVITIES
+    
+    # Nếu hoạt động yêu cầu vật tư nhưng không có
+    if required_activities.include?(@farm_activity.activity_type.to_s) && @farm_activity.activity_materials.reload.empty?
+      @farm_activity.errors.add(:base, "Hoạt động này cần có ít nhất một vật tư")
+      return false
+    end
+    
+    true
+  end
+  
+  # Cập nhật vật tư thực tế sử dụng và giảm số lượng trong kho
+  def update_actual_materials(actual_materials)
+    actual_materials.each do |material_id, quantity|
+      quantity = quantity.to_f
+      next if quantity <= 0
+      
+      # Tìm liên kết activity_material
+      activity_material = @farm_activity.activity_materials.find_by(farm_material_id: material_id)
+      material = @user.farm_materials.find_by(id: material_id)
+      
+      # Kiểm tra xem còn đủ vật tư không
+      if material.nil? || material.quantity < quantity
+        return false # Không đủ vật tư
+      end
+      
+      # Nếu không tìm thấy, tạo mới liên kết
+      unless activity_material
+        activity_material = @farm_activity.activity_materials.create(
+          farm_material_id: material_id,
+          planned_quantity: quantity,
+          actual_quantity: quantity
+        )
+      else
+        activity_material.update(actual_quantity: quantity)
+      end
+      
+      # Giảm số lượng vật tư trong kho
+      material.quantity -= quantity
+      material.last_updated = Time.current
+      material.save
+    end
+    
+    true
   end
 end

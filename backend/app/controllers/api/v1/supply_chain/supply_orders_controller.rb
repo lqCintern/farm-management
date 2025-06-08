@@ -35,58 +35,82 @@ module Api
           # Lưu trạng thái cũ để xử lý logic
           old_status = @supply_order.status
 
-          if params[:status].present?
-            case params[:status]
-            when "confirmed"
-              @supply_order.status = :confirmed
-            when "shipped"
-              @supply_order.status = :shipped
-            when "delivered"
-              @supply_order.status = :delivered
-            when "rejected"
-              @supply_order.status = :rejected
-              @supply_order.rejection_reason = params[:rejection_reason]
-            end
-          end
-
-          if @supply_order.save
-            # Xử lý cập nhật số lượng khi từ chối đơn hàng đã xác nhận
-            if old_status == "confirmed" && @supply_order.rejected?
-              @supply_order.supply_listing.increment!(:quantity, @supply_order.quantity)
-            end
-
-            # Xử lý cập nhật số lượng khi xác nhận đơn hàng
-            if @supply_order.confirmed? && old_status == "pending"
-              # Kiểm tra và cập nhật số lượng tồn kho
-              listing = @supply_order.supply_listing
-              if listing.quantity >= @supply_order.quantity
-                listing.decrement!(:quantity, @supply_order.quantity)
-
-                # Nếu hết hàng, đổi trạng thái
-                if listing.quantity <= 0
-                  listing.update(status: :sold_out)
+          ActiveRecord::Base.transaction do
+            if params[:status].present?
+              case params[:status]
+              when "confirmed"
+                # Xác nhận đơn hàng
+                @supply_order.status = :confirmed
+                
+                # Kiểm tra số lượng tồn kho thực tế
+                listing = @supply_order.supply_listing
+                if listing.quantity >= @supply_order.quantity
+                  # Giảm số lượng tồn kho thực tế
+                  listing.decrement!(:quantity, @supply_order.quantity)
+                  
+                  # Giảm số lượng đang tạm giữ
+                  listing.decrement!(:pending_quantity, @supply_order.quantity)
+                  
+                  # Cập nhật trạng thái nếu hết hàng
+                  if listing.quantity <= 0
+                    listing.update(status: :sold_out)
+                  end
+                else
+                  # Không đủ hàng để xác nhận
+                  @supply_order.update(status: :rejected, rejection_reason: "Số lượng vật tư không đủ")
+                  raise ActiveRecord::Rollback
+                  render json: {
+                    status: "error",
+                    message: "Số lượng vật tư không đủ để đáp ứng đơn hàng"
+                  }, status: :unprocessable_entity
+                  return
                 end
-              else
-                @supply_order.update(status: :rejected, rejection_reason: "Số lượng vật tư không đủ")
-                render json: {
-                  status: "error",
-                  message: "Số lượng vật tư không đủ để đáp ứng đơn hàng"
-                }, status: :unprocessable_entity
-                return
+                
+              when "shipped"
+                # Chuyển sang trạng thái đang giao hàng
+                @supply_order.status = :shipped
+                
+              when "delivered"
+                # Chuyển sang trạng thái đã giao hàng
+                @supply_order.status = :delivered
+                
+              when "rejected"
+                # Từ chối đơn hàng
+                @supply_order.status = :rejected
+                @supply_order.rejection_reason = params[:rejection_reason]
+                
+                # Nếu đơn đã được xác nhận, cần trả lại số lượng vật tư
+                if old_status == "confirmed"
+                  @supply_order.supply_listing.increment!(:quantity, @supply_order.quantity)
+                  
+                  # Cập nhật lại trạng thái nếu trước đó là hết hàng
+                  if @supply_order.supply_listing.status == "sold_out" && @supply_order.supply_listing.quantity > 0
+                    @supply_order.supply_listing.update(status: :active)
+                  end
+                elsif old_status == "pending"
+                  # Nếu từ chối đơn đang chờ, giảm số lượng đang tạm giữ
+                  @supply_order.supply_listing.decrement!(:pending_quantity, @supply_order.quantity)
+                end
               end
             end
 
-            render json: {
-              status: "success",
-              message: "Cập nhật trạng thái đơn hàng thành công",
-              data: supply_order_json(@supply_order)
-            }
-          else
-            render json: {
-              status: "error",
-              message: "Không thể cập nhật đơn hàng",
-              errors: @supply_order.errors
-            }, status: :unprocessable_entity
+            if @supply_order.save
+              # Ghi nhật ký hoạt động
+              log_order_activity(old_status, @supply_order.status)
+              
+              render json: {
+                status: "success",
+                message: "Cập nhật trạng thái đơn hàng thành công",
+                data: supply_order_json(@supply_order)
+              }
+            else
+              raise ActiveRecord::Rollback
+              render json: {
+                status: "error",
+                message: "Không thể cập nhật đơn hàng",
+                errors: @supply_order.errors
+              }, status: :unprocessable_entity
+            end
           end
         end
 
@@ -181,6 +205,22 @@ module Api
               message: "Bạn không có quyền truy cập chức năng này"
             }, status: :forbidden
           end
+        end
+
+        # Thêm phương thức ghi nhật ký
+        def log_order_activity(old_status, new_status)
+          ActivityLog.create(
+            user_id: current_user.id,
+            action_type: "order_status_change",
+            target_type: 'SupplyOrder',
+            target_id: @supply_order.id,
+            details: {
+              old_status: old_status,
+              new_status: new_status,
+              order_quantity: @supply_order.quantity,
+              product_name: @supply_order.supply_listing.name
+            }
+          )
         end
       end
     end

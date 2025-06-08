@@ -62,7 +62,7 @@ module Api
           if farm_activity.errors.empty?
             # Thêm thông báo nhắc nhở nếu hoạt động sắp diễn ra
             if farm_activity.start_date.present? && farm_activity.start_date < 7.days.from_now
-              Notification::FarmNotificationService.new.activity_reminder(farm_activity)
+              ::Notification::FarmNotificationService.new.activity_reminder(farm_activity)
             end
 
             render json: {
