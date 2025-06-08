@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_05_181411) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_08_042215) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -37,6 +37,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_05_181411) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "activity_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "action_type", null: false
+    t.string "target_type"
+    t.bigint "target_id"
+    t.json "details"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action_type"], name: "index_activity_logs_on_action_type"
+    t.index ["target_type", "target_id"], name: "index_activity_logs_on_target_type_and_target_id"
+    t.index ["user_id"], name: "index_activity_logs_on_user_id"
   end
 
   create_table "activity_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -475,6 +488,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_05_181411) do
     t.string "address"
     t.integer "view_count", default: 0
     t.integer "order_count", default: 0
+    t.decimal "pending_quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "sold_quantity", precision: 10, scale: 2, default: "0.0"
     t.index ["category"], name: "index_supply_listings_on_category"
     t.index ["province"], name: "index_supply_listings_on_province"
     t.index ["status"], name: "index_supply_listings_on_status"
@@ -530,6 +545,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_05_181411) do
   end
 
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "activity_logs", "users", primary_key: "user_id"
   add_foreign_key "activity_materials", "farm_activities"
   add_foreign_key "activity_materials", "farm_materials"
   add_foreign_key "conversations", "product_listings"

@@ -1,66 +1,83 @@
 class ApiRendererService
-  def self.render_farm_activities(activities, pagy, options = {})
+  def self.render_farm_activities(activities, pagy = nil, options = {})
     # Kiểm tra nếu activities là nil hoặc mảng rỗng
     return { farm_activities: [] } if activities.nil? || activities.empty?
 
+    # Đảm bảo include materials trong options
+    options[:include] ||= []
+    options[:include] << :activity_materials unless options[:include].include?(:activity_materials)
+    options[:include] << :farm_materials unless options[:include].include?(:farm_materials)
+
     begin
-      # Lấy dữ liệu từ serializer
-      serialized_data = FarmActivitySerializer.new(activities, options).serializable_hash
-
-      # Kiểm tra nếu serialized_data không có data
-      if serialized_data.nil? || !serialized_data[:data]
-        Rails.logger.warn("FarmActivitySerializer returned nil or no data")
-        return { farm_activities: [] }
-      end
-
-      # Đảm bảo data luôn là array
-      data_array = serialized_data[:data].is_a?(Array) ? serialized_data[:data] : [ serialized_data[:data] ]
-      return { farm_activities: [] } if data_array.empty?
-
-      # Chuyển đổi từ định dạng JSON:API sang định dạng phẳng hơn
-      flattened_activities = data_array.map do |item|
-        next unless item && item[:attributes]
-        attributes = item[:attributes].dup
-
-        # Thêm ID từ resource vào attributes
-        attributes[:id] = item[:id].to_i
-
-        # Nếu có include, xử lý chúng
-        if serialized_data[:included].present?
-          related_materials = serialized_data[:included].select do |included|
-            included[:type] == "activity_material" &&
-            included.dig(:relationships, :farm_activity, :data, :id) == item[:id]
-          end
-
-          attributes[:materials] = related_materials.map do |material|
-            material[:attributes].merge(id: material[:id].to_i)
-          end
-        end
-
-        attributes
-      end.compact
-
-      result = {
-        farm_activities: flattened_activities
-      }
-
-      # Thêm thông tin phân trang nếu có
-      if pagy
-        result[:pagination] = {
-          current_page: pagy.page,
-          next_page: pagy.next,
-          prev_page: pagy.prev,
-          total_pages: pagy.pages,
-          total_items: pagy.count
+      # Chuyển đổi activities thành format mong muốn
+      activities_array = activities.respond_to?(:to_a) ? activities.to_a : [activities].compact
+      
+      # Tạo mảng kết quả từng activity
+      farm_activities = activities_array.map do |activity|
+        # Lấy thuộc tính cơ bản
+        result = activity.attributes.symbolize_keys
+        
+        # Thêm các thuộc tính tính toán
+        result[:status_label] = activity.status_i18n if activity.respond_to?(:status_i18n)
+        
+        # Thêm status_details nếu có
+        result[:status_details] = {
+          starting_soon: (activity.start_date - Date.today) <= 3,
+          ending_soon: (activity.end_date - Date.today) <= 3,
+          overdue: activity.end_date < Date.today,
+          overdue_days: [0, (Date.today - activity.end_date).to_i].max
         }
+        
+        # Thêm requires_materials
+        required_activities = %w[fertilizing pesticide planting]
+        result[:requires_materials] = required_activities.include?(activity.activity_type)
+        
+        # Lấy và thêm materials
+        materials = []
+        activity_materials = activity.activity_materials.to_a
+        
+        if activity_materials.any?
+          materials = activity_materials.map do |am|
+            material = am.farm_material
+            next unless material
+            
+            {
+              id: material.id,
+              name: material.name,
+              quantity: am.planned_quantity,
+              unit: material.unit
+            }
+          end.compact
+        end
+        
+        # Gán danh sách materials
+        result[:materials] = materials
+        
+        result
       end
-
-      result
+      
+      # Thêm pagination nếu có
+      response = { farm_activities: farm_activities }
+      if pagy
+        response[:pagination] = pagy_metadata(pagy)
+      end
+      
+      response
     rescue => e
-      # Log lỗi để debug
       Rails.logger.error("Error in render_farm_activities: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
       { farm_activities: [] }
     end
+  end
+  
+  # Helper method để sử dụng với pagy
+  def self.pagy_metadata(pagy)
+    {
+      current_page: pagy.page,
+      next_page: pagy.next,
+      prev_page: pagy.prev, 
+      total_pages: pagy.pages,
+      total_items: pagy.count
+    }
   end
 end

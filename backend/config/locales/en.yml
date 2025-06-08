@@ -29,3 +29,10 @@
 
 en:
   hello: "Hello world"
+  supply_listing:
+    categories:
+      fertilizer: "Fertilizer"
+      pesticide: "Pesticide"
+      seed: "Seed"
+      equipment: "Equipment"
+      other: "Other"

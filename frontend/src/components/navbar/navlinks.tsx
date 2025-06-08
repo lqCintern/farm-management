@@ -31,7 +31,24 @@ const navlinksConfig: Record<string, any[]> = {
       ],
     },
     {
-      id: 5, // Thêm ID mới để tránh xung đột
+      id: 3,
+      name: "Vật tư nông nghiệp",
+      subLinks: [
+        { name: "Danh sách vật tư", href: "/farmer/listings" },
+        { name: "Đơn hàng của tôi", href: "/farmer/orders" },
+      ],
+    },
+    {
+      id: 4,
+      name: "Đăng tải",
+      subLinks: [
+        { name: "New Product", href: "/products/create" },
+        { name: "Products", href: "/products" },
+        { name: "Orders", href: "/orders" },
+      ],
+    },
+    {
+      id: 5,
       name: "Đổi công",
       subLinks: [
         { name: "Tổng quan", href: "/labor" },
@@ -45,40 +62,44 @@ const navlinksConfig: Record<string, any[]> = {
       ],
     },
     {
-      id: 3,
-      name: "Đăng tải",
+      id: 6,
+      name: "Liên hệ",
       subLinks: [
-        { name: "New Product", href: "/products/create" },
-        { name: "Products", href: "/products" },
-        { name: "Orders", href: "/orders" },
-      ],
-    },
-    {
-      id: 4,
-      name: "Contact Us",
-      subLinks: [
-        { name: "Contact", href: "/contact" },
-        { name: "Location", href: "/location" },
+        { name: "Liên hệ", href: "/contact" },
+        { name: "Địa điểm", href: "/location" },
       ],
     },
   ],
   supplier: [
     {
       id: 1,
-      name: "Dashboard",
+      name: "Bảng điều khiển",
       subLinks: [
         { name: "Overview", href: "/supplier/dashboard" },
-        { name: "Listings", href: "/supplier/listings-management" },
-        { name: "Orders", href: "/supplier/orders" },
       ],
     },
     {
       id: 2,
-      name: "Contact Us",
+      name: "Quản lý vật tư",
       subLinks: [
-        { name: "Contact", href: "/contact" },
-        { name: "Location", href: "/location" },
-      ], 
+        { name: "Danh sách vật tư", href: "/supplier/listings" },
+        { name: "Tạo vật tư mới", href: "/supplier/listings/create" },
+      ],
+    },
+    {
+      id: 3,
+      name: "Đơn hàng",
+      subLinks: [
+        { name: "Đơn hàng nhận được", href: "/supplier/orders" },
+      ],
+    },
+    {
+      id: 4,
+      name: "Liên hệ",
+      subLinks: [
+        { name: "Liên hệ", href: "/contact" },
+        { name: "Địa điểm", href: "/location" },
+      ],
     },
   ],
   trader: [

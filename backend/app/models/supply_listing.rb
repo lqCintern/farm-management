@@ -21,11 +21,26 @@ class SupplyListing < ApplicationRecord
   scope :by_category, ->(category) { where(category: category) if category.present? }
   scope :by_province, ->(province) { where(province: province) if province.present? }
 
+  # Thêm các trường quản lý số lượng
+  after_initialize :set_default_quantities, if: :new_record?
+
+  # Số lượng có sẵn để đặt hàng = quantity - pending_quantity
+  def available_quantity
+    quantity - (pending_quantity || 0)
+  end
+
   def update_stock_after_order(ordered_quantity)
     new_quantity = self.quantity - ordered_quantity
     self.update(
       quantity: new_quantity,
       status: new_quantity <= 0 ? :sold_out : :active
     )
+  end
+
+  private
+
+  def set_default_quantities
+    self.pending_quantity ||= 0
+    self.sold_quantity ||= 0
   end
 end

@@ -105,7 +105,7 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :supply_orders, only: [ :index, :show, :update ] do
+        resources :supply_orders, only: [:index, :show, :update] do
           member do
             patch :cancel
             patch :complete
@@ -115,20 +115,20 @@ Rails.application.routes.draw do
         get "dashboard", to: "supply_orders#dashboard"
 
         # Routes cho nông dân
-        resources :farmer_supply_listings, only: [ :index, :show ] do
+        resources :farmer_supply_listings, only: [:index, :show] do
           collection do
-            get :categories
+            get :categories # Bổ sung route cho categories
           end
         end
 
-        resources :farmer_supply_orders, only: [ :index, :show, :create ] do
+        resources :farmer_supply_orders, only: [:index, :show, :create] do
           member do
             patch :cancel
             patch :complete
           end
         end
 
-        resources :supplier_reviews, only: [ :create ]
+        resources :supplier_reviews, only: [:create]
         get "suppliers/:id/reviews", to: "supplier_reviews#supplier_reviews"
       end
 
