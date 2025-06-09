@@ -36,7 +36,7 @@ module Api
           end
 
           # Nếu không có mùa vụ hiện tại, tạo mùa vụ mới
-          service = PineappleCropService.new(PineappleCrop.new, current_user)
+          service = ::Farming::PineappleCropService.new(PineappleCrop.new, current_user)
           pineapple_crop = service.create(pineapple_crop_params)
 
           if pineapple_crop.errors.empty?
@@ -50,7 +50,7 @@ module Api
         end
 
         def update
-          service = PineappleCropService.new(@pineapple_crop, current_user)
+          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
           pineapple_crop = service.update(pineapple_crop_params)
 
           if pineapple_crop.errors.empty?
@@ -72,7 +72,7 @@ module Api
         end
 
         def generate_plan
-          service = PineappleCropService.new(@pineapple_crop, current_user)
+          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
 
           if service.generate_full_plan
             render json: {
@@ -85,7 +85,7 @@ module Api
         end
 
         def advance_stage
-          service = PineappleCropService.new(@pineapple_crop, current_user)
+          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
 
           if service.advance_to_next_stage
             render json: {
@@ -98,7 +98,7 @@ module Api
         end
 
         def record_harvest
-          service = PineappleCropService.new(@pineapple_crop, current_user)
+          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
 
           if service.record_harvest(params[:quantity].to_f)
             render json: {
@@ -112,7 +112,7 @@ module Api
 
         def preview_plan
           crop_params = pineapple_crop_params
-          service = PineappleCropService.new(nil, current_user)
+          service = ::Farming::PineappleCropService.new(nil, current_user)
           preview_activities = service.preview_plan(crop_params)
 
           render json: {
@@ -123,7 +123,7 @@ module Api
         def confirm_plan
           activities_params = params.require(:activities) # array các công đoạn đã chỉnh sửa
 
-          service = PineappleCropService.new(@pineapple_crop, current_user)
+          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
           created_activities = service.save_plan(activities_params)
 
           render json: {
@@ -151,7 +151,7 @@ module Api
         end
 
         def clean_activities
-          service = PineappleCropService.new(@pineapple_crop, current_user)
+          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
 
           if service.clean_and_regenerate
             render json: { message: "Đã dọn dẹp và tạo lại hoạt động thành công" }, status: :ok

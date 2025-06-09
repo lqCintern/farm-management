@@ -1,6 +1,6 @@
 # app/models/conversation.rb
 class Conversation < ApplicationRecord
-  belongs_to :product_listing, optional: true
+  belongs_to :product_listing, class_name: "Marketplace::ProductListing", optional: true
   belongs_to :sender, class_name: "User", foreign_key: "sender_id", primary_key: "user_id"
   belongs_to :receiver, class_name: "User", foreign_key: "receiver_id", primary_key: "user_id"
 

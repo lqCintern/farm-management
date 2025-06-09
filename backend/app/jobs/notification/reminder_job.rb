@@ -24,7 +24,7 @@ module NotificationJob
       tomorrow = Date.tomorrow.beginning_of_day
       tomorrow_end = Date.tomorrow.end_of_day
 
-      FarmActivity.includes(:user, :field)
+      Farming::FarmActivity.includes(:user, :field)
                   .where("start_date BETWEEN ? AND ?", tomorrow, tomorrow_end)
                   .where(status: [ "pending", "in_progress" ])
                   .find_each do |activity|
@@ -45,7 +45,7 @@ module NotificationJob
       # Tìm các hoạt động đã quá hạn nhưng chưa hoàn thành
       yesterday = Date.yesterday.end_of_day
 
-      FarmActivity.includes(:user, :field)
+      Farming::FarmActivity.includes(:user, :field)
                   .where("end_date < ?", yesterday)
                   .where.not(status: "completed")
                   .find_each do |activity|
