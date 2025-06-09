@@ -21,6 +21,7 @@ import {
   ToolOutlined,
   PhoneOutlined,
   DashboardOutlined,
+  CloudOutlined, // Thêm import này
 } from '@ant-design/icons';
 import { Button } from 'antd';
 
@@ -196,6 +197,13 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
       ],
     },
     {
+      title: 'Thời tiết',
+      icon: <CloudOutlined />,
+      children: [
+        { title: 'Dự báo thời tiết', path: '/climate' },
+      ],
+    },
+    {
       title: 'Liên hệ',
       icon: <PhoneOutlined />,
       children: [
@@ -227,6 +235,13 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
       icon: <ShoppingCartOutlined />,
       children: [
         { title: 'Đơn hàng nhận được', path: '/supplier/orders' },
+      ],
+    },
+    {
+      title: 'Thời tiết',
+      icon: <CloudOutlined />,
+      children: [
+        { title: 'Dự báo thời tiết', path: '/climate' },
       ],
     },
     {
@@ -264,6 +279,13 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
         { title: 'New Product', path: '/products/create' },
         { title: 'Products', path: '/products' },
         { title: 'Categories', path: '/categories' },
+      ],
+    },
+    {
+      title: 'Thời tiết',
+      icon: <CloudOutlined />,
+      children: [
+        { title: 'Dự báo thời tiết', path: '/climate' },
       ],
     },
     {

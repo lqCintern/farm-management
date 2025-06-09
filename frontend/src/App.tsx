@@ -73,6 +73,7 @@ import SupplierCreateListingPage from './pages/SupplyChain/Supplier/CreateListin
 import SupplierEditListingPage from './pages/SupplyChain/Supplier/EditListingPage';
 import SupplierOrdersReceivedPage from './pages/SupplyChain/Supplier/OrdersReceivedPage';
 import SupplierOrderDetailPage from './pages/SupplyChain/Supplier/OrderDetailPage';
+import WeatherDashboardPage from './pages/climate/WeatherDashboardPage';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -160,6 +161,9 @@ const router = createBrowserRouter(
       <Route path="/supplier/listings/:id/edit" element={<SupplierEditListingPage />} />
       <Route path="/supplier/orders" element={<SupplierOrdersReceivedPage />} />
       <Route path="/supplier/orders/:id" element={<SupplierOrderDetailPage />} />
+
+      {/* Weather Routes */}
+      <Route path="/climate" element={<WeatherDashboardPage />} />
     </Route>
   )
 );

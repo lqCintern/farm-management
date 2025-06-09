@@ -2,7 +2,7 @@ import React from "react";
 
 interface CalendarHeaderProps {
   view: string;
-  onViewChange: (viewName: string) => void;
+  onViewChange: (view: string) => void;
   calendarType: "grid" | "bloc";
   onCalendarTypeChange: (type: "grid" | "bloc") => void;
 }
@@ -13,88 +13,105 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   calendarType,
   onCalendarTypeChange,
 }) => {
-  // Xử lý click cho nút Today trong BigCalendar
+  // Xử lý click vào nút Today
   const handleTodayClick = () => {
-    // Nếu đang ở chế độ grid, thay đổi view về today
-    if (calendarType === "grid") {
-      const calendarApi = document.querySelector(".fc")?.classList.contains("fc")
-        ? (document.querySelector(".fc") as any)?.querySelector(".fc-today-button")
-        : null;
-
-      if (calendarApi) {
-        calendarApi.click();
-      }
+    // Phân tán sự kiện cho lịch bloc nếu đang ở chế độ bloc
+    if (calendarType === "bloc") {
+      window.dispatchEvent(new CustomEvent("bloc-calendar-today"));
     } else {
-      // Kích hoạt một sự kiện tùy chỉnh để BlocCalendar có thể bắt và xử lý
-      const event = new CustomEvent("bloc-calendar-today");
-      window.dispatchEvent(event);
+      // Xử lý cho lịch grid
+      const calendarElement = document.querySelector(".fc");
+      const todayButton = calendarElement?.querySelector(".fc-today-button");
+
+      if (todayButton) {
+        (todayButton as HTMLButtonElement).click();
+      }
     }
   };
 
   return (
-    <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+    <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
       <div>
-        <button
-          className="px-3 py-1 bg-green-500 text-white rounded mr-2 hover:bg-green-600"
-          onClick={handleTodayClick}
-        >
-          Hôm nay
-        </button>
+        <h2 className="text-xl font-semibold text-gray-800 mb-1">
+          Lịch hoạt động
+        </h2>
+        <p className="text-sm text-gray-500">
+          Quản lý các hoạt động nông trại của bạn
+        </p>
       </div>
 
-      <div className="flex items-center space-x-1">
-        <span className="text-sm text-gray-600 mr-1">Chế độ xem:</span>
+      <div className="flex items-center space-x-3">
+        {/* Nút "Hôm nay" */}
+        <button
+          className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium rounded-md 
+                     border border-blue-200 transition-colors flex items-center gap-1.5 text-sm shadow-sm"
+          onClick={handleTodayClick}
+        >
+          <span className="w-4 h-4 flex items-center justify-center text-xs bg-blue-600 text-white rounded-full">
+            {new Date().getDate()}
+          </span>
+          Hôm nay
+        </button>
 
-        {/* Grid/Bloc toggle */}
-        <div className="flex border border-gray-300 rounded overflow-hidden">
+        {/* Grid/Bloc toggle - đặt Bloc đầu tiên */}
+        <div className="flex border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <button
-            className={`px-3 py-1 text-sm ${
-              calendarType === "grid" ? "bg-blue-500 text-white" : "bg-gray-100"
-            }`}
-            onClick={() => onCalendarTypeChange("grid")}
-          >
-            Lưới
-          </button>
-          <button
-            className={`px-3 py-1 text-sm ${
-              calendarType === "bloc" ? "bg-blue-500 text-white" : "bg-gray-100"
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              calendarType === "bloc"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
             onClick={() => onCalendarTypeChange("bloc")}
           >
             Bloc
           </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              calendarType === "grid"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+            onClick={() => onCalendarTypeChange("grid")}
+          >
+            Lưới
+          </button>
         </div>
 
         {/* View options (disabled when in bloc view) */}
-        <div className="flex border border-gray-300 rounded overflow-hidden ml-2">
-          <button
-            className={`px-3 py-1 text-sm ${
-              view === "dayGridMonth" ? "bg-blue-500 text-white" : "bg-gray-100"
-            } ${calendarType === "bloc" ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={() => calendarType !== "bloc" && onViewChange("dayGridMonth")}
-            disabled={calendarType === "bloc"}
-          >
-            Tháng
-          </button>
-          <button
-            className={`px-3 py-1 text-sm ${
-              view === "timeGridWeek" ? "bg-blue-500 text-white" : "bg-gray-100"
-            } ${calendarType === "bloc" ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={() => calendarType !== "bloc" && onViewChange("timeGridWeek")}
-            disabled={calendarType === "bloc"}
-          >
-            Tuần
-          </button>
-          <button
-            className={`px-3 py-1 text-sm ${
-              view === "timeGridDay" ? "bg-blue-500 text-white" : "bg-gray-100"
-            } ${calendarType === "bloc" ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={() => calendarType !== "bloc" && onViewChange("timeGridDay")}
-            disabled={calendarType === "bloc"}
-          >
-            Ngày
-          </button>
-        </div>
+        {calendarType === "grid" && (
+          <div className="flex border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <button
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                view === "dayGridMonth"
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => onViewChange("dayGridMonth")}
+            >
+              Tháng
+            </button>
+            <button
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                view === "timeGridWeek"
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => onViewChange("timeGridWeek")}
+            >
+              Tuần
+            </button>
+            <button
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                view === "timeGridDay"
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => onViewChange("timeGridDay")}
+            >
+              Ngày
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

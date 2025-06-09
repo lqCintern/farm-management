@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_08_042215) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_09_044512) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -544,6 +544,34 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_08_042215) do
     t.datetime "reset_password_sent_at"
   end
 
+  create_table "weather_forecasts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "field_id"
+    t.string "location_name", null: false
+    t.float "latitude", null: false
+    t.float "longitude", null: false
+    t.json "current_data"
+    t.json "hourly_forecast"
+    t.json "daily_forecast"
+    t.datetime "last_updated_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["field_id"], name: "index_weather_forecasts_on_field_id"
+    t.index ["latitude", "longitude"], name: "index_weather_forecasts_on_latitude_and_longitude"
+  end
+
+  create_table "weather_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "temperature_unit", default: "metric"
+    t.float "default_latitude"
+    t.float "default_longitude"
+    t.string "default_location_name"
+    t.boolean "alert_enabled", default: false
+    t.json "alert_conditions"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_weather_settings_on_user_id"
+  end
+
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "activity_logs", "users", primary_key: "user_id"
   add_foreign_key "activity_materials", "farm_activities"
@@ -591,4 +619,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_08_042215) do
   add_foreign_key "supplier_reviews", "users", column: "supplier_id", primary_key: "user_id"
   add_foreign_key "supply_images", "supply_listings"
   add_foreign_key "supply_orders", "supply_listings"
+  add_foreign_key "weather_forecasts", "fields"
+  add_foreign_key "weather_settings", "users", primary_key: "user_id"
 end

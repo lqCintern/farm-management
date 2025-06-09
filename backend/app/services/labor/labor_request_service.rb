@@ -177,7 +177,7 @@ module Labor
         end
 
         # Nếu là parent request, hủy tất cả child request luôn
-        if request.original_request? && request.has_clones?
+        if request.original_request? && request.child_requests.exists?
           request.child_requests.update_all(status: :cancelled)
         end
 

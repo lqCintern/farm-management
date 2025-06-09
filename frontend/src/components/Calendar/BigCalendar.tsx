@@ -25,7 +25,7 @@ interface BigCalendarProps {
   setClickedDate: React.Dispatch<React.SetStateAction<string>>;
   setEvents: React.Dispatch<React.SetStateAction<any[]>>;
   farmActivities: FarmActivity[];
-  laborRequests?: any[]; // Thêm prop này
+  laborRequests?: any[]; 
 }
 
 export default function BigCalendar({
@@ -39,7 +39,7 @@ export default function BigCalendar({
   const [selectedEvent, setSelectedEvent] = useState<FarmActivity | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
   const [view, setView] = useState<string>("dayGridMonth");
-  const [calendarType, setCalendarType] = useState<"grid" | "bloc">("grid");
+  const [calendarType, setCalendarType] = useState<"grid" | "bloc">("bloc");
 
   // Áp dụng thay đổi view khi state thay đổi
   useEffect(() => {
@@ -145,7 +145,6 @@ export default function BigCalendar({
   useEffect(() => {
     // Xử lý Farm Activities
     const farmActivityEvents = farmActivities.map((activity) => {
-      // Mã xử lý hiện tại
       return {
         id: `activity-${activity.id}`,
         title: activity.description,
@@ -205,7 +204,7 @@ export default function BigCalendar({
   }, [calendarType]);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 w-full">
+    <div className="bg-white rounded-lg shadow-lg p-5 w-full font-sans">
       <CalendarHeader
         view={view}
         onViewChange={handleViewChange}
@@ -215,7 +214,7 @@ export default function BigCalendar({
 
       {calendarType === "grid" ? (
         // Hiển thị dạng lịch lưới
-        <div className="rounded-lg overflow-hidden border border-gray-200">
+        <div className="rounded-lg overflow-hidden border border-gray-200 calendar-container">
           <FullCalendar
             plugins={[
               dayGridPlugin,
@@ -270,13 +269,127 @@ export default function BigCalendar({
         />
       )}
 
-      <CalendarLegend />
+      <div className="mt-4">
+        <CalendarLegend />
+      </div>
 
       <EventPopup
         event={selectedEvent}
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
       />
+
+      {/* Thêm CSS tùy chỉnh */}
+      <style>{`
+        /* Cải thiện font và kích thước */
+        .calendar-container {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        /* Cải thiện header và tiêu đề */
+        .fc .fc-toolbar-title {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #344767;
+        }
+        
+        /* Cải thiện nút trong lịch */
+        .fc .fc-button {
+          background-color: #f0f9ff;
+          border-color: #e0f2fe;
+          color: #0369a1;
+          font-weight: 500;
+          box-shadow: none;
+          transition: all 0.2s;
+          padding: 0.4rem 0.8rem;
+          border-radius: 0.375rem;
+        }
+        
+        .fc .fc-button:hover {
+          background-color: #0ea5e9;
+          border-color: #0ea5e9;
+          color: white;
+        }
+        
+        .fc .fc-button-primary:not(:disabled).fc-button-active,
+        .fc .fc-button-primary:not(:disabled):active {
+          background-color: #0284c7;
+          border-color: #0284c7;
+        }
+        
+        /* Cải thiện cell ngày */
+        .fc-day {
+          transition: background-color 0.2s;
+        }
+        
+        .fc-day:hover {
+          background-color: #f0f9ff;
+        }
+        
+        .fc-day-today {
+          background-color: #f0f9ff !important;
+          border: 1px solid #7dd3fc !important;
+        }
+        
+        .fc-daygrid-day-number {
+          font-size: 1rem;
+          padding: 0.5rem;
+          color: #334155;
+          font-weight: 500;
+        }
+        
+        /* Cải thiện event */
+        .fc-event {
+          border-radius: 6px;
+          padding: 2px 4px;
+          margin-bottom: 2px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+          border-left: 3px solid #1a73e8;
+        }
+        
+        /* Màu sắc cho header và title */
+        .fc .fc-col-header-cell-cushion {
+          color: #475569;
+          font-weight: 600;
+          padding: 10px 4px;
+        }
+        
+        .fc-theme-standard th {
+          background-color: #f8fafc;
+          border-color: #e2e8f0;
+        }
+        
+        /* Màu sắc và khoảng cách cho grid */
+        .fc-theme-standard td, 
+        .fc-theme-standard th {
+          border-color: #e2e8f0;
+        }
+        
+        /* Cải thiện khung giờ trong timeGrid */
+        .fc-timegrid-slot-label {
+          font-size: 0.8rem;
+          color: #64748b;
+        }
+        
+        /* Làm cho event popup trông tốt hơn */
+        .fc-popover {
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          border: none;
+        }
+        
+        .fc-popover-header {
+          background-color: #f8fafc;
+          padding: 8px 10px;
+          font-weight: 600;
+        }
+        
+        /* Làm cho "more" link trông tốt hơn */
+        .fc-daygrid-more-link {
+          color: #0284c7;
+          font-weight: 500;
+        }
+      `}</style>
     </div>
   );
 }
