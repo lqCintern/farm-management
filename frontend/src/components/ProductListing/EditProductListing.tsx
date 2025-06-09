@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, Steps, Button, message } from "antd";
+import { Card, Steps, Button, message, Typography, Upload, Modal } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import {
   getProductListingById,
   updateProductListing,
-  ProductListing,
 } from "@/services/marketplace/productListingsService";
 import BasicInfoSection from "./CreateForm/BasicInfoSection";
 import PricingSection from "./CreateForm/PricingSection";
 import LocationSection from "./CreateForm/LocationSection";
 import HarvestInfoSection from "./CreateForm/HarvestInfoSection";
-import ImageUploadSection from "./CreateForm/ImageUploadSection";
 
 const { Step } = Steps;
+const { Title } = Typography;
 
 export default function EditProductListing() {
   const { id } = useParams<{ id: string }>();
@@ -23,18 +23,28 @@ export default function EditProductListing() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formValues, setFormValues] = useState<any>({});
-  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<any[]>([]);
+  
+  // Thay thế các state phức tạp bằng một state fileList đơn giản
+  const [fileList, setFileList] = useState<any[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTitle, setPreviewTitle] = useState("");
+  
+  // Thêm state để theo dõi trạng thái upload
+  const [uploading, setUploading] = useState(false);
 
+  // Fetch product data
   useEffect(() => {
     const fetchProductData = async () => {
       if (!id) return;
 
       try {
         setInitialLoading(true);
-        const response = await getProductListingById(parseInt(id));
-        const product = (response as { product_listing: ProductListing })
-          .product_listing;
+        const response = await getProductListingById(parseInt(id)) as {
+          product_listing: any;
+          product_images: any[];
+        };
+        const product = response.product_listing;
 
         // Initialize form values
         setFormValues({
@@ -52,11 +62,28 @@ export default function EditProductListing() {
           harvest_end_date: product.harvest_end_date || null,
           crop_animal_id: product.crop_animal_id || null,
           status: product.status || 1,
+          // Additional fields
+          latitude: product.latitude || null,
+          longitude: product.longitude || null,
+          pineapple_crop: product.pineapple_crop || null,
+          google_maps_url: product.google_maps_url || "",
         });
 
-        // Load existing images
-        if (product.product_images && product.product_images.length > 0) {
-          setExistingImages(product.product_images);
+        console.log("Product images:", response.product_images);
+
+        // Load existing images directly into fileList
+        if (response.product_images && response.product_images.length > 0) {
+          const existingImages = response.product_images.map((img: any, index: number) => ({
+            uid: `existing-${img.id}`,
+            name: `image-${index + 1}.jpg`,
+            status: 'done', // Status "done" ngay từ đầu
+            url: img.image_url,
+            thumbUrl: img.image_url,
+            isExisting: true,
+            imageId: img.id,
+          }));
+          
+          setFileList(existingImages);
         }
       } catch (err: any) {
         console.error("Failed to fetch product data:", err);
@@ -70,51 +97,55 @@ export default function EditProductListing() {
     fetchProductData();
   }, [id, navigate]);
 
-  const handleImageUpload = (file: File) => {
-    setUploadedImages((prev) => [...prev, file]);
-    return false; // Prevent default upload
+  // Handle image preview like in CreateListingPage
+  const handleImagePreview = (file: any) => {
+    setPreviewImage(file.url || file.thumbUrl);
+    setPreviewOpen(true);
+    setPreviewTitle(file.name || "Hình ảnh");
   };
 
-  const handleRemoveImage = (file: File) => {
-    setUploadedImages((prev) => prev.filter((f) => f !== file));
-  };
-
-  const handleRemoveExistingImage = (imageId: number) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+  // Handle image change like in CreateListingPage
+  const handleImageChange = ({ fileList: newFileList, file }: any) => {
+    console.log("File change event:", file);
+    
+    // Đánh dấu các file mới với trạng thái done
+    const updatedFileList = newFileList.map((file: any) => {
+      // Nếu file đang trong trạng thái uploading, chuyển sang done
+      if (file.status === 'uploading') {
+        return { ...file, status: 'done' };
+      }
+      return file;
+    });
+    
+    // Kiểm tra xem file có originFileObj không
+    updatedFileList.forEach((file: any, index: number) => {
+      if (!file.isExisting && !file.originFileObj && file.status === 'done') {
+        console.warn(`File at index ${index} missing originFileObj:`, file);
+      }
+    });
+    
+    setFileList(updatedFileList);
+    
+    // Kiểm tra còn file nào đang upload không
+    const hasUploading = updatedFileList.some((f: any) => f.status === 'uploading');
+    setUploading(hasUploading);
   };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Required fields validation
-    if (!formValues.title) newErrors.title = "Vui lòng nhập tiêu đề";
-    if (!formValues.product_type)
+    // Minimum validation
+    if (!formValues.title || formValues.title.trim() === "") {
+      newErrors.title = "Vui lòng nhập tiêu đề";
+    }
+    
+    if (!formValues.product_type) {
       newErrors.product_type = "Vui lòng chọn loại sản phẩm";
-    if (!formValues.province) newErrors.province = "Vui lòng chọn tỉnh/thành";
-    if (!formValues.district) newErrors.district = "Vui lòng chọn quận/huyện";
-    if (!formValues.ward) newErrors.ward = "Vui lòng chọn phường/xã";
-
-    // Numeric validation
-    if (formValues.quantity !== null && formValues.quantity <= 0) {
-      newErrors.quantity = "Số lượng phải lớn hơn 0";
     }
 
-    if (
-      formValues.price_expectation !== null &&
-      formValues.price_expectation <= 0
-    ) {
-      newErrors.price_expectation = "Giá mong muốn phải lớn hơn 0";
-    }
-
-    // Date validation
-    if (formValues.harvest_start_date && formValues.harvest_end_date) {
-      const start = new Date(formValues.harvest_start_date);
-      const end = new Date(formValues.harvest_end_date);
-
-      if (end < start) {
-        newErrors.harvest_end_date =
-          "Ngày kết thúc thu hoạch phải sau ngày bắt đầu";
-      }
+    // For debugging
+    if (Object.keys(newErrors).length > 0) {
+      console.log("Validation errors:", newErrors);
     }
 
     setErrors(newErrors);
@@ -122,14 +153,24 @@ export default function EditProductListing() {
   };
 
   const handleSubmit = async () => {
+    // Kiểm tra xem có ảnh đang upload không
+    if (uploading) {
+      message.warning("Vui lòng đợi tải ảnh hoàn tất trước khi cập nhật");
+      return;
+    }
+    
     if (!validate()) {
       message.error("Vui lòng kiểm tra lại thông tin");
       return;
     }
 
-    if (!id) return;
+    if (!id) {
+      message.error("Không tìm thấy ID sản phẩm");
+      return;
+    }
 
     setIsLoading(true);
+    console.log("Bắt đầu cập nhật sản phẩm...");
 
     try {
       const formData = new FormData();
@@ -137,45 +178,174 @@ export default function EditProductListing() {
       // Append form values
       Object.entries(formValues).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== "") {
-          formData.append(`product_listing[${key}]`, String(value));
+          // Skip complex objects
+          if (key !== "pineapple_crop" && typeof value !== 'object') {
+            formData.append(`product_listing[${key}]`, String(value));
+          }
         }
       });
 
-      // Append new images
-      uploadedImages.forEach((image) => {
-        formData.append("images[]", image);
+      // Process images EXACTLY like in CreateListingPage
+      const newImages: File[] = [];
+      const retainedImageIds: number[] = [];
+      
+      // Kiểm tra xem có file nào đang ở trạng thái uploading
+      const hasUploadingFiles = fileList.some(file => file.status === 'uploading');
+      if (hasUploadingFiles) {
+        setIsLoading(false);
+        message.warning("Vui lòng đợi tải ảnh hoàn tất");
+        return;
+      }
+      
+      console.log("All files before processing:", fileList);
+
+      // Separate files into new and existing
+      fileList.forEach(file => {
+        if (file.isExisting && file.imageId) {
+          retainedImageIds.push(file.imageId);
+          console.log(`Added existing image ID ${file.imageId} to retained list`);
+        } else if (file.originFileObj) {
+          newImages.push(file.originFileObj);
+          console.log(`Added new image ${file.name} to upload list`);
+        } else {
+          console.warn("File missing required properties:", file);
+        }
       });
+      
+      console.log("New images to upload:", newImages.length);
+      console.log("Existing images to retain:", retainedImageIds);
+      
+      // Add new images to formData
+      if (newImages.length > 0) {
+        newImages.forEach(image => {
+          formData.append("images[]", image);
+          console.log(`Appended image to formData: ${image.name}, size: ${image.size}`);
+        });
+      }
+      
+      // Add retained image IDs
+      if (retainedImageIds.length > 0) {
+        // Sử dụng cú pháp có dấu [] để backend hiểu đây là array
+        retainedImageIds.forEach(imageId => {
+          formData.append("retained_image_ids[]", String(imageId));
+          console.log(`Added retained_image_ids[]: ${imageId}`);
+        });
+      } else {
+        // Thêm một phần tử rỗng để backend biết đây là mảng rỗng
+        formData.append("retained_image_ids[]", "");
+        console.log("Added empty retained_image_ids[]");
+      }
+      
+      // Log all form data keys for debugging
+      console.log("Form data keys:", Array.from(formData.keys()));
+      
+      // In trước khi gửi API để kiểm tra
+      for (let [key, value] of formData.entries()) {
+        if (key === "images[]") {
+          const file = value as File;
+          console.log(`${key}: ${file.name} (${file.size} bytes)`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
 
-      // Append retained image IDs
-      existingImages.forEach((image) => {
-        formData.append("retained_image_ids[]", String(image.id));
-      });
-
-      // Gọi API cập nhật sản phẩm
-      const response = (await updateProductListing(parseInt(id), formData)) as {
-        message: string;
-      };
-
-      // Hiển thị thông báo thành công
-      message.success(response.message || "Cập nhật sản phẩm thành công");
-
-      // Điều hướng về trang chi tiết sản phẩm
+      // Call API
+      const response = await updateProductListing(parseInt(id), formData);
+      message.success("Cập nhật sản phẩm thành công");
       navigate(`/products/${id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating product:", error);
-      message.error("Đã có lỗi xảy ra khi cập nhật sản phẩm");
+      message.error(
+        error.response?.data?.message || "Đã có lỗi xảy ra khi cập nhật sản phẩm"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const next = () => {
-    setCurrent(current + 1);
+    if (validate()) {
+      setCurrent(current + 1);
+    } else {
+      message.error("Vui lòng điền đầy đủ thông tin cần thiết");
+    }
   };
 
   const prev = () => {
     setCurrent(current - 1);
   };
+
+  // Image section component - similar to CreateListingPage
+  const ImageSection = () => (
+    <div className="my-4">
+      <Title level={5}>Hình ảnh sản phẩm</Title>
+      <div className="mb-4">
+        <p className="text-gray-500">
+          Thêm hình ảnh rõ nét sẽ giúp sản phẩm của bạn được chú ý hơn (tối đa 5 ảnh)
+        </p>
+      </div>
+
+      <Upload
+        listType="picture-card"
+        fileList={fileList}
+        onPreview={handleImagePreview}
+        onChange={handleImageChange}
+        multiple
+        maxCount={5}
+        customRequest={({ file, onSuccess }) => {
+          // Gọi onSuccess ngay lập tức, không dùng setTimeout
+          onSuccess && onSuccess("ok");
+          // Không dùng setTimeout vì nó gây ra trạng thái uploading kéo dài
+        }}
+        beforeUpload={(file) => {
+          const isImage = file.type.startsWith('image/');
+          if (!isImage) {
+            message.error('Chỉ được tải lên file hình ảnh!');
+            return false;
+          }
+          const isLt5M = file.size / 1024 / 1024 < 5;
+          if (!isLt5M) {
+            message.error('Hình ảnh phải nhỏ hơn 5MB!');
+            return false;
+          }
+          return true;
+        }}
+      >
+        {fileList.length >= 5 ? null : (
+          <div>
+            <PlusOutlined />
+            <div style={{ marginTop: 8 }}>Tải lên</div>
+          </div>
+        )}
+      </Upload>
+
+      <Modal
+        open={previewOpen}
+        title={previewTitle}
+        footer={null}
+        onCancel={() => setPreviewOpen(false)}
+      >
+        <img
+          alt="preview"
+          style={{ width: '100%' }}
+          src={previewImage || ''}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFNUU3RUIiLz48cGF0aCBkPSJNOTAgODVDOTAgODguODY2IDg2Ljg2NiA5MiA4MyA9MkM3OS4xMzQgOTIgNzYgODguODY2IDc2IDg1Qzc2IDgxLjEzNCA3OS4xMzQgNzggODMgNzhDODYuODY2IDc4IDkwIDgxLjEzNCA5MCA4NVoiIGZpbGw9IiM5Q0EzQUYiLz48cGF0aCBkPSJNMTI0IDE1Mi4yNUw1MS4yNSA3MUw3MCA1MEwxMTAgOTBMMTYwIDU1TDE4NSA4NUwxMjQgMTUyLjI1WiIgc3Ryb2tlPSIjOUNBM0FGIiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+";
+          }}
+        />
+      </Modal>
+      
+      {/* Debug information */}
+      <div className="mt-4 text-gray-500 text-sm">
+        <p>Tổng số ảnh: {fileList.length}/5</p>
+        <p>Ảnh đã tải lên: {fileList.filter(file => file.originFileObj).length}</p>
+        <p>Ảnh hiện có: {fileList.filter(file => file.isExisting).length}</p>
+        {uploading && <p className="text-yellow-500">Đang tải lên...</p>}
+      </div>
+
+      {/* Loại bỏ nút Cập nhật ở đây để tránh trùng lặp */}
+    </div>
+  );
 
   const steps = [
     {
@@ -220,49 +390,7 @@ export default function EditProductListing() {
     },
     {
       title: "Hình ảnh",
-      content: (
-        <div>
-          {existingImages.length > 0 && (
-            <div className="mb-6">
-              <h4 className="mb-3">Hình ảnh hiện tại</h4>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {existingImages.map((image) => (
-                  <div key={image.id} className="relative group">
-                    <img
-                      src={image.image_url}
-                      alt="Product"
-                      className="w-full h-24 object-cover rounded-md"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        danger
-                        size="small"
-                        onClick={() => handleRemoveExistingImage(image.id)}
-                      >
-                        Xóa
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <ImageUploadSection
-            uploadedImages={uploadedImages.map((file) => ({
-                url: URL.createObjectURL(file),
-                name: file.name,
-                uid: file.name,
-              }))}
-            onUpload={handleImageUpload}
-            onRemove={handleRemoveImage}
-          />
-
-          <p className="text-gray-500 mt-2">
-            Tối đa 5 ảnh bao gồm cả ảnh hiện tại và ảnh mới.
-          </p>
-        </div>
-      ),
+      content: <ImageSection />,
     },
   ];
 
@@ -298,8 +426,13 @@ export default function EditProductListing() {
             )}
 
             {current === steps.length - 1 && (
-              <Button type="primary" onClick={handleSubmit} loading={isLoading}>
-                Cập nhật
+              <Button 
+                type="primary" 
+                onClick={handleSubmit} 
+                loading={isLoading}
+                disabled={isLoading || uploading}
+              >
+                {uploading ? "Đang tải ảnh..." : "Cập nhật sản phẩm"}
               </Button>
             )}
           </div>

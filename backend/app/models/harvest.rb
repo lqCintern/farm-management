@@ -1,7 +1,7 @@
 class Harvest < ApplicationRecord
   # Quan hệ
   belongs_to :user, foreign_key: :user_id
-  belongs_to :crop_animal, foreign_key: :crop_id
+  belongs_to :pineapple_crop, foreign_key: :crop_animal_id, optional: true
   belongs_to :field, optional: true
   belongs_to :farm_activity, optional: true
 

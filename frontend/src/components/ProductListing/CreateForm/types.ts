@@ -21,6 +21,12 @@ export interface FormValues {
   harvest_end_date: string | null;
   crop_animal_id?: number | null;
   status: number;
+  pineapple_crop?: {
+    field_id?: string;
+    variety?: string;
+    current_stage?: string;
+  };
+  google_maps_url?: string;
 }
 
 export interface SectionProps {

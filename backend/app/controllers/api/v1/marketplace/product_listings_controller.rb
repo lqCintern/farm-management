@@ -112,11 +112,43 @@ module Api
             max_size = params[:product_listing][:max_size].to_f
             params[:product_listing][:average_size] = (min_size + max_size) / 2
           end
+          
+          # Xử lý hình ảnh mới nếu có
+          if params[:images].present?
+            # Log để debug
+            Rails.logger.info "Processing #{params[:images].length} new images"
+            
+            params[:images].each_with_index do |image, index|
+              # Tìm vị trí cuối cùng
+              last_position = @product_listing.product_images.maximum(:position) || -1
+              new_position = last_position + index + 1
+              
+              # Tạo ảnh mới
+              img = @product_listing.product_images.build(position: new_position)
+              img.image.attach(image)
+              Rails.logger.info "Attached new image at position #{new_position}"
+            end
+          end
+          
+          # Xử lý retained_image_ids nếu có
+          if params[:retained_image_ids].present?
+            retained_ids = params[:retained_image_ids].reject(&:blank?).map(&:to_i)
+            Rails.logger.info "Retaining image IDs: #{retained_ids.inspect}"
+            
+            # Xóa các ảnh không còn trong danh sách giữ lại
+            @product_listing.product_images.where.not(id: retained_ids).destroy_all
+            Rails.logger.info "Deleted images not in retained list"
+          elsif params[:retained_image_ids] == [""] || params[:retained_image_ids] == []
+            # Nếu retained_image_ids là mảng rỗng, xóa tất cả ảnh cũ
+            Rails.logger.info "Empty retained_image_ids, deleting all existing images"
+            @product_listing.product_images.destroy_all
+          end
 
           if @product_listing.update(product_listing_params)
             render json: {
               message: "Sản phẩm đã được cập nhật thành công",
-              product_listing: @product_listing
+              product_listing: @product_listing,
+              product_images: @product_listing.product_images.map(&:image_url)
             }
           else
             render json: { errors: @product_listing.errors.full_messages }, status: :unprocessable_entity

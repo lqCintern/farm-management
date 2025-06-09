@@ -1,0 +1,61 @@
+.weather-widget-card {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.weather-panel {
+  width: 100%;
+}
+
+.weather-content {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 15px;
+}
+
+.weather-content.compact {
+  grid-template-columns: 1fr;
+}
+
+.weather-loading, .weather-error {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.temperature-display {
+  display: flex;
+  align-items: center;
+}
+
+.temperature-display.compact {
+  font-size: 1rem;
+}
+
+.current-weather.compact ul {
+  margin-top: 0;
+}
+
+/* Tabs styling */
+.weather-panel .ant-tabs-nav {
+  margin-bottom: 8px;
+}
+
+.weather-panel .ant-tabs-tab {
+  padding: 6px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .weather-content {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .col-span-5, .col-span-7 {
+    grid-column: span 12;
+  }
+}

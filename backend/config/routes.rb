@@ -251,6 +251,15 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      # Module Climate
+      namespace :climate do
+        get 'weather/current', to: 'weather#current'
+        get 'weather/forecast', to: 'weather#forecast'
+        get 'weather/field/:id/forecast', to: 'weather#field_forecast'
+        
+        resources :weather_settings, only: [:show, :update]
+      end
     end
   end
 end

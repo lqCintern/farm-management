@@ -13,7 +13,7 @@ import Login from "./pages/login";
 import ForgotPassword from "./pages/login/forgotPassword";
 import ResetPassword from "./pages/login/resetPassword";
 import Register from "./pages/register";
-import Products from "./pages/products";
+import ProductListingsPage from "./pages/marketplace/ProductListingsPage";
 import ProductDetailPage from "./pages/products/[id]";
 import CreateProductPage from "./pages/products/create";
 import EditProductPage from "@/pages/products/edit";
@@ -73,6 +73,7 @@ import SupplierCreateListingPage from './pages/SupplyChain/Supplier/CreateListin
 import SupplierEditListingPage from './pages/SupplyChain/Supplier/EditListingPage';
 import SupplierOrdersReceivedPage from './pages/SupplyChain/Supplier/OrdersReceivedPage';
 import SupplierOrderDetailPage from './pages/SupplyChain/Supplier/OrderDetailPage';
+import WeatherDashboardPage from './pages/climate/WeatherDashboardPage';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -84,7 +85,7 @@ const router = createBrowserRouter(
       <Route path={routes.register.index} element={<Register />} />
       <Route path={routes.forgotPassword.index} element={<ForgotPassword />} />
       <Route path={routes.resetPassword.index} element={<ResetPassword />} />
-      <Route path={routes.products.index} element={<Products />} />
+      <Route path={routes.products.index} element={<ProductListingsPage />} />
       <Route path={routes.cart.index} element={<CartPage />} />
       <Route path={routes.products.create} element={<CreateProductPage />} />
       <Route
@@ -160,6 +161,9 @@ const router = createBrowserRouter(
       <Route path="/supplier/listings/:id/edit" element={<SupplierEditListingPage />} />
       <Route path="/supplier/orders" element={<SupplierOrdersReceivedPage />} />
       <Route path="/supplier/orders/:id" element={<SupplierOrderDetailPage />} />
+
+      {/* Weather Routes */}
+      <Route path="/climate" element={<WeatherDashboardPage />} />
     </Route>
   )
 );
