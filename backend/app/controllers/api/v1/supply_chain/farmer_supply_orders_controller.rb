@@ -47,6 +47,7 @@ module Api
             @supply_order.supply_listing_id = @supply_listing.id
             @supply_order.price = @supply_listing.price
             @supply_order.purchase_date = Time.current
+            @supply_order.supply_id = @supply_listing.id
             
             if @supply_order.save
               # Tăng số lượng đơn hàng và tạm giữ số lượng

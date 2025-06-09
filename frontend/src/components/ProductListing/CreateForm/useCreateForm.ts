@@ -141,6 +141,21 @@ export const useCreateForm = () => {
         }
       });
 
+      // THÊM ĐOẠN CODE NÀY: Xử lý uploadedImages riêng
+      if (uploadedImages.length > 0) {
+        // Log để debug
+        console.log(`Appending ${uploadedImages.length} images to FormData`);
+
+        // Thêm từng file ảnh vào formData với key "images[]"
+        uploadedImages.forEach((image) => {
+          formData.append("images[]", image);
+          console.log(`Added image: ${image.name}, size: ${image.size}`);
+        });
+      }
+
+      // Log toàn bộ keys trong formData để kiểm tra
+      console.log("FormData keys:", Array.from(formData.keys()));
+
       await createProductListing(formData);
       message.success("Sản phẩm đã được đăng thành công");
       navigate("/products"); // Redirect to products page

@@ -13,6 +13,9 @@ const HarvestInfoSection: React.FC<SectionProps> = ({
 }) => {
   const [dateError, setDateError] = useState<string | null>(null);
 
+  // Kiểm tra nếu đã có thông tin từ pineapple_crop
+  const hasCropInfo = formValues.pineapple_crop && formValues.pineapple_crop.current_stage === "harvesting";
+
   const handleDateRangeChange = (dates: any) => {
     if (dates && dates.length === 2) {
       // Kiểm tra ngày bắt đầu < ngày kết thúc
@@ -54,6 +57,17 @@ const HarvestInfoSection: React.FC<SectionProps> = ({
   return (
     <div>
       <Title level={4}>Thông tin thu hoạch</Title>
+      
+      {hasCropInfo && (
+        <Alert
+          message="Trạng thái cây trồng: Đang thu hoạch"
+          description="Hệ thống đã xác định cây trồng của bạn đang trong giai đoạn thu hoạch."
+          type="success"
+          showIcon
+          className="mb-4"
+        />
+      )}
+
       <Text type="secondary" className="mb-4 block">
         Chọn khoảng thời gian sẵn sàng thu hoạch sản phẩm
       </Text>
@@ -61,7 +75,6 @@ const HarvestInfoSection: React.FC<SectionProps> = ({
       <Form layout="vertical" className="mt-4">
         <Form.Item
           label="Thời gian thu hoạch"
-          required
           validateStatus={(errors.harvest_start_date || errors.harvest_end_date || dateError) ? "error" : ""}
           help={dateError || errors.harvest_start_date || errors.harvest_end_date}
         >
@@ -83,7 +96,7 @@ const HarvestInfoSection: React.FC<SectionProps> = ({
         {formValues.harvest_start_date && formValues.harvest_end_date && !dateError && (
           <Alert
             message="Thông tin thu hoạch"
-            description={`Sản phẩm sẽ sẵn sàng để thu hoạch từ ${dayjs(formValues.harvest_start_date).format('DD/MM/YYYY')} 
+            description={`Sản phẩm sẵn sàng thu hoạch từ ${dayjs(formValues.harvest_start_date).format('DD/MM/YYYY')} 
             đến ${dayjs(formValues.harvest_end_date).format('DD/MM/YYYY')}`}
             type="info"
             showIcon

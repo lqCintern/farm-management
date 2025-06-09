@@ -1,0 +1,39 @@
+.side-nav {
+  overflow-y: auto;
+  height: calc(100vh - 64px); /* Chiều cao của viewport trừ đi chiều cao của navbar */
+}
+
+/* Hiệu ứng hover cho menu items */
+.side-nav-item:hover {
+  background-color: rgba(0, 178, 7, 0.05);
+}
+
+/* Hiệu ứng active cho menu items */
+.side-nav-item.active {
+  background-color: rgba(0, 178, 7, 0.1);
+  color: #00b207;
+  border-left: 3px solid #00b207;
+}
+
+/* Animation cho submenu */
+.submenu-enter {
+  max-height: 0;
+  opacity: 0;
+}
+
+.submenu-enter-active {
+  max-height: 500px;
+  opacity: 1;
+  transition: max-height 300ms, opacity 300ms;
+}
+
+.submenu-exit {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.submenu-exit-active {
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 300ms, opacity 300ms;
+}

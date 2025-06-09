@@ -37,6 +37,17 @@ export interface ProductListing {
   location_text?: string;
   google_maps_url?: string;
   thumbnail?: string;
+  seller_detail?: {
+    user_name?: string;
+    fullname?: string;
+    phone?: string;
+  };
+  pineapple_crop?: {
+    variety?: string;
+    planting_date?: string;
+    current_stage?: string;
+    field_id?: string;
+  };
 }
 
 export interface ProductListingFilters {
@@ -82,18 +93,30 @@ export const createProductListing = async (productData: FormData) => {
   return response.data;
 };
 
-export const updateProductListing = async (
-  id: number,
-  productData: FormData
-) => {
-  const response = await axiosInstance.put(
-    `/marketplace/product_listings/${id}`,
-    productData,
-    {
-      headers: { "Content-Type": "multipart/form-data" },
-    }
-  );
-  return response.data;
+export const updateProductListing = async (id: number, formData: FormData) => {
+  console.log("Updating product listing id:", id);
+  console.log("Form data keys:", Array.from(formData.keys()));
+  
+  try {
+    // Đảm bảo content type là 'multipart/form-data'
+    const response = await axiosInstance.put(
+      `/marketplace/product_listings/${id}`, 
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    
+    // Log kết quả trả về từ API
+    console.log("API response:", response.data);
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error in updateProductListing API call:", error);
+    throw error;
+  }
 };
 
 export const deleteProductListing = async (id: number) => {

@@ -24,7 +24,7 @@ const FieldMap: React.FC<FieldMapProps> = ({
   const mapRef = useRef(null);
 
   return (
-    <div className="h-[600px]">
+    <div className="h-[600px] relative z-0"> {/* Thêm z-0 để đảm bảo z-index thấp */}
       <MapContainer
         center={[20.14, 105.848]}
         zoom={17}
@@ -32,8 +32,10 @@ const FieldMap: React.FC<FieldMapProps> = ({
           width: "100%",
           height: "100%",
           borderRadius: "0.5rem",
+          zIndex: 0, // Thêm z-index explicit
         }}
         ref={mapRef}
+        className="leaflet-container" // Thêm class để có thể ghi đè z-index
       >
         {/* Custom Panes */}
         <CustomPane name="base" zIndex={100} />

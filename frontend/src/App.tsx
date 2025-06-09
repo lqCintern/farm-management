@@ -13,7 +13,7 @@ import Login from "./pages/login";
 import ForgotPassword from "./pages/login/forgotPassword";
 import ResetPassword from "./pages/login/resetPassword";
 import Register from "./pages/register";
-import Products from "./pages/products";
+import ProductListingsPage from "./pages/marketplace/ProductListingsPage";
 import ProductDetailPage from "./pages/products/[id]";
 import CreateProductPage from "./pages/products/create";
 import EditProductPage from "@/pages/products/edit";
@@ -84,7 +84,7 @@ const router = createBrowserRouter(
       <Route path={routes.register.index} element={<Register />} />
       <Route path={routes.forgotPassword.index} element={<ForgotPassword />} />
       <Route path={routes.resetPassword.index} element={<ResetPassword />} />
-      <Route path={routes.products.index} element={<Products />} />
+      <Route path={routes.products.index} element={<ProductListingsPage />} />
       <Route path={routes.cart.index} element={<CartPage />} />
       <Route path={routes.products.create} element={<CreateProductPage />} />
       <Route
