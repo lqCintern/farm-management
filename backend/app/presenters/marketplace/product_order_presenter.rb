@@ -77,7 +77,8 @@ module Marketplace
 
     def self.format_show_response(result)
       if result[:success]
-        { order: as_detail(result[:order]) }
+        # Sửa: tạo instance mới và gọi as_detail trên instance đó
+        { order: new(result[:order]).as_detail }
       else
         { error: result[:error] }
       end

@@ -46,25 +46,6 @@ module Repositories
         map_to_entity(record) if record
       end
 
-      def create(harvest_entity)
-        record = ::Marketplace::MarketplaceHarvest.new(
-          scheduled_date: harvest_entity.scheduled_date,
-          location: harvest_entity.location,
-          notes: harvest_entity.notes,
-          estimated_quantity: harvest_entity.estimated_quantity,
-          actual_quantity: harvest_entity.actual_quantity,
-          estimated_price: harvest_entity.estimated_price,
-          final_price: harvest_entity.final_price,
-          status: harvest_entity.status,
-          trader_id: harvest_entity.trader_id,
-          product_listing_id: harvest_entity.product_listing_id,
-          product_order_id: harvest_entity.product_order_id
-        )
-
-        return nil unless record.save
-        map_to_entity(record)
-      end
-
       def update(harvest_entity)
         record = ::Marketplace::MarketplaceHarvest.find_by(id: harvest_entity.id)
         return nil unless record
@@ -129,17 +110,22 @@ module Repositories
           location: entity.location,
           notes: entity.notes,
           estimated_quantity: entity.estimated_quantity,
+          actual_quantity: entity.actual_quantity, # Thêm từ phiên bản đầu
           estimated_price: entity.estimated_price,
+          final_price: entity.final_price, # Thêm từ phiên bản đầu
+          status: entity.status || "scheduled",
           trader_id: entity.trader_id,
           product_listing_id: entity.product_listing_id,
-          status: entity.status || "scheduled"
+          product_order_id: entity.product_order_id # Thêm từ phiên bản đầu
         }
 
-        record = ::Marketplace::MarketplaceHarvest.create(attributes)
-
-        if record.persisted?
+        record = ::Marketplace::MarketplaceHarvest.new(attributes)
+        
+        if record.save
           map_to_entity(record)
         else
+          # Giữ lại thông tin lỗi
+          Rails.logger.error("Failed to create harvest: #{record.errors.full_messages.join(', ')}")
           nil
         end
       end
@@ -204,7 +190,7 @@ module Repositories
         return nil unless record
 
         Entities::Marketplace::ProductListing.new(
-          id: record.product_listing_id,
+          id: record.id,
           title: record.title,
           status: record.status,
           product_type: record.product_type,

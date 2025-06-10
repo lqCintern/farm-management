@@ -30,8 +30,11 @@ module Marketplace
         end
 
         if result[:success]
-          # Thêm thông báo cho các bên
-          @notification_service.order_status_updated(order_id, old_status)
+          # Lấy order đã cập nhật từ kết quả
+          updated_order = result[:order]
+          
+          # Truyền object order thay vì order_id
+          @notification_service.order_status_updated(updated_order, old_status)
         end
 
         result

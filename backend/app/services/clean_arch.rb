@@ -352,6 +352,204 @@ module CleanArch
       )
     end
 
+    def farming_get_farm_activity_history_by_field
+      @farming_get_farm_activity_history_by_field ||= Farming::FarmActivities::GetFarmActivityHistoryByField.new(
+        farming_farm_activity_repository
+      )
+    end
+
+    # Farm Material Repositories
+    def farming_farm_material_repository
+      @farming_farm_material_repository ||= Repositories::Farming::FarmMaterialRepository.new
+    end
+
+    # Farm Material Use Cases
+    def farming_list_farm_materials
+      @farming_list_farm_materials ||= Farming::FarmMaterials::ListFarmMaterials.new(
+        farming_farm_material_repository
+      )
+    end
+
+    def farming_get_farm_material
+      @farming_get_farm_material ||= Farming::FarmMaterials::GetFarmMaterial.new(
+        farming_farm_material_repository
+      )
+    end
+
+    def farming_create_farm_material
+      @farming_create_farm_material ||= Farming::FarmMaterials::CreateFarmMaterial.new(
+        farming_farm_material_repository
+      )
+    end
+
+    def farming_update_farm_material
+      @farming_update_farm_material ||= Farming::FarmMaterials::UpdateFarmMaterial.new(
+        farming_farm_material_repository
+      )
+    end
+
+    def farming_delete_farm_material
+      @farming_delete_farm_material ||= Farming::FarmMaterials::DeleteFarmMaterial.new(
+        farming_farm_material_repository
+      )
+    end
+
+    # Repositories
+    def farming_pineapple_activity_template_repository
+      @farming_pineapple_activity_template_repository ||= Repositories::Farming::PineappleActivityTemplateRepository.new
+    end
+
+    # Use Cases
+    def farming_list_pineapple_activity_templates
+      @farming_list_pineapple_activity_templates ||= Farming::PineappleActivityTemplates::ListPineappleActivityTemplates.new(
+        farming_pineapple_activity_template_repository
+      )
+    end
+
+    def farming_get_pineapple_activity_template
+      @farming_get_pineapple_activity_template ||= Farming::PineappleActivityTemplates::GetPineappleActivityTemplate.new(
+        farming_pineapple_activity_template_repository
+      )
+    end
+
+    def farming_create_pineapple_activity_template
+      @farming_create_pineapple_activity_template ||= Farming::PineappleActivityTemplates::CreatePineappleActivityTemplate.new(
+        farming_pineapple_activity_template_repository
+      )
+    end
+
+    def farming_update_pineapple_activity_template
+      @farming_update_pineapple_activity_template ||= Farming::PineappleActivityTemplates::UpdatePineappleActivityTemplate.new(
+        farming_pineapple_activity_template_repository
+      )
+    end
+
+    def farming_delete_pineapple_activity_template
+      @farming_delete_pineapple_activity_template ||= Farming::PineappleActivityTemplates::DeletePineappleActivityTemplate.new(
+        farming_pineapple_activity_template_repository
+      )
+    end
+
+    def farming_apply_template_to_activities
+      @farming_apply_template_to_activities ||= Farming::PineappleActivityTemplates::ApplyTemplateToActivities.new(
+        farming_pineapple_activity_template_repository
+      )
+    end
+
+    # Repositories
+    def farming_field_repository
+      @farming_field_repository ||= Repositories::Farming::FieldRepository.new
+    end
+
+    # Use Cases
+    def farming_list_fields
+      @farming_list_fields ||= Farming::Fields::ListFields.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_get_field
+      @farming_get_field ||= Farming::Fields::GetField.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_create_field
+      @farming_create_field ||= Farming::Fields::CreateField.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_update_field
+      @farming_update_field ||= Farming::Fields::UpdateField.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_delete_field
+      @farming_delete_field ||= Farming::Fields::DeleteField.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_get_field_activities
+      @farming_get_field_activities ||= Farming::Fields::GetFieldActivities.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_get_field_harvests
+      @farming_get_field_harvests ||= Farming::Fields::GetFieldHarvests.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_get_field_pineapple_crops
+      @farming_get_field_pineapple_crops ||= Farming::Fields::GetFieldPineappleCrops.new(
+        farming_field_repository
+      )
+    end
+
+    def farming_get_field_stats
+      @farming_get_field_stats ||= Farming::Fields::GetFieldStats.new(
+        farming_field_repository
+      )
+    end
+
+    # Repositories
+    def farming_harvest_repository
+      @farming_harvest_repository ||= Repositories::Farming::HarvestRepository.new
+    end
+
+    # Use Cases
+    def farming_list_harvests
+      @farming_list_harvests ||= Farming::Harvests::ListHarvests.new(
+        farming_harvest_repository
+      )
+    end
+
+    def farming_get_harvest
+      @farming_get_harvest ||= Farming::Harvests::GetHarvest.new(
+        farming_harvest_repository
+      )
+    end
+
+    def farming_get_harvests_by_crop
+      @farming_get_harvests_by_crop ||= Farming::Harvests::GetHarvestsByCrop.new(
+        farming_harvest_repository
+      )
+    end
+
+    def farming_get_harvests_by_field
+      @farming_get_harvests_by_field ||= Farming::Harvests::GetHarvestsByField.new(
+        farming_harvest_repository
+      )
+    end
+
+    def farming_create_harvest
+      @farming_create_harvest ||= Farming::Harvests::CreateHarvest.new(
+        farming_harvest_repository
+      )
+    end
+
+    def farming_update_harvest
+      @farming_update_harvest ||= Farming::Harvests::UpdateHarvest.new(
+        farming_harvest_repository
+      )
+    end
+
+    def farming_delete_harvest
+      @farming_delete_harvest ||= Farming::Harvests::DeleteHarvest.new(
+        farming_harvest_repository
+      )
+    end
+
+    def farming_get_harvest_stats
+      @farming_get_harvest_stats ||= Farming::Harvests::GetHarvestStats.new(
+        farming_harvest_repository
+      )
+    end
+
     # Rest of CleanArch methods...
   end
 end

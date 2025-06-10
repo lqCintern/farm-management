@@ -5,7 +5,11 @@ module Marketplace
         @repository = repository
       end
 
-      def execute(id, attributes, user_id, images = [])
+      def execute(id, attributes, user_id, images = [], retained_image_ids = [])
+        # Log để debug
+        Rails.logger.info("Updating product #{id} with attributes: #{attributes.inspect}")
+        Rails.logger.info("Images count: #{images.size}, Retained image IDs: #{retained_image_ids.inspect}")
+        
         # Tìm sản phẩm hiện tại
         existing = @repository.find(id)
 
@@ -30,7 +34,7 @@ module Marketplace
         updated_entity = Entities::Marketplace::ProductListing.new(attributes.merge(id: id, user_id: user_id))
 
         # Lưu entity qua repository
-        result = @repository.update(updated_entity, images)
+        result = @repository.update(updated_entity, images, retained_image_ids)
 
         if result
           {
@@ -45,6 +49,13 @@ module Marketplace
             message: "Không thể cập nhật sản phẩm"
           }
         end
+      rescue => e
+        Rails.logger.error("Error in UpdateProductListing use case: #{e.message}\n#{e.backtrace.join("\n")}")
+        {
+          success: false,
+          errors: [e.message],
+          message: "Đã xảy ra lỗi khi cập nhật sản phẩm"
+        }
       end
     end
   end

@@ -2,103 +2,101 @@ module Api
   module V1
     module Farming
       class PineappleActivityTemplatesController < BaseController
-        before_action :set_template, only: [ :show, :update, :destroy ]
-
         def index
-          # Lấy cả templates mặc định và của user
-          templates = ::Farming::PineappleActivityTemplate.default_templates.to_a
-          user_templates = current_user.pineapple_activity_templates.to_a
-
-          all_templates = templates + user_templates
-
-          # Lọc theo các tiêu chí nếu cần
-          if params[:stage].present?
-            all_templates.select! { |t| t.stage.to_s == params[:stage] }
-          end
-
-          if params[:activity_type].present?
-            all_templates.select! { |t| t.activity_type.to_s == params[:activity_type] }
-          end
-
-          render json: { data: all_templates }, status: :ok
+          result = CleanArch.farming_list_pineapple_activity_templates.execute(
+            current_user.user_id,
+            {
+              stage: params[:stage],
+              activity_type: params[:activity_type],
+              is_required: params[:is_required],
+              season_specific: params[:season_specific]
+            }
+          )
+          
+          render json: Presenters::Farming::PineappleActivityTemplatePresenter.collection_as_json(result[:templates]), status: :ok
         end
 
         def show
-          render json: { data: @template }, status: :ok
+          result = CleanArch.farming_get_pineapple_activity_template.execute(params[:id])
+          
+          if result[:success]
+            render json: { data: Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template]) }, status: :ok
+          else
+            render json: { error: result[:error] }, status: :not_found
+          end
         end
 
         def create
-          template = current_user.pineapple_activity_templates.new(template_params)
-
-          if template.save
+          result = CleanArch.farming_create_pineapple_activity_template.execute(
+            template_params.to_h,
+            current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
               message: "Đã tạo mẫu hoạt động thành công",
-              data: template
+              data: Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
             }, status: :created
           else
-            render json: { errors: template.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:errors] }, status: :unprocessable_entity
           end
         end
 
         def update
-          # Chỉ cho phép sửa templates của user này
-          unless @template.user_id == current_user.id
-            return render json: { error: "Không có quyền sửa mẫu này" }, status: :forbidden
-          end
-
-          if @template.update(template_params)
+          result = CleanArch.farming_update_pineapple_activity_template.execute(
+            params[:id],
+            template_params.to_h,
+            current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
               message: "Đã cập nhật mẫu hoạt động thành công",
-              data: @template
+              data: Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
             }, status: :ok
           else
-            render json: { errors: @template.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:error] || result[:errors] }, status: :unprocessable_entity
           end
         end
 
         def destroy
-          # Chỉ cho phép xóa templates của user này
-          unless @template.user_id == current_user.id
-            return render json: { error: "Không có quyền xóa mẫu này" }, status: :forbidden
+          result = CleanArch.farming_delete_pineapple_activity_template.execute(
+            params[:id],
+            current_user.user_id
+          )
+          
+          if result[:success]
+            render json: { message: "Đã xóa mẫu hoạt động thành công" }, status: :ok
+          else
+            render json: { error: result[:error] }, status: :unprocessable_entity
           end
-
-          @template.destroy
-          render json: { message: "Đã xóa mẫu hoạt động thành công" }, status: :ok
         end
 
         # Áp dụng template cho một vụ dứa cụ thể
         def apply_to_crop
-          template = ::Farming::PineappleActivityTemplate.find(params[:template_id])
-          crop = current_user.pineapple_crops.find(params[:crop_id])
-
-          service = ::Farming::PineappleCropService.new(crop, current_user)
-
-          if service.send(:create_activity_from_template, template, crop.current_stage)
+          result = CleanArch.farming_apply_template_to_activities.execute(
+            params[:template_id],
+            params[:crop_id],
+            current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
-              message: "Đã áp dụng mẫu hoạt động thành công"
+              message: "Đã áp dụng mẫu hoạt động thành công",
+              farm_activity: Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
             }, status: :created
           else
-            render json: { error: "Không thể áp dụng mẫu hoạt động" }, status: :unprocessable_entity
+            render json: { error: result[:error] || result[:errors] }, status: :unprocessable_entity
           end
         end
 
         private
 
-        def set_template
-          @template = ::Farming::PineappleActivityTemplate.find_by(id: params[:id])
-          render json: { error: "Không tìm thấy mẫu hoạt động" }, status: :not_found unless @template
-        end
-
         def template_params
-          permitted = params.require(:template).permit(
+          params.require(:template).permit(
             :name, :description, :activity_type, :stage,
             :day_offset, :duration_days, :season_specific, :is_required
           )
-
-          permitted[:activity_type] = permitted[:activity_type].to_i if permitted[:activity_type].present?
-          permitted[:stage] = permitted[:stage].to_i if permitted[:stage].present?
-
-          permitted
         end
       end
     end

@@ -91,10 +91,13 @@ module Repositories
 
           # Add images if provided
           if images.present?
-            images.each_with_index do |image_data, index|
-              if image_data[:image].present?
+            images.each_with_index do |image, index|
+              # Xử lý image trực tiếp, không cần truy cập qua image_data[:image]
+              if image.is_a?(ActionDispatch::Http::UploadedFile)
+                # Tạo product image với position
                 product_image = record.product_images.create!(position: index + 1)
-                product_image.image.attach(image_data[:image])
+                # Đính kèm file trực tiếp
+                product_image.image.attach(image)
               end
             end
           end
@@ -106,42 +109,54 @@ module Repositories
         nil
       end
 
-      def update(product_listing_entity, images = [])
-        record = ::Marketplace::ProductListing.find_by(id: product_listing_entity.id)
-        return nil unless record
-
+      def update(product_listing_entity, images = [], retained_image_ids = [])
+        return nil unless product_listing_entity
+        
+        # Map entity to ActiveRecord attributes
         attributes = map_entity_to_attributes(product_listing_entity)
-
+        
+        # Start transaction
         ActiveRecord::Base.transaction do
+          # Find record
+          record = ::Marketplace::ProductListing.find_by(id: product_listing_entity.id)
+          return nil unless record
+          
+          # Update attributes
           record.update!(attributes)
-
-          # Handle images
+          
+          # Xử lý retained_image_ids - chuyển đổi thành mảng số nếu cần
+          retained_ids = if retained_image_ids.is_a?(Array)
+                          retained_image_ids.select(&:present?).map(&:to_i)
+                        else
+                          []
+                        end
+            
+          # Xóa ảnh không thuộc retained_image_ids
+          if retained_ids.any?
+            record.product_images.where.not(id: retained_ids).destroy_all
+          elsif retained_ids.empty? && images.present?
+            # Nếu không có retained_image_ids nhưng có images mới, xóa tất cả images cũ
+            record.product_images.destroy_all
+          end
+          
+          # Add new images
           if images.present?
-            # Delete existing images that aren't in the new array
-            existing_ids = images.map { |img| img[:id] }.compact
-            if existing_ids.any?
-              record.product_images.where.not(id: existing_ids).destroy_all
-            else
-              record.product_images.destroy_all
-            end
-
-            # Add/update images
-            images.each_with_index do |image_data, index|
-              if image_data[:id].present?
-                product_image = record.product_images.find_by(id: image_data[:id])
-                product_image&.update(position: index + 1)
-              elsif image_data[:image].present?
-                product_image = record.product_images.create!(position: index + 1)
-                product_image.image.attach(image_data[:image])
+            images.each_with_index do |image, index|
+              if image.is_a?(ActionDispatch::Http::UploadedFile)
+                # Tạo product image với position
+                product_image = record.product_images.create!(position: record.product_images.count + index + 1)
+                # Đính kèm file
+                product_image.image.attach(image)
               end
             end
           end
-
+          
+          # Return updated entity
           map_to_entity(record.reload)
+        rescue ActiveRecord::RecordInvalid => e
+          Rails.logger.error("Failed to update product listing: #{e.message}")
+          nil
         end
-      rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.error("Failed to update product listing: #{e.message}")
-        nil
       end
 
       def delete(id)
@@ -153,7 +168,7 @@ module Repositories
         record = ::Marketplace::ProductListing.find_by(id: id)
         return nil unless record
 
-        if record.update(status: ::Marketplace::ProductListing::STATUSES[status.to_sym])
+        if record.update(status: status)
           map_to_entity(record)
         else
           nil
@@ -212,7 +227,6 @@ module Repositories
           product_images: map_product_images(record.product_images),
           seller_name: record.user&.fullname,
           user_name: record.user&.user_name,
-          seller_rating: calculate_seller_rating(record.user),
           pineapple_crop_data: pineapple_crop_data
         )
       end
@@ -227,13 +241,6 @@ module Repositories
         end
       end
 
-      def calculate_seller_rating(user)
-        # Logic tính seller rating
-        # Ví dụ: trung bình đánh giá từ bảng ratings
-        rating_avg = ::SellerRating.where(seller_id: user.id).average(:rating)
-        rating_avg&.round(1) || 0
-      end
-
       def map_entity_to_attributes(entity)
         {
           title: entity.title,
@@ -242,7 +249,7 @@ module Repositories
           quantity: entity.quantity,
           average_size: entity.average_size,
           price_expectation: entity.price_expectation,
-          status: ::Marketplace::ProductListing::STATUSES[entity.status.to_sym],
+          status: entity.status,
           province: entity.province,
           district: entity.district,
           ward: entity.ward,

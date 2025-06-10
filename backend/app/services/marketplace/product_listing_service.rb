@@ -15,8 +15,6 @@ module Marketplace
 
       # Thêm các trường bổ sung không có trong strong parameters
       @product_listing.variety = params[:variety] if params[:variety].present?
-      @product_listing.location_note = params[:locationNote] if params[:locationNote].present?
-
       # Xử lý coordinates nếu được gửi lên
       process_coordinates(params[:coordinates]) if params[:coordinates].present?
 

@@ -26,6 +26,7 @@ module NotificationServices
         category: "marketplace",
         event_type: "new_order",
         title: "Đơn hàng mới",
+        priority: 2,
         message: "Bạn có đơn hàng mới cho sản phẩm #{order.product_listing.title}",
         metadata: {
           order_id: order.id,

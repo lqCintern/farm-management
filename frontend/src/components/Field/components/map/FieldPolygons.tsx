@@ -18,10 +18,18 @@ const FieldPolygons: React.FC<FieldPolygonsProps> = ({
   return (
     <>
       {fields.map((field) => {
-        // Lấy mùa vụ hiện tại từ mảng currentCrop
-        const currentCrop: PineappleCrop | undefined = Array.isArray(field.currentCrop)
-          ? field.currentCrop.find((crop) => crop.status === "harvesting") || field.currentCrop[0]
-          : undefined;
+        // Xử lý cả trường hợp currentCrop là object hoặc array
+        let currentCrop: PineappleCrop | undefined;
+        
+        if (field.currentCrop) {
+          if (Array.isArray(field.currentCrop)) {
+            // Trường hợp currentCrop là array (API cũ)
+            currentCrop = field.currentCrop.find((crop) => crop.status === "harvesting") || field.currentCrop[0];
+          } else {
+            // Trường hợp currentCrop là object (API mới)
+            currentCrop = field.currentCrop;
+          }
+        }
           
         // Kiểm tra xem field.coordinates có phải là mảng không
         if (!field.coordinates || !Array.isArray(field.coordinates)) {

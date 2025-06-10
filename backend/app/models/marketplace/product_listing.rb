@@ -8,7 +8,7 @@ module Marketplace
     has_many :product_images, -> { order(position: :asc) }, class_name: "Marketplace::ProductImage", dependent: :destroy
     has_many :product_orders, class_name: "Marketplace::ProductOrder", dependent: :destroy
     has_many :conversations, class_name: "::Conversation", dependent: :nullify
-
+    
     accepts_nested_attributes_for :product_images, allow_destroy: true, reject_if: :all_blank
 
     # Validations
@@ -19,24 +19,17 @@ module Marketplace
     validates :price_expectation, numericality: { greater_than: 0 }, allow_nil: true
     validate :validate_harvest_dates
 
-    # Định nghĩa trạng thái
-    STATUS_DRAFT = 0
-    STATUS_ACTIVE = 1
-    STATUS_SOLD = 2
-    STATUS_HIDDEN = 3
-
-    STATUSES = {
-      draft: STATUS_DRAFT,
-      active: STATUS_ACTIVE,
-      sold: STATUS_SOLD,
-      hidden: STATUS_HIDDEN
-    }.freeze
-
-    # Scopes - giữ ở AR model
-    scope :published, -> { where(status: STATUS_ACTIVE) }
-    scope :draft, -> { where(status: STATUS_DRAFT) }
-    scope :sold, -> { where(status: STATUS_SOLD) }
-    scope :hidden, -> { where(status: STATUS_HIDDEN) }
+    # Chuyển từ hằng số và STATUSES hash sang enum
+    enum :status, {
+      draft: 0,
+      active: 1, 
+      sold: 2,
+      hidden: 3
+    }
+    
+    scope :published, -> { active }
+    
+    # Các scope khác giữ nguyên
     scope :by_product_type, ->(type) { where(product_type: type) if type.present? }
     scope :by_location, ->(province) { where(province: province) if province.present? }
     scope :by_price_range, ->(min, max) {
@@ -52,7 +45,7 @@ module Marketplace
     # Callbacks
     before_create :set_default_title
 
-    # Database-specific operations - giữ ở AR model
+    # Database-specific operations
     def increment_view_count!
       update_column(:view_count, view_count + 1)
     end
@@ -69,11 +62,12 @@ module Marketplace
       product_orders.where.not(status: :rejected).exists?
     end
 
+    # Không cần phương thức status_name nữa vì có thể sử dụng status trực tiếp
+    # Giữ lại để tương thích ngược
     def status_name
-      STATUSES.key(status)
+      status.to_sym
     end
 
-    # Helper cho Repository (không nên gọi trực tiếp từ controllers)
     def seller_name
       user&.fullname || user&.user_name
     end

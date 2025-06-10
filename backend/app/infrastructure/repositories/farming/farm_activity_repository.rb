@@ -189,6 +189,31 @@ module Repositories
         activities.map { |record| map_to_entity(record) }
       end
 
+      def find_by_crop_animal_id(crop_animal_id, user_id)
+        records = ::Farming::FarmActivity
+                 .where(user_id: user_id)
+                 .where(crop_animal_id: crop_animal_id)
+                 .order(start_date: :desc)
+        
+        {
+          records: records,
+          entities: records.map { |record| map_to_entity(record) }
+        }
+      end
+
+      def find_by_activity_types(activity_types, crop_animal_id, user_id)
+        records = ::Farming::FarmActivity
+                 .where(user_id: user_id)
+                 .where(crop_animal_id: crop_animal_id)
+                 .where(activity_type: activity_types)
+                 .order(start_date: :asc)
+        
+        {
+          records: records,
+          entities: records.map { |record| map_to_entity(record) }
+        }
+      end
+
       private
 
       def apply_filters(query, filters)

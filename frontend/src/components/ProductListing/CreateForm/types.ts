@@ -1,9 +1,11 @@
+import { PineappleCrop } from "@/types/labor/types";
+
 export interface FormValues {
   title: string;
   product_type: string;
   description?: string;
   quantity: number | null;
-  average_size?: number | null; // Keep for backward compatibility
+  average_size?: number | null; 
   min_size?: number;
   max_size?: number;
   total_weight?: number | null;
@@ -16,16 +18,14 @@ export interface FormValues {
   longitude?: number | null;
   coordinates?: Array<{lat: number, lng: number}>;
   fieldName?: string;
+  field_id?: number;
   locationNote?: string;
   harvest_start_date: string | null;
   harvest_end_date: string | null;
   crop_animal_id?: number | null;
   status: number;
-  pineapple_crop?: {
-    field_id?: string;
-    variety?: string;
-    current_stage?: string;
-  };
+  // Sử dụng interface PineappleCrop đã định nghĩa
+  pineapple_crop?: PineappleCrop;
   google_maps_url?: string;
 }
 

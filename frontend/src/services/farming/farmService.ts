@@ -77,22 +77,32 @@ export const getFarmMaterials = async (): Promise<any> => {
   try {
     const response = await axiosInstance.get('/farming/farm_materials');
     
-    // Nhất quán trong xử lý dữ liệu
+    // Trả về dữ liệu đúng định dạng mà component đang kỳ vọng
     const responseData = response.data;
     
-    // Chuyển đổi cấu trúc dữ liệu từ JSONAPI thành dạng đơn giản
-    if (responseData && typeof responseData === 'object' && 'materials' in responseData && typeof responseData.materials === 'object' && responseData.materials && 'data' in responseData.materials) {
-      // Chuyển đổi ID thành số nguyên
+    // Kiểm tra cấu trúc mới (Clean Architecture)
+    if (responseData && typeof responseData === 'object' && 'materials' in responseData && Array.isArray(responseData.materials)) {
+      // Trả về đúng định dạng mà component đang kỳ vọng
       return {
-        data: (responseData.materials.data as Array<{ id: string; attributes: any }>).map((item) => ({
-          id: parseInt(item.id), // Chuyển đổi ID thành số
-          ...item.attributes
+        data: responseData.materials.map((item) => ({
+          id: item.id,
+          ...item
         })),
         pagination: 'pagination' in responseData ? responseData.pagination : undefined
       };
     }
     
-    return responseData;
+    // Kiểm tra cấu trúc cũ (JSONAPI) để đảm bảo tương thích ngược
+    if (responseData && typeof responseData === 'object' && 'materials' in responseData && 
+        typeof responseData.materials === 'object' && responseData.materials && 'data' in responseData.materials) {
+      return {
+        data: (responseData.materials.data as Array<{ id: string; attributes: any }>).map((item) => ({
+          id: parseInt(item.id),
+          ...item.attributes
+        })),
+        pagination: 'pagination' in responseData ? responseData.pagination : undefined
+      };
+    }
   } catch (error) {
     console.error('Error fetching farm materials:', error);
     throw error;

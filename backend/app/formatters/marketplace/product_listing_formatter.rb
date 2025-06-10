@@ -1,4 +1,3 @@
-
   module Marketplace
     class ProductListingFormatter
       # Format params cho create action

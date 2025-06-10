@@ -10,20 +10,31 @@ module Api
 
         # GET /api/v1/marketplace/product_listings
         def index
-          filter_params = ::Marketplace::ProductListingFormatter.format_filter_params(params)
-          pagy, products = CleanArch.marketplace_list_products.execute(filter_params)
-          product_listings_response = products.map { |product|
-            ::Marketplace::ProductListingPresenter.as_list_item(product)
+          filter_params = {
+            product_type: params[:product_type],
+            province: params[:province],
+            min_price: params[:min_price],
+            max_price: params[:max_price],
+            ready_to_harvest: params[:ready_to_harvest] == 'true',
+            sort: params[:sort],
+            page: params[:page] || 1,
+            per_page: params[:per_page] || 12
           }
-
-          render json: {
-            product_listings: product_listings_response,
-            pagination: {
-              current_page: pagy.page,
-              total_pages: pagy.pages,
-              total_items: pagy.count
-            }
-          }
+          
+          result = CleanArch.marketplace_list_products.execute(filter_params)
+          pagy = result[0]
+          products = result[1]
+          
+          # Sử dụng phương thức presenter_collection hiện có
+          response = ::Marketplace::ProductListingPresenter.present_collection(
+            products,
+            pagy
+          )
+          
+          render json: response
+        rescue => e
+          Rails.logger.error("Error in product listing: #{e.message}\n#{e.backtrace.join("\n")}")
+          render json: { error: "Đã xảy ra lỗi khi lấy danh sách sản phẩm" }, status: :internal_server_error
         end
 
         # GET /api/v1/marketplace/product_listings/:id
@@ -39,49 +50,95 @@ module Api
 
         # POST /api/v1/marketplace/product_listings
         def create
-          create_params = ::Marketplace::ProductListingFormatter.format_create_params(
-            params.require(:product_listing).to_h,
-            current_user.user_id
-          )
-          images = ::Marketplace::ProductListingFormatter.format_images(
-            params[:product_listing][:images]
-          )
-          result = CleanArch.marketplace_create_product_listing.execute(
-            create_params[:basic_attributes],
-            create_params[:user_id],
-            images
-          )
+          begin
+            # Đảm bảo tất cả các trường được permit đầy đủ
+            permitted_params = params.require(:product_listing).permit(
+              :title, :description, :status, :product_type, :quantity,
+              :total_weight, :average_size, :price_expectation,
+              :province, :district, :ward, :address, :latitude, :longitude,
+              :harvest_start_date, :harvest_end_date, :crop_animal_id, :field_id
+            )
+            
+            create_params = ::Marketplace::ProductListingFormatter.format_create_params(
+              permitted_params.to_h,
+              current_user.user_id
+            )
+            
+            images = params[:images] || []
+            
+            result = CleanArch.marketplace_create_product_listing.execute(
+              create_params[:basic_attributes],
+              create_params[:user_id],
+              images
+            )
 
-          if result[:success]
-            render json: ::Marketplace::ProductListingPresenter.format_create_response(result),
-                   status: :created
-          else
-            render json: { errors: result[:errors] }, status: :unprocessable_entity
+            if result[:success]
+              render json: ::Marketplace::ProductListingPresenter.format_create_response(result),
+                    status: :created
+            else
+              render json: { errors: result[:errors] }, status: :unprocessable_entity
+            end
+          rescue ActionController::ParameterMissing => e
+            render json: { error: e.message }, status: :bad_request
+          rescue => e
+            Rails.logger.error("Error in product creation: #{e.message}\n#{e.backtrace.join("\n")}")
+            render json: { error: "Unexpected error occurred" }, status: :internal_server_error
           end
         end
 
         # PUT /api/v1/marketplace/product_listings/:id
         def update
-          update_params = ::Marketplace::ProductListingFormatter.format_update_params(
-            params.require(:product_listing).to_h,
-            current_user.user_id
-          )
+          begin
+            # Thêm explicit permit parameters trước khi gọi to_h
+            permitted_params = params.require(:product_listing).permit(
+              :title, :description, :status, :product_type, :quantity,
+              :total_weight, :average_size, :price_expectation,
+              :province, :district, :ward, :address, :latitude, :longitude,
+              :harvest_start_date, :harvest_end_date, :crop_animal_id, :field_id,
+              :google_maps_url, :min_size, :max_size
+            )
+            
+            update_params = ::Marketplace::ProductListingFormatter.format_update_params(
+              permitted_params.to_h,
+              current_user.user_id
+            )
 
-          images = ::Marketplace::ProductListingFormatter.format_images_with_ids(
-            params[:product_listing][:images]
-          )
+            # Xử lý hình ảnh giữ lại
+            retained_image_ids = params[:retained_image_ids] || []
+            retained_image_ids = retained_image_ids.select(&:present?)
+            
+            # Xử lý hình ảnh mới
+            new_images = params[:images] || []
+            
+            Rails.logger.info("Retained image IDs: #{retained_image_ids.inspect}")
+            Rails.logger.info("New images count: #{new_images.size}")
+            
+            result = CleanArch.marketplace_update_product_listing.execute(
+              params[:id],
+              update_params[:basic_attributes],
+              update_params[:user_id],
+              new_images,
+              retained_image_ids
+            )
 
-          result = CleanArch.marketplace_update_product_listing.execute(
-            params[:id],
-            update_params[:basic_attributes],
-            update_params[:user_id],
-            images
-          )
-
-          if result[:success]
-            render json: ::Marketplace::ProductListingFormatter.format_update_response(result)
-          else
-            render json: { errors: result[:errors] }, status: :unprocessable_entity
+            if result[:success]
+              render json: {
+                success: true,
+                product: result[:product_listing],
+                message: result[:message]
+              }
+            else
+              render json: { 
+                success: false, 
+                errors: result[:errors],
+                message: result[:message]
+              }, status: :unprocessable_entity
+            end
+          rescue ActionController::ParameterMissing => e
+            render json: { error: e.message }, status: :bad_request
+          rescue => e
+            Rails.logger.error("Error in product update: #{e.message}\n#{e.backtrace.join("\n")}")
+            render json: { error: "Đã xảy ra lỗi không mong muốn" }, status: :internal_server_error
           end
         end
 

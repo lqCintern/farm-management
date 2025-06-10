@@ -5,19 +5,24 @@ module Marketplace
         @repository = repository
       end
 
-      def execute(product_type: nil, province: nil, min_price: nil, max_price: nil,
-                 ready_to_harvest: nil, sort: nil, page: 1, per_page: 12)
-        params = {
-          product_type: product_type,
-          province: province,
-          min_price: min_price,
-          max_price: max_price,
-          ready_to_harvest: ready_to_harvest,
-          sort: sort,
-          page: page,
-          per_page: per_page
-        }
-
+      # Phương thức này nhận các params như một hash hoặc keyword arguments
+      def execute(options = {})
+        # Nếu không phải là hash, chuyển về hash
+        params = options.is_a?(Hash) ? options : {}
+        
+        # Thiết lập giá trị mặc định cho các tham số nếu chưa có
+        params[:product_type] ||= nil
+        params[:province] ||= nil
+        params[:min_price] ||= nil
+        params[:max_price] ||= nil
+        params[:ready_to_harvest] ||= nil
+        params[:sort] ||= nil
+        params[:page] ||= 1
+        params[:per_page] ||= 12
+        
+        # Log để debug
+        Rails.logger.info("Listing products with params: #{params.inspect}")
+        
         @repository.list_published(params)
       end
     end

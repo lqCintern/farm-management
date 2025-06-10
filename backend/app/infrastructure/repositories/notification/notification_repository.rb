@@ -2,7 +2,7 @@ module Repositories
   module Notification
     class NotificationRepository
       def find(id)
-        record = ::Notification.find_by(id: id)
+        record = ::Notifications::Notification.find_by(id: id)
         map_to_entity(record) if record
       end
 
@@ -20,7 +20,8 @@ module Repositories
 
         # Paginate
         pagy = Pagy.new(count: query.count, page: page, items: per_page)
-        records = query.offset(pagy.offset).limit(pagy.items)
+        # Sửa phương thức items thành limit ở đây
+        records = query.offset(pagy.offset).limit(pagy.limit)
 
         [ pagy, records.map { |record| map_to_entity(record) } ]
       end
@@ -87,7 +88,7 @@ module Repositories
           title: entity.title,
           message: entity.message,
           metadata: entity.metadata,
-          priority: entity.priority || 3
+          priority: entity.priority || 2
         )
 
         if record.save

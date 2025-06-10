@@ -46,8 +46,16 @@ export default function TraderProductListingList() {
         
         // Truyền object trực tiếp vào hàm API
         const response = await getProductListings(filtersObject);
-        const typedResponse = response as { product_listings?: ProductListing[] };
-        setListings(typedResponse.product_listings || []);
+        
+        // ĐÂY LÀ PHẦN CẦN SỬA: API đang trả về items thay vì product_listings
+        // Sửa thành:
+        const typedResponse = response as { items?: ProductListing[] };
+        const products = typedResponse.items || []; // Lấy từ property 'items' thay vì 'product_listings'
+        setListings(products);
+        
+        // Có thể lưu thông tin phân trang nếu cần
+        // const pagination = response.pagination;
+        // setPagination(pagination);
       } catch (err: any) {
         console.error("Failed to fetch product listings:", err);
         setError(err.message || "Failed to load product listings");
@@ -253,6 +261,26 @@ function TraderProductCard({ listing, navigate }: TraderProductCardProps) {
     return "/images/placeholder-pineapple.jpg";
   };
 
+  function formatRelativeDate(created_at: string): React.ReactNode {
+    const now = new Date();
+    const created = new Date(created_at);
+    const diffMs = now.getTime() - created.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (isNaN(created.getTime())) return "Không rõ thời gian";
+
+    if (diffSec < 60) return "Vừa đăng";
+    if (diffMin < 60) return `${diffMin} phút trước`;
+    if (diffHour < 24) return `${diffHour} giờ trước`;
+    if (diffDay === 1) return "Hôm qua";
+    if (diffDay < 7) return `${diffDay} ngày trước`;
+
+    // Otherwise, show date in dd/MM/yyyy
+    return created.toLocaleDateString("vi-VN");
+  }
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
       {/* Image section - cover style */}
@@ -424,16 +452,4 @@ function formatDate(dateString: string | null): string {
 function formatCurrency(amount: number | null): string {
   if (amount === null) return "Thỏa thuận";
   return new Intl.NumberFormat('vi-VN').format(amount);
-}
-
-function formatRelativeDate(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (diffInDays === 0) return "Hôm nay";
-  if (diffInDays === 1) return "Hôm qua";
-  if (diffInDays < 7) return `${diffInDays} ngày trước`;
-  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} tuần trước`;
-  return `${Math.floor(diffInDays / 30)} tháng trước`;
 }
