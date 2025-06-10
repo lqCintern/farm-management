@@ -17,10 +17,10 @@ module Backend
     config.autoload_paths += %w[
       app/decorators
       app/domain
-      app/formatters    # Thêm formatters
+      app/formatters # Thêm formatters
       app/infrastructure
       app/interfaces
-      app/presenters    # Thêm presenters
+      app/presenters # Thêm presenters
       app/use_cases
     ].map { |path| "#{config.root}/#{path}" }
 

@@ -42,22 +42,22 @@ module Entities
       end
 
       def payment_complete?
-        status == 'payment_confirmed' && payment_proof_url.present?
+        status == "payment_confirmed" && payment_proof_url.present?
       end
-      
+
       def active?
-        !['completed', 'cancelled', 'payment_confirmed'].include?(status)
+        ![ "completed", "cancelled", "payment_confirmed" ].include?(status)
       end
 
       def display_status
         status_map = {
-          'scheduled' => 'Đã lên lịch',
-          'harvesting' => 'Đang thu hoạch',
-          'completed' => 'Đã thu hoạch',
-          'payment_confirmed' => 'Đã thanh toán',
-          'cancelled' => 'Đã hủy'
+          "scheduled" => "Đã lên lịch",
+          "harvesting" => "Đang thu hoạch",
+          "completed" => "Đã thu hoạch",
+          "payment_confirmed" => "Đã thanh toán",
+          "cancelled" => "Đã hủy"
         }
-        
+
         status_map[status.to_s] || status.to_s.humanize
       end
     end

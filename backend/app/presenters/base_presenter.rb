@@ -27,4 +27,3 @@
       raise NotImplementedError, "Subclasses must implement as_json"
     end
   end
-

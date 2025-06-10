@@ -12,16 +12,16 @@
           field_area: params[:field_area],
           season_type: params[:season_type],
           planting_density: params[:planting_density],
-          status: params[:status] || 'planning',
+          status: params[:status] || "planning",
           description: params[:description],
           variety: params[:variety],
           source: params[:source],
-          current_stage: params[:current_stage] || 'preparation',
+          current_stage: params[:current_stage] || "preparation",
           expected_yield: params[:expected_yield],
           location: params[:location]
         }
       end
-      
+
       # Format params cho cập nhật vụ trồng
       def self.format_update_params(params)
         {
@@ -39,7 +39,7 @@
           location: params[:location]
         }.compact
       end
-      
+
       # Format params cho filter
       def self.format_filter_params(params = {})
         {
@@ -49,11 +49,11 @@
           stage: params[:stage]
         }.compact
       end
-      
+
       # Format params cho hoạt động nông trại
       def self.format_activities_params(activities_params)
         return [] unless activities_params.present?
-        
+
         activities_params.map do |act|
           {
             activity_type: act[:activity_type],

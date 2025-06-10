@@ -25,20 +25,20 @@
             crop_animal_id: params[:crop_animal_id],
             location_note: params[:location_note]
           }.compact,
-          
+
           # Thông tin user
-          user_id: current_user_id,
-          
+          user_id: current_user_id
+
           # Formatted images sẽ được truyền riêng
         }
       end
 
-      # Format params cho update action  
+      # Format params cho update action
       def self.format_update_params(params, current_user_id)
         {
           # Thông tin cơ bản về sản phẩm
           basic_attributes: {
-            title: params[:title], 
+            title: params[:title],
             description: params[:description],
             status: params[:status],
             product_type: params[:product_type],
@@ -50,17 +50,17 @@
             district: params[:district],
             ward: params[:ward],
             address: params[:address],
-            latitude: params[:latitude], 
+            latitude: params[:latitude],
             longitude: params[:longitude],
             harvest_start_date: params[:harvest_start_date],
             harvest_end_date: params[:harvest_end_date],
             crop_animal_id: params[:crop_animal_id],
             location_note: params[:location_note]
           }.compact,
-          
+
           # Thông tin user
-          user_id: current_user_id,
-          
+          user_id: current_user_id
+
           # Formatted images sẽ được truyền riêng
         }
       end
@@ -68,16 +68,16 @@
       # Format hình ảnh từ request params
       def self.format_images(images_params)
         return [] unless images_params.present?
-        
+
         images_params.each_with_index.map do |img, idx|
           { image: img, position: idx + 1 }
         end
       end
-      
+
       # Format hình ảnh có kèm ID (cho update)
       def self.format_images_with_ids(images_params)
         return [] unless images_params.present?
-        
+
         images_params.each_with_index.map do |img, idx|
           if img.is_a?(Hash) && img[:id].present?
             { id: img[:id], position: idx + 1 }

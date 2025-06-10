@@ -12,15 +12,15 @@ module Marketplace
         unless product
           return { success: false, error: "Không tìm thấy sản phẩm" }
         end
-        
+
         # Check if there's already an active harvest for this product
         if @repository.active_for_product(product_listing_id).present?
-          return { 
-            success: false, 
+          return {
+            success: false,
             error: "Đã có lịch thu hoạch khác đang diễn ra cho sản phẩm này"
           }
         end
-        
+
         # Create entity
         harvest_entity = Entities::Marketplace::MarketplaceHarvest.new(
           attributes.merge(
@@ -29,10 +29,10 @@ module Marketplace
             status: "scheduled"
           )
         )
-        
+
         # Save via repository
         result = @repository.create(harvest_entity)
-        
+
         if result
           { success: true, harvest: result, message: "Đã lên lịch thu hoạch thành công" }
         else

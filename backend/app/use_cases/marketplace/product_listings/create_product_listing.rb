@@ -8,13 +8,13 @@ module Marketplace
       def execute(attributes, user_id, images = [])
         # Thêm user_id vào attributes
         attributes[:user_id] = user_id
-        
+
         # Khởi tạo entity mới từ attributes
         entity = Entities::Marketplace::ProductListing.new(attributes)
-        
+
         # Lưu entity qua repository
         result = @repository.create(entity, images)
-        
+
         if result
           {
             success: true,
@@ -24,7 +24,7 @@ module Marketplace
         else
           {
             success: false,
-            errors: ["Không thể tạo sản phẩm"],
+            errors: [ "Không thể tạo sản phẩm" ],
             message: "Không thể tạo sản phẩm"
           }
         end

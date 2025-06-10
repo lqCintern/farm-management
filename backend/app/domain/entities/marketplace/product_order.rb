@@ -52,7 +52,7 @@ module Entities
           "rejected" => "Đã từ chối",
           "completed" => "Hoàn thành"
         }
-        
+
         status_map[status.to_s] || status.to_s.humanize
       end
     end

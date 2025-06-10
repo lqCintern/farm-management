@@ -7,7 +7,7 @@ module Marketplace
 
       def execute(id)
         harvest = @repository.find_with_associations(id)
-        
+
         if harvest
           { success: true, harvest: harvest }
         else

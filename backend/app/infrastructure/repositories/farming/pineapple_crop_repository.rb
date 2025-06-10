@@ -13,12 +13,12 @@ module Repositories
 
       def find_by_user_id(user_id, filters = {})
         query = ::Farming::PineappleCrop.where(user_id: user_id)
-        
+
         query = query.where(season_type: filters[:season_type]) if filters[:season_type].present?
         query = query.where(field_id: filters[:field_id]) if filters[:field_id].present?
         query = query.where(status: filters[:status]) if filters[:status].present?
         query = query.where(current_stage: filters[:stage]) if filters[:stage].present?
-        
+
         query.order(created_at: :desc)
       end
 
@@ -41,17 +41,17 @@ module Repositories
           field_area: attributes[:field_area],
           season_type: attributes[:season_type],
           planting_density: attributes[:planting_density],
-          status: attributes[:status] || 'planning',
+          status: attributes[:status] || "planning",
           description: attributes[:description],
           variety: attributes[:variety],
           source: attributes[:source],
-          current_stage: attributes[:current_stage] || 'preparation',
+          current_stage: attributes[:current_stage] || "preparation",
           current_stage_start_date: attributes[:current_stage_start_date] || Date.today,
           expected_yield: attributes[:expected_yield],
           actual_yield: attributes[:actual_yield] || 0,
           location: attributes[:location]
         )
-        
+
         if record.save
           map_to_entity(record)
         else
@@ -62,7 +62,7 @@ module Repositories
       def update(id, attributes)
         record = ::Farming::PineappleCrop.find_by(id: id)
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
-        
+
         if record.update(attributes)
           { success: true, pineapple_crop: map_to_entity(record) }
         else
@@ -73,14 +73,14 @@ module Repositories
       def delete(id)
         record = ::Farming::PineappleCrop.find_by(id: id)
         return false unless record
-        
+
         record.destroy
       end
 
       def advance_stage(id)
         record = ::Farming::PineappleCrop.find_by(id: id)
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
-        
+
         if record.advance_to_next_stage
           { success: true, pineapple_crop: map_to_entity(record) }
         else
@@ -91,16 +91,16 @@ module Repositories
       def record_harvest(id, quantity)
         record = ::Farming::PineappleCrop.find_by(id: id)
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
-        
+
         return { success: false, error: "Vụ trồng chưa đến giai đoạn thu hoạch" } unless record.current_stage == "harvesting"
-        
+
         current_yield = record.actual_yield || 0
         if record.update(actual_yield: current_yield + quantity)
           # Kiểm tra nếu đã thu hoạch xong
           if record.actual_yield >= record.expected_yield
             record.advance_to_next_stage # Chuyển sang giai đoạn tiếp theo
           end
-          
+
           # Tạo bản ghi thu hoạch
           ::Farming::Harvest.create(
             user_id: record.user_id,
@@ -109,7 +109,7 @@ module Repositories
             harvest_date: Time.current,
             field_id: record.field_id
           )
-          
+
           { success: true, pineapple_crop: map_to_entity(record) }
         else
           { success: false, errors: record.errors.full_messages }
@@ -119,11 +119,11 @@ module Repositories
       def get_statistics(user_id)
         {
           total_crops: ::Farming::PineappleCrop.where(user_id: user_id).count,
-          active_crops: ::Farming::PineappleCrop.where(user_id: user_id, status: 'active').count,
-          harvested_crops: ::Farming::PineappleCrop.where(user_id: user_id, status: 'harvested').count,
+          active_crops: ::Farming::PineappleCrop.where(user_id: user_id, status: "active").count,
+          harvested_crops: ::Farming::PineappleCrop.where(user_id: user_id, status: "harvested").count,
           by_season: {
-            spring_summer: ::Farming::PineappleCrop.where(user_id: user_id, season_type: 'Xuân-Hè').count,
-            fall_winter: ::Farming::PineappleCrop.where(user_id: user_id, season_type: 'Thu-Đông').count
+            spring_summer: ::Farming::PineappleCrop.where(user_id: user_id, season_type: "Xuân-Hè").count,
+            fall_winter: ::Farming::PineappleCrop.where(user_id: user_id, season_type: "Thu-Đông").count
           },
           by_stage: ::Farming::PineappleCrop.current_stages.keys.map { |stage|
             { stage: stage, count: ::Farming::PineappleCrop.where(user_id: user_id, current_stage: stage).count }
@@ -139,7 +139,7 @@ module Repositories
 
         planting_date = record.planting_date
         season_type = record.season_type
-        
+
         # Chuẩn bị đất (trước trồng 1 tháng)
         land_preparation_date = planting_date - 1.month
 
@@ -173,7 +173,7 @@ module Repositories
           flower_treatment_date: record.flower_treatment_date || flower_treatment_date,
           harvest_date: record.harvest_date || harvest_date
         }
-        
+
         if record.update(update_params)
           { success: true, pineapple_crop: map_to_entity(record) }
         else
@@ -184,12 +184,12 @@ module Repositories
       def generate_plan(id, activities)
         record = ::Farming::PineappleCrop.find_by(id: id)
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
-        
+
         begin
           ActiveRecord::Base.transaction do
             # Xóa tất cả hoạt động đang chờ hoặc đang thực hiện
-            record.farm_activities.where(status: [:pending, :in_progress]).destroy_all
-            
+            record.farm_activities.where(status: [ :pending, :in_progress ]).destroy_all
+
             # Tạo các hoạt động mới được truyền vào
             activities.each do |activity_attrs|
               ::Farming::FarmActivity.create!(
@@ -199,8 +199,8 @@ module Repositories
               )
             end
           end
-          
-          { 
+
+          {
             success: true,
             pineapple_crop: map_to_entity(record, true),
             message: "Đã tạo kế hoạch trồng dứa thành công"
@@ -214,7 +214,7 @@ module Repositories
         begin
           service = ::Farming::PlanGeneratorService.new  # Service mới, không phụ thuộc vào record
           activities_data = service.preview_activities_for_params(attributes)
-          
+
           activities_entities = activities_data.map do |act|
             Entities::Farming::FarmActivity.new(
               activity_type: act[:activity_type],  # Truy cập hash thay vì thuộc tính
@@ -226,7 +226,7 @@ module Repositories
               field_id: act[:field_id] || attributes[:field_id]
             )
           end
-          
+
           { success: true, activities: activities_entities }
         rescue => e
           { success: false, error: "Lỗi khi tạo kế hoạch: #{e.message}" }
@@ -236,14 +236,14 @@ module Repositories
       def save_activities(id, activities, user_id)
         record = ::Farming::PineappleCrop.find_by(id: id)
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
-        
+
         created_activities = []
-        
+
         begin
           ActiveRecord::Base.transaction do
             # Xóa hoạt động cũ
-            record.farm_activities.where(status: [:pending, :in_progress]).destroy_all
-            
+            record.farm_activities.where(status: [ :pending, :in_progress ]).destroy_all
+
             # Tạo hoạt động mới
             activities.each do |activity_attrs|
               activity = ::Farming::FarmActivity.create!(
@@ -251,13 +251,13 @@ module Repositories
                 user_id: user_id,
                 **activity_attrs
               )
-              
+
               created_activities << map_activity_to_entity(activity)
             end
           end
-          
-          { 
-            success: true, 
+
+          {
+            success: true,
             activities: created_activities,
             message: "Đã tạo kế hoạch công việc thành công"
           }
@@ -265,24 +265,24 @@ module Repositories
           { success: false, error: "Lỗi khi lưu kế hoạch: #{e.message}" }
         end
       end
-      
+
       def clean_and_regenerate(id, user_id)
         record = ::Farming::PineappleCrop.find_by(id: id, user_id: user_id)
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
-        
+
         begin
           # Xóa tất cả hoạt động chưa hoàn thành
           record.farm_activities.where.not(status: :completed).destroy_all
-          
+
           # Tạo lại kế hoạch sử dụng PlanGeneratorService mới
           service = ::Farming::PlanGeneratorService.new
           activities = service.generate_activities_for_crop(map_to_entity(record))
-          
+
           # Gọi generate_plan với đủ tham số
           result = generate_plan(id, activities)
-          
+
           if result[:success]
-            { 
+            {
               success: true,
               message: "Đã dọn dẹp và tạo lại hoạt động thành công",
               pineapple_crop: result[:pineapple_crop]
@@ -297,12 +297,12 @@ module Repositories
 
       def map_to_entity(record, include_activities = false)
         return nil unless record
-        
+
         activities = []
         if include_activities && record.farm_activities.present?
           activities = record.farm_activities.map { |activity| map_activity_to_entity(activity) }
         end
-        
+
         Entities::Farming::PineappleCrop.new(
           id: record.id,
           name: record.name,
@@ -334,7 +334,7 @@ module Repositories
       end
 
       private
-      
+
       def map_activity_to_entity(activity)
         Entities::Farming::FarmActivity.new(
           id: activity.id,

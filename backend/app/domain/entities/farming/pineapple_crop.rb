@@ -1,7 +1,7 @@
 module Entities
   module Farming
     class PineappleCrop
-      attr_reader :id, :name, :user_id, :field_id, :planting_date, :harvest_date, 
+      attr_reader :id, :name, :user_id, :field_id, :planting_date, :harvest_date,
                  :land_preparation_date, :tie_date, :flower_treatment_date,
                  :expected_flower_date, :field_area, :season_type,
                  :planting_density, :status, :description, :variety, :source,

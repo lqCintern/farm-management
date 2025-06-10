@@ -22,7 +22,7 @@ module Repositories
                      .offset(pagy.offset)
                      .limit(pagy.items)
 
-        [pagy, records.map { |record| map_to_entity(record) }]
+        [ pagy, records.map { |record| map_to_entity(record) } ]
       end
 
       def list_for_seller(seller_id, status = nil, page = 1, per_page = 10)
@@ -35,7 +35,7 @@ module Repositories
                      .order(created_at: :desc)
                      .offset(pagy.offset)
 
-        [pagy, records.map { |record| map_to_entity(record) }]
+        [ pagy, records.map { |record| map_to_entity(record) } ]
       end
 
       def create(entity)
@@ -116,7 +116,7 @@ module Repositories
           .where(product_listing_id: product_listing_id)
           .where.not(id: accepted_order_id)
           .where(status: :pending)
-          
+
         orders.each do |order|
           order.update(
             status: :rejected,

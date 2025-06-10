@@ -21,7 +21,7 @@ module Marketplace
         buyer_id: user_id
       }
     end
-    
+
     # Format params cho cập nhật đơn hàng
     def self.format_update_params(params)
       {

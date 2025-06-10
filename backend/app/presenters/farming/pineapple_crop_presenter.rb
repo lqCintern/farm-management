@@ -53,11 +53,11 @@
           farm_activities: format_activities(@object.farm_activities)
         }
       end
-      
+
       def format_activities(activities)
         activities.map { |activity| format_activity(activity) }
       end
-      
+
       def format_activity(activity)
         {
           id: activity.id,
@@ -70,7 +70,7 @@
           field_id: activity.field_id
         }
       end
-      
+
       # Format basic info for product listing
       def as_basic_info
         {
@@ -82,7 +82,7 @@
           current_stage: @object.current_stage
         }
       end
-      
+
       # Format collection với phân trang
       def self.present_collection(collection, pagination = nil)
         {
@@ -99,7 +99,7 @@
           total_items: pagy.count
         }
       end
-      
+
       # Format response cho create/update
       def self.format_response(result)
         if result[:success]
@@ -111,12 +111,12 @@
           { error: result[:error], errors: result[:errors] }
         end
       end
-      
+
       # Format kế hoạch preview
       def self.format_preview_plan(result)
         if result[:success]
           {
-            preview_activities: result[:activities].map { |activity| 
+            preview_activities: result[:activities].map { |activity|
               {
                 activity_type: activity.activity_type,
                 description: activity.description,
@@ -130,7 +130,7 @@
           { error: result[:error] }
         end
       end
-      
+
       # Format cho confirm plan response
       def self.format_confirm_plan_response(result)
         if result[:success]
@@ -152,7 +152,7 @@
           { error: result[:error] }
         end
       end
-      
+
       # Format statistics response
       def self.format_statistics(statistics)
         {
@@ -161,4 +161,3 @@
       end
     end
   end
-

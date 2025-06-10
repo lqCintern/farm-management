@@ -101,28 +101,28 @@ module Repositories
       def active_for_product(product_listing_id)
         record = ::Marketplace::MarketplaceHarvest
           .where(product_listing_id: product_listing_id)
-          .where.not(status: ['completed', 'cancelled'])
+          .where.not(status: [ "completed", "cancelled" ])
           .order(created_at: :desc)
           .first
-          
+
         map_to_entity(record) if record
       end
-      
+
       def add_payment_proof(id, payment_proof)
         record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
         return nil unless record
-        
+
         record.payment_proof_url = payment_proof
         record.payment_date = Time.current
-        record.status = 'payment_confirmed' if record.status == 'completed'
-        
+        record.status = "payment_confirmed" if record.status == "completed"
+
         if record.save
           map_to_entity(record)
         else
           nil
         end
       end
-      
+
       def create(entity)
         attributes = {
           scheduled_date: entity.scheduled_date,
@@ -132,22 +132,22 @@ module Repositories
           estimated_price: entity.estimated_price,
           trader_id: entity.trader_id,
           product_listing_id: entity.product_listing_id,
-          status: entity.status || 'scheduled'
+          status: entity.status || "scheduled"
         }
-        
+
         record = ::Marketplace::MarketplaceHarvest.create(attributes)
-        
+
         if record.persisted?
           map_to_entity(record)
         else
           nil
         end
       end
-      
+
       def update(entity)
         record = ::Marketplace::MarketplaceHarvest.find_by(id: entity.id)
         return nil unless record
-        
+
         attributes = {
           scheduled_date: entity.scheduled_date,
           location: entity.location,
@@ -158,25 +158,25 @@ module Repositories
           final_price: entity.final_price,
           status: entity.status
         }
-        
+
         if record.update(attributes)
           map_to_entity(record)
         else
           nil
         end
       end
-      
+
       def delete(id)
         record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
         record&.destroy
         record.destroyed? if record
       end
-      
+
       private
-      
+
       def map_to_entity(record)
         return nil unless record
-        
+
         Entities::Marketplace::MarketplaceHarvest.new(
           id: record.id,
           scheduled_date: record.scheduled_date,
@@ -199,10 +199,10 @@ module Repositories
           farmer_data: map_user(record.product_listing&.user)
         )
       end
-      
+
       def map_product_listing(record)
         return nil unless record
-        
+
         Entities::Marketplace::ProductListing.new(
           id: record.product_listing_id,
           title: record.title,
@@ -214,10 +214,10 @@ module Repositories
           product_images: map_product_images(record.product_images)
         )
       end
-      
+
       def map_product_images(images)
         return [] unless images
-        
+
         images.map do |image|
           Entities::Marketplace::ProductImage.new(
             id: image.id,
@@ -226,10 +226,10 @@ module Repositories
           )
         end
       end
-      
+
       def map_user(user)
         return nil unless user
-        
+
         {
           user_id: user.user_id,
           user_name: user.user_name,

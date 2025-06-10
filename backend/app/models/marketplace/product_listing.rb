@@ -8,7 +8,7 @@ module Marketplace
     has_many :product_images, -> { order(position: :asc) }, class_name: "Marketplace::ProductImage", dependent: :destroy
     has_many :product_orders, class_name: "Marketplace::ProductOrder", dependent: :destroy
     has_many :conversations, class_name: "::Conversation", dependent: :nullify
-    
+
     accepts_nested_attributes_for :product_images, allow_destroy: true, reject_if: :all_blank
 
     # Validations

@@ -1,7 +1,7 @@
 module Notifications
   class NotificationSetting < ApplicationRecord
-    self.table_name = 'notification_settings'
-    
+    self.table_name = "notification_settings"
+
     belongs_to :user
 
     # Validations

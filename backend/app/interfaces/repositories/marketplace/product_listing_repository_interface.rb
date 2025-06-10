@@ -5,7 +5,7 @@ module Repositories
       def find(id)
         raise NotImplementedError
       end
-      
+
       def find_with_associations(id)
         raise NotImplementedError
       end

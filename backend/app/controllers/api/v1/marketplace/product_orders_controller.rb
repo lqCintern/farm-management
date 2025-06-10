@@ -17,11 +17,11 @@ module Api
             page: params[:page],
             per_page: params[:per_page]
           )
-          
+
           # Gọi use case với params đã được format
           # Sử dụng double splat operator (**) để chuyển hash thành keyword arguments
           result = CleanArch.marketplace_list_orders.execute(**filter_params)
-          
+
           # Sử dụng Presenter để format response
           render json: ::Marketplace::ProductOrderPresenter.format_index_response(result),
                  status: :ok
@@ -30,12 +30,12 @@ module Api
         # GET /api/v1/marketplace/product_orders/:id
         def show
           result = CleanArch.marketplace_get_order_details.execute(
-            params[:id], 
+            params[:id],
             current_user.user_id
           )
-          
+
           response_data = ::Marketplace::ProductOrderPresenter.format_show_response(result)
-          
+
           if result[:success]
             render json: response_data, status: :ok
           else
@@ -50,13 +50,13 @@ module Api
             product_order_params.to_h,
             current_user.user_id
           )
-          
+
           # Gọi use case với params đã format
           result = CleanArch.marketplace_create_order.execute(create_params)
-          
+
           # Presenter định dạng response
           response_data = ::Marketplace::ProductOrderPresenter.format_create_response(result)
-          
+
           if result[:success]
             render json: response_data, status: :created
           else
@@ -74,7 +74,7 @@ module Api
               current_user.user_id,
               params[:reason]
             )
-            
+
             # Gọi use case với params đã format
             result = CleanArch.marketplace_update_order_status.execute(
               status_params[:order_id],
@@ -82,10 +82,10 @@ module Api
               status_params[:user_id],
               status_params[:reason]
             )
-            
+
             # Presenter định dạng response
             response_data = ::Marketplace::ProductOrderPresenter.format_status_update_response(result)
-            
+
             if result[:success]
               render json: response_data, status: :ok
             else
@@ -96,17 +96,17 @@ module Api
             update_params = ::Marketplace::ProductOrderFormatter.format_update_params(
               product_order_update_params.to_h
             )
-            
+
             # Gọi use case với params đã format
             result = CleanArch.marketplace_update_order_details.execute(
               params[:id],
               update_params,
               current_user.user_id
             )
-            
+
             # Presenter định dạng response
             response_data = ::Marketplace::ProductOrderPresenter.format_update_response(result)
-            
+
             if result[:success]
               render json: response_data, status: :ok
             else

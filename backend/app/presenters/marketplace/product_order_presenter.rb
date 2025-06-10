@@ -28,7 +28,7 @@ module Marketplace
         }
       }
     end
-    
+
     def as_detail
       {
         id: @object.id,
@@ -65,7 +65,7 @@ module Marketplace
         }
       }
     end
-    
+
     # Hoàn thiện các phương thức format khác
     def self.format_index_response(result)
       {
@@ -74,7 +74,7 @@ module Marketplace
         statistics: result[:statistics]
       }
     end
-    
+
     def self.format_show_response(result)
       if result[:success]
         { order: as_detail(result[:order]) }
@@ -82,7 +82,7 @@ module Marketplace
         { error: result[:error] }
       end
     end
-    
+
     def self.format_create_response(result)
       if result[:success]
         {
@@ -91,10 +91,10 @@ module Marketplace
           conversation_id: result[:conversation_id]
         }
       else
-        { errors: result[:errors] || [result[:error]] }
+        { errors: result[:errors] || [ result[:error] ] }
       end
     end
-    
+
     def self.format_update_response(result)
       if result[:success]
         {
@@ -102,10 +102,10 @@ module Marketplace
           order: new(result[:order]).as_json
         }
       else
-        { errors: result[:errors] || [result[:error]] }
+        { errors: result[:errors] || [ result[:error] ] }
       end
     end
-    
+
     def self.format_status_update_response(result)
       if result[:success]
         {
@@ -117,7 +117,7 @@ module Marketplace
         { error: result[:error] }
       end
     end
-    
+
     def self.format_pagination(pagy)
       {
         count: pagy.count,

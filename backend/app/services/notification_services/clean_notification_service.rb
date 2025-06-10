@@ -3,21 +3,21 @@ module NotificationServices
     def initialize(create_notification_use_case)
       @create_notification_use_case = create_notification_use_case
     end
-    
+
     # General create notification method
     def create_notification(attributes)
       @create_notification_use_case.execute(attributes)
     end
-    
+
     #--------------------------------------------------
     # MARKETPLACE NOTIFICATIONS
     #--------------------------------------------------
-    
+
     # Thông báo đơn hàng mới
     def new_order(order)
       return unless order && order.respond_to?(:id) && order.respond_to?(:product_listing)
       return unless order.product_listing&.user_id
-      
+
       create_notification(
         recipient_id: order.product_listing.user_id,
         sender_id: order.buyer_id,
@@ -38,19 +38,19 @@ module NotificationServices
         }
       )
     end
-    
+
     # Thông báo cập nhật trạng thái đơn hàng
     # Đảm bảo phương thức này chấp nhận entity order thay vì order_id
     def order_status_updated(order, old_status)
       return unless order && order.respond_to?(:id)
-      
+
       status_text = case order.status.to_s
-                    when "accepted" then "đã được chấp nhận"
-                    when "rejected" then "đã bị từ chối"
-                    when "completed" then "đã hoàn thành"
-                    else "đã được cập nhật"
-                    end
-      
+      when "accepted" then "đã được chấp nhận"
+      when "rejected" then "đã bị từ chối"
+      when "completed" then "đã hoàn thành"
+      else "đã được cập nhật"
+      end
+
       create_notification(
         recipient_id: order.buyer_id,
         sender_id: order.product_listing.user_id,
@@ -69,16 +69,16 @@ module NotificationServices
         }
       )
     end
-    
+
     # Thông báo tin nhắn mới
     def new_message(message)
       return unless message && message.respond_to?(:id)
       conversation = message.respond_to?(:conversation) ? message.conversation : nil
       return unless conversation
-      
-      recipient_id = message.user_id == conversation.sender_id ? 
+
+      recipient_id = message.user_id == conversation.sender_id ?
         conversation.receiver_id : conversation.sender_id
-      
+
       create_notification(
         recipient_id: recipient_id,
         sender_id: message.user_id,
@@ -96,17 +96,17 @@ module NotificationServices
         }
       )
     end
-    
+
     # Thông báo thu hoạch
     def new_harvest(harvest)
       return unless harvest
-      
+
       create_notification(
         recipient_id: harvest.product_listing.user_id,
         sender_id: harvest.trader_id,
         notifiable_type: "Marketplace::MarketplaceHarvest",
         notifiable_id: harvest.id,
-        category: "marketplace", 
+        category: "marketplace",
         event_type: "new_harvest",
         title: "Lịch thu hoạch mới",
         message: "Bạn có lịch thu hoạch mới cho sản phẩm #{harvest.product_listing.title}",
@@ -118,22 +118,22 @@ module NotificationServices
         }
       )
     end
-    
+
     #--------------------------------------------------
     # FARM NOTIFICATIONS
     #--------------------------------------------------
-    
+
     # Thông báo nhắc nhở hoạt động sắp tới
     def activity_reminder(activity, days_before = 1)
       return unless activity
-      
+
       # Người nhận là chủ nông trại và những người được phân công
-      recipients = [activity.user_id]
-      
+      recipients = [ activity.user_id ]
+
       if activity.respond_to?(:assignments) && activity.assignments.any?
         recipients += activity.assignments.map { |a| a[:worker_id] }.compact
       end
-      
+
       recipients.uniq.compact.each do |recipient_id|
         create_notification(
           recipient_id: recipient_id,
@@ -154,14 +154,14 @@ module NotificationServices
         )
       end
     end
-    
+
     # Thông báo khi hoạt động quá hạn
     def activity_overdue(activity)
       return unless activity && activity.status != "completed" && activity.end_date
-      
+
       days_overdue = (Date.today - activity.end_date.to_date).to_i
       return unless days_overdue > 0
-      
+
       create_notification(
         recipient_id: activity.user_id,
         sender_id: nil,
@@ -180,11 +180,11 @@ module NotificationServices
         priority: 2 # High priority
       )
     end
-    
+
     # Thông báo mùa vụ chuyển giai đoạn
     def crop_stage_changed(crop, old_stage, new_stage)
       return unless crop
-      
+
       create_notification(
         recipient_id: crop.user_id,
         sender_id: nil,
@@ -203,15 +203,15 @@ module NotificationServices
         }
       )
     end
-    
+
     # Thông báo thu hoạch sẵn sàng
     def harvest_ready(harvest)
       return unless harvest
-      
+
       create_notification(
         recipient_id: harvest.user_id,
         sender_id: nil,
-        notifiable_type: harvest.class.name, 
+        notifiable_type: harvest.class.name,
         notifiable_id: harvest.id,
         category: "farm",
         event_type: "harvest_ready",
@@ -226,20 +226,20 @@ module NotificationServices
         priority: 2 # High priority
       )
     end
-    
+
     #--------------------------------------------------
     # LABOR NOTIFICATIONS
     #--------------------------------------------------
-    
+
     # Thông báo yêu cầu đổi công mới
     def new_labor_request(request)
       return unless request
       return unless request.providing_household_id
-      
+
       # Xác định người nhận
       recipient_id = request.providing_household&.owner_id
       return unless recipient_id
-      
+
       create_notification(
         recipient_id: recipient_id,
         sender_id: request.requesting_household&.owner_id,
@@ -259,30 +259,30 @@ module NotificationServices
         }
       )
     end
-    
+
     # Thông báo phản hồi yêu cầu đổi công
     def labor_request_response(request, status)
       return unless request
-      
+
       # Người nhận là người tạo yêu cầu
       recipient_id = request.requesting_household&.owner_id
       sender_id = request.providing_household&.owner_id
-      
+
       title = case status
-              when "accepted" then "Yêu cầu đổi công được chấp nhận"
-              when "rejected" then "Yêu cầu đổi công bị từ chối"
-              else "Cập nhật yêu cầu đổi công"
-              end
-      
+      when "accepted" then "Yêu cầu đổi công được chấp nhận"
+      when "rejected" then "Yêu cầu đổi công bị từ chối"
+      else "Cập nhật yêu cầu đổi công"
+      end
+
       message = case status
-                when "accepted"
+      when "accepted"
                   "#{request.providing_household&.name} đã chấp nhận yêu cầu đổi công: #{request.title}"
-                when "rejected"
+      when "rejected"
                   "#{request.providing_household&.name} đã từ chối yêu cầu đổi công: #{request.title}"
-                else
+      else
                   "Có cập nhật về yêu cầu đổi công: #{request.title}"
-                end
-      
+      end
+
       create_notification(
         recipient_id: recipient_id,
         sender_id: sender_id,
@@ -302,15 +302,15 @@ module NotificationServices
         priority: status == "accepted" ? 1 : 2 # Từ chối là ưu tiên cao hơn
       )
     end
-    
+
     # Thông báo phân công lao động mới
     def new_assignment(assignment)
       return unless assignment
-      
+
       # Thông báo cho người lao động
       worker_user_id = assignment.worker_id
       return unless worker_user_id
-      
+
       create_notification(
         recipient_id: worker_user_id,
         sender_id: assignment.assigner_id,
@@ -331,14 +331,14 @@ module NotificationServices
         }
       )
     end
-    
+
     # Nhắc nhở lịch làm việc
     def assignment_reminder(assignment)
       return unless assignment
-      
+
       worker_user_id = assignment.worker_id
       return unless worker_user_id
-      
+
       create_notification(
         recipient_id: worker_user_id,
         sender_id: nil,
@@ -357,19 +357,19 @@ module NotificationServices
         }
       )
     end
-    
+
     #--------------------------------------------------
     # SUPPLY NOTIFICATIONS
     #--------------------------------------------------
-    
+
     # Thông báo đơn đặt hàng vật tư mới
     def new_supply_order(order)
       return unless order
-      
+
       # Thông báo cho nhà cung cấp
       supplier_id = order.supply_listing&.user_id
       return unless supplier_id
-      
+
       create_notification(
         recipient_id: supplier_id,
         sender_id: order.user_id,
@@ -389,19 +389,19 @@ module NotificationServices
         }
       )
     end
-    
+
     # Thông báo cập nhật đơn vật tư
     def supply_order_updated(order, old_status)
       return unless order
-      
+
       status_text = case order.status
-                    when "accepted" then "đã được chấp nhận"
-                    when "shipped" then "đang được vận chuyển"
-                    when "completed" then "đã hoàn thành"
-                    when "cancelled" then "đã bị hủy"
-                    else "đã được cập nhật"
-                    end
-      
+      when "accepted" then "đã được chấp nhận"
+      when "shipped" then "đang được vận chuyển"
+      when "completed" then "đã hoàn thành"
+      when "cancelled" then "đã bị hủy"
+      else "đã được cập nhật"
+      end
+
       create_notification(
         recipient_id: order.user_id,
         sender_id: order.supply_listing&.user_id,
@@ -420,15 +420,15 @@ module NotificationServices
         }
       )
     end
-    
+
     # Nhắc nhở đánh giá nhà cung cấp
     def review_reminder(order)
       return unless order && order.status == "completed"
-      
+
       # Chỉ gửi nếu chưa có đánh giá
       has_review = order.respond_to?(:supplier_reviews) && order.supplier_reviews.exists?
       return if has_review
-      
+
       create_notification(
         recipient_id: order.user_id,
         sender_id: nil,

@@ -29,7 +29,7 @@ module Api
         # GET /api/v1/marketplace/harvests/:id
         def show
           result = CleanArch.marketplace_get_harvest_details.execute(params[:id])
-          
+
           if result[:success]
             render json: {
               harvest: harvest_response(result[:harvest])
@@ -46,14 +46,14 @@ module Api
             current_user.user_id,
             params[:product_listing_id]
           )
-          
+
           if result[:success]
             render json: {
               message: result[:message],
               harvest: harvest_response(result[:harvest])
             }, status: :created
           else
-            render json: { errors: [result[:error]] }, status: :unprocessable_entity
+            render json: { errors: [ result[:error] ] }, status: :unprocessable_entity
           end
         end
 
@@ -64,14 +64,14 @@ module Api
             marketplace_harvest_params.to_h,
             current_user.user_id
           )
-          
+
           if result[:success]
             render json: {
               message: result[:message],
               harvest: harvest_response(result[:harvest])
             }
           else
-            render json: { errors: [result[:error]] }, status: :unprocessable_entity
+            render json: { errors: [ result[:error] ] }, status: :unprocessable_entity
           end
         end
 
@@ -82,7 +82,7 @@ module Api
             params[:payment_proof],
             current_user.user_id
           )
-          
+
           if result[:success]
             render json: {
               message: result[:message],
@@ -96,10 +96,10 @@ module Api
         # DELETE /api/v1/marketplace/harvests/:id
         def destroy
           result = CleanArch.marketplace_delete_harvest.execute(
-            params[:id], 
+            params[:id],
             current_user.user_id
           )
-          
+
           if result[:success]
             render json: { message: result[:message] }
           else
@@ -112,7 +112,7 @@ module Api
           result = CleanArch.marketplace_get_active_by_product.execute(
             params[:product_listing_id]
           )
-          
+
           if result[:success]
             render json: {
               harvest: harvest_response(result[:harvest])

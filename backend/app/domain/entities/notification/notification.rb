@@ -46,12 +46,12 @@ module Entities
           recipient_id: @recipient_id
         }
       end
-      
+
       def time_ago
         return nil unless @created_at
-        
+
         seconds = (Time.current - @created_at).to_i
-        
+
         case seconds
         when 0..59
           "vừa xong"

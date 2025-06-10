@@ -12,8 +12,8 @@ module Api
         def index
           filter_params = ::Marketplace::ProductListingFormatter.format_filter_params(params)
           pagy, products = CleanArch.marketplace_list_products.execute(filter_params)
-          product_listings_response = products.map { |product| 
-            ::Marketplace::ProductListingPresenter.as_list_item(product) 
+          product_listings_response = products.map { |product|
+            ::Marketplace::ProductListingPresenter.as_list_item(product)
           }
 
           render json: {
@@ -66,7 +66,7 @@ module Api
             params.require(:product_listing).to_h,
             current_user.user_id
           )
-          
+
           images = ::Marketplace::ProductListingFormatter.format_images_with_ids(
             params[:product_listing][:images]
           )
@@ -130,7 +130,7 @@ module Api
             params,
             current_user.user_id
           )
-          
+
           pagy, listings = CleanArch.marketplace_list_my_listings.execute(**my_listings_params)
 
           response = ::Marketplace::ProductListingPresenter.present_collection(listings, pagy)

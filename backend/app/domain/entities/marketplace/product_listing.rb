@@ -113,13 +113,13 @@ module Entities
             updated_at: @updated_at,
             pineapple_crop: @pineapple_crop_data
           },
-          
+
           seller: {
             id: @user_id,
             name: @seller_name || @user_name,
             rating: @seller_rating
           },
-          
+
           product_images: @product_images.map(&:image_url)
         }
       end

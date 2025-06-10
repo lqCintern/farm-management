@@ -4,10 +4,10 @@ module Marketplace
       def initialize(product_listing_repository)
         @product_listing_repository = product_listing_repository
       end
-      
+
       def execute(id)
         product_listing = @product_listing_repository.find_with_associations(id)
-        
+
         if product_listing
           { success: true, product_listing: product_listing }
         else

@@ -9,9 +9,9 @@ module Marketplace
         unless product_listing_id.present?
           return { success: false, error: "Thiếu thông tin sản phẩm" }
         end
-        
+
         harvest = @repository.active_for_product(product_listing_id)
-        
+
         if harvest
           { success: true, harvest: harvest }
         else

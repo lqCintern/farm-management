@@ -150,45 +150,45 @@ module CleanArch
     def notification_repository
       @notification_repository ||= Repositories::Notification::NotificationRepository.new
     end
-    
+
     # Notification use cases
     def notification_list
       @notification_list ||= Notification::ListNotifications.new(notification_repository)
     end
-    
+
     def notification_get_details
       @notification_get_details ||= Notification::GetNotificationDetails.new(notification_repository)
     end
-    
+
     def notification_mark_as_read
       @notification_mark_as_read ||= Notification::MarkAsRead.new(notification_repository)
     end
-    
+
     def notification_mark_as_unread
       @notification_mark_as_unread ||= Notification::MarkAsUnread.new(notification_repository)
     end
-    
+
     def notification_mark_all_as_read
       @notification_mark_all_as_read ||= Notification::MarkAllAsRead.new(notification_repository)
     end
-    
+
     def notification_get_unread_count
       @notification_get_unread_count ||= Notification::GetUnreadCount.new(notification_repository)
     end
-    
+
     def notification_create
       @notification_create ||= Notification::CreateNotification.new(notification_repository)
     end
-    
+
     def notification_delete
       @notification_delete ||= Notification::DeleteNotification.new(notification_repository)
     end
-    
+
     # Notification Service - phục vụ cho toàn bộ ứng dụng
     def notification_service
       @notification_service ||= NotificationServices::CleanNotificationService.new(notification_create)
     end
-    
+
     # Pineapple Crop repositories
     def farming_pineapple_crop_repository
       @farming_pineapple_crop_repository ||= Repositories::Farming::PineappleCropRepository.new
@@ -276,6 +276,80 @@ module CleanArch
     # Thêm service phân trang nếu chưa có
     def pagination_service
       @pagination_service ||= PaginationService.new
+    end
+
+    # Repositories
+    def farming_farm_activity_repository
+      @farming_farm_activity_repository ||= Repositories::Farming::FarmActivityRepository.new
+    end
+
+    # Services
+    def farming_farm_activity_notification_service
+      @farming_farm_activity_notification_service ||= Services::Farming::FarmActivityNotificationService.new
+    end
+
+    def farming_farm_activity_stats_service
+      @farming_farm_activity_stats_service ||= Services::Farming::FarmActivityStatsService.new
+    end
+
+    # Use Cases
+    def farming_list_farm_activities
+      @farming_list_farm_activities ||= Farming::FarmActivities::ListFarmActivities.new(
+        farming_farm_activity_repository
+      )
+    end
+
+    def farming_get_farm_activity
+      @farming_get_farm_activity ||= Farming::FarmActivities::GetFarmActivity.new(
+        farming_farm_activity_repository
+      )
+    end
+
+    def farming_create_farm_activity
+      @farming_create_farm_activity ||= Farming::FarmActivities::CreateFarmActivity.new(
+        farming_farm_activity_repository,
+        farming_farm_activity_notification_service
+      )
+    end
+
+    def farming_update_farm_activity
+      @farming_update_farm_activity ||= Farming::FarmActivities::UpdateFarmActivity.new(
+        farming_farm_activity_repository,
+        farming_farm_activity_notification_service
+      )
+    end
+
+    def farming_delete_farm_activity
+      @farming_delete_farm_activity ||= Farming::FarmActivities::DeleteFarmActivity.new(
+        farming_farm_activity_repository
+      )
+    end
+
+    def farming_complete_farm_activity
+      @farming_complete_farm_activity ||= Farming::FarmActivities::CompleteFarmActivity.new(
+        farming_farm_activity_repository,
+        farming_farm_activity_notification_service
+      )
+    end
+
+    def farming_get_stage_activities
+      @farming_get_stage_activities ||= Farming::FarmActivities::GetStageActivities.new(
+        farming_farm_activity_repository
+      )
+    end
+
+    def farming_check_upcoming_activities
+      @farming_check_upcoming_activities ||= Farming::FarmActivities::CheckUpcomingActivities.new(
+        farming_farm_activity_repository,
+        farming_farm_activity_notification_service
+      )
+    end
+
+    def farming_get_farm_activity_stats
+      @farming_get_farm_activity_stats ||= Farming::FarmActivities::GetFarmActivityStats.new(
+        farming_farm_activity_repository,
+        farming_farm_activity_stats_service
+      )
     end
 
     # Rest of CleanArch methods...

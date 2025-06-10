@@ -10,17 +10,17 @@ module Repositories
         record = ::Marketplace::ProductListing.includes(:product_images, :user)
                                              .find_by(id: id)
         return nil unless record
-        
+
         # Tăng view_count
         record.increment!(:view_count)
-        
+
         # Lấy thông tin pineapple_crop nếu có
         pineapple_crop_data = nil
         if record.crop_animal_id.present?
           pineapple_crop = ::Farming::PineappleCrop.find_by(id: record.crop_animal_id)
-          pineapple_crop_data = pineapple_crop&.as_json(only: [:id, :name, :variety, :planting_date, :field_id, :current_stage])
+          pineapple_crop_data = pineapple_crop&.as_json(only: [ :id, :name, :variety, :planting_date, :field_id, :current_stage ])
         end
-        
+
         map_to_entity(record, pineapple_crop_data)
       end
 
@@ -182,7 +182,7 @@ module Repositories
 
       def map_to_entity(record, pineapple_crop_data = nil)
         return nil unless record
-        
+
         Entities::Marketplace::ProductListing.new(
           id: record.id,
           title: record.title,
