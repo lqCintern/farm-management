@@ -1,7 +1,7 @@
 module SupplyChain
   class SupplyListing < ApplicationRecord
-    self.table_name = 'supply_listings'
-    
+    self.table_name = "supply_listings"
+
     belongs_to :user, foreign_key: "user_id", primary_key: "user_id"
 
     has_many :supply_images, class_name: "SupplyChain::SupplyImage", dependent: :destroy

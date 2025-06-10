@@ -130,7 +130,7 @@ module Farming
     def validate_materials_requirement
       # Bỏ qua kiểm tra nếu được yêu cầu
       return if skip_materials_check
-      
+
       # Kiểm tra nếu hoạt động yêu cầu vật tư nhưng không có
       if MATERIAL_REQUIRED_ACTIVITIES.include?(activity_type) && activity_materials.empty?
         errors.add(:base, "Hoạt động #{I18n.t("activity_types.#{activity_type}")} cần có ít nhất một vật tư")

@@ -42,7 +42,7 @@ module Farming
       # Tính ngày bắt đầu và kết thúc dựa trên ngày tham chiếu
       start_date = reference_date + day_offset.days
       end_date = start_date + duration_days.days
-      
+
       # Tạo activity mới
       Farming::FarmActivity.new(
         user_id: pineapple_crop.user_id,

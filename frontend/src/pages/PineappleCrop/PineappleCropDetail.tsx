@@ -50,7 +50,8 @@ const PineappleCropDetailPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await pineappleCropService.getPineappleCropById(Number(id));
-      setCrop((response as { data: PineappleCrop }).data);
+      // Sửa lại đoạn này - response chính là dữ liệu cần thiết, không cần truy cập .data nữa
+      setCrop(response as PineappleCrop);
     } catch (error) {
       console.error('Error fetching pineapple crop:', error);
       setError('Không thể tải dữ liệu vụ trồng. Vui lòng thử lại sau.');

@@ -31,7 +31,7 @@ module Api
         # POST /api/v1/supply_orders
         def create
           @supply_listing = ::SupplyChain::SupplyListing.find(params[:supply_listing_id])
-          
+
           # Kiểm tra số lượng tồn kho và số lượng đang tạm giữ
           available_quantity = @supply_listing.quantity - @supply_listing.pending_quantity
           if available_quantity < params[:supply_order][:quantity].to_f
@@ -41,19 +41,19 @@ module Api
             }, status: :unprocessable_entity
             return
           end
-          
+
           ActiveRecord::Base.transaction do
             @supply_order = current_user.supply_orders.build(supply_order_params)
             @supply_order.supply_listing_id = @supply_listing.id
             @supply_order.price = @supply_listing.price
             @supply_order.purchase_date = Time.current
             @supply_order.supply_id = @supply_listing.id
-            
+
             if @supply_order.save
               # Tăng số lượng đơn hàng và tạm giữ số lượng
               @supply_listing.increment!(:order_count)
               @supply_listing.increment!(:pending_quantity, @supply_order.quantity)
-              
+
               render json: {
                 status: "success",
                 message: "Đặt hàng thành công",
@@ -78,7 +78,7 @@ module Api
               if @supply_order.update(status: :cancelled)
                 # Giảm số lượng đang tạm giữ
                 @supply_order.supply_listing.decrement!(:pending_quantity, @supply_order.quantity)
-                
+
                 render json: {
                   status: "success",
                   message: "Hủy đơn hàng thành công",
@@ -108,10 +108,10 @@ module Api
             if @supply_order.update(status: :completed)
               # Cập nhật farm_materials của người dùng
               update_farm_materials
-              
+
               # Giảm số lượng vật tư của nhà cung cấp
               update_supplier_inventory
-              
+
               render json: {
                 status: "success",
                 message: "Xác nhận nhận hàng thành công",
@@ -248,18 +248,18 @@ module Api
           ActiveRecord::Base.transaction do
             supply_listing = @supply_order.supply_listing
             quantity_ordered = @supply_order.quantity
-            
+
             # Tăng số lượng đã bán thành công
             supply_listing.increment!(:sold_quantity, quantity_ordered)
-            
+
             # Xóa khỏi số lượng đang chờ xác nhận
             supply_listing.decrement!(:pending_quantity, quantity_ordered) if supply_listing.pending_quantity > 0
-            
+
             # Log hoạt động
             ActivityLog.create(
               user_id: current_user.id,
-              action_type: 'complete_order',
-              target_type: 'SupplyOrder',
+              action_type: "complete_order",
+              target_type: "SupplyOrder",
               target_id: @supply_order.id,
               details: {
                 quantity: quantity_ordered,

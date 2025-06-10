@@ -1,5 +1,7 @@
-
+module Notifications
   class Notification < ApplicationRecord
+    self.table_name = 'notifications'
+    
     belongs_to :recipient, class_name: "User"
     belongs_to :sender, class_name: "User", optional: true
     belongs_to :notifiable, polymorphic: true, optional: true
@@ -134,3 +136,4 @@
       end
     end
   end
+end

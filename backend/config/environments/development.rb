@@ -7,7 +7,7 @@ Rails.application.configure do
   config.enable_reloading = true
 
   # Do not eager load code on boot.
-  config.eager_load = false
+  config.eager_load = true
 
   # Show full error reports.
   config.consider_all_requests_local = true
@@ -79,4 +79,12 @@ Rails.application.configure do
   # config.generators.apply_rubocop_autocorrect_after_generate!
   Rails.application.routes.default_url_options[:host] = "localhost:3000"
   Rails.application.routes.default_url_options[:protocol] = "http"
+
+  # Eager load toàn bộ application
+  config.eager_load_paths += [
+    Rails.root.join("app/domain"),
+    Rails.root.join("app/infrastructure"),
+    Rails.root.join("app/interfaces"),
+    Rails.root.join("app/use_cases")
+  ]
 end

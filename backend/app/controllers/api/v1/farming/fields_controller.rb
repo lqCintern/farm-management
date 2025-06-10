@@ -175,7 +175,7 @@ module Api
             coordinates: field.coordinates,
             activity_count: field.farm_activities.is_a?(ActiveRecord::Relation) ? field.farm_activities.count : 0,
             harvest_count: field.harvests.count,
-            currentCrop: field.pineapple_crops.where(status: 'active').first, # Cập nhật với quan hệ đúng
+            currentCrop: field.pineapple_crops.where(status: "active").first, # Cập nhật với quan hệ đúng
             created_at: field.created_at,
             updated_at: field.updated_at
           }

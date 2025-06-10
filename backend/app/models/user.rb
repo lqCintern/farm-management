@@ -65,13 +65,13 @@ class User < ApplicationRecord
     end
 
     # Thêm các mối quan hệ với chức năng mua bán vật tư
-    has_many :supply_listings, class_name: "SupplyChain::SupplyListing", 
+    has_many :supply_listings, class_name: "SupplyChain::SupplyListing",
            foreign_key: :user_id, primary_key: :user_id, dependent: :destroy
-    has_many :supply_orders, class_name: "SupplyChain::SupplyOrder", 
+    has_many :supply_orders, class_name: "SupplyChain::SupplyOrder",
            foreign_key: :user_id, primary_key: :user_id, dependent: :destroy
-    has_many :supplier_reviews_received, class_name: "SupplyChain::SupplierReview", 
+    has_many :supplier_reviews_received, class_name: "SupplyChain::SupplierReview",
            foreign_key: "supplier_id", primary_key: "user_id"
-    has_many :supplier_reviews_given, class_name: "SupplyChain::SupplierReview", 
+    has_many :supplier_reviews_given, class_name: "SupplyChain::SupplierReview",
            foreign_key: "reviewer_id", primary_key: "user_id"
 
     # Lấy trung bình đánh giá của nhà cung cấp
@@ -86,7 +86,7 @@ class User < ApplicationRecord
 
     # Lấy các đơn hàng đang xử lý (dành cho người mua)
     def processing_orders
-        supply_orders.where(status: [:pending, :confirmed, :shipped])
+        supply_orders.where(status: [ :pending, :confirmed, :shipped ])
     end
 
     def primary_labor_household

@@ -1,8 +1,8 @@
 # app/models/marketplace/product_order.rb
 module Marketplace
   class ProductOrder < ApplicationRecord
-    self.table_name = 'product_orders'
-    
+    self.table_name = "product_orders"
+
     belongs_to :product_listing, class_name: "Marketplace::ProductListing"
     belongs_to :buyer, class_name: "User", foreign_key: "buyer_id", primary_key: "user_id"
 

@@ -234,10 +234,10 @@ module Farming
     def get_templates_for_stage(stage, crop = nil)
       crop ||= @pineapple_crop
       user_templates = ::Farming::PineappleActivityTemplate.where(user_id: @user.id, stage: stage)
-      templates = user_templates.empty? ? 
-                  ::Farming::PineappleActivityTemplate.default_templates.for_stage(stage) : 
+      templates = user_templates.empty? ?
+                  ::Farming::PineappleActivityTemplate.default_templates.for_stage(stage) :
                   user_templates
-      
+
       if crop.season_type.present?
         templates = templates.to_a.select do |t|
           t.season_specific.blank? || t.season_specific == crop.season_type

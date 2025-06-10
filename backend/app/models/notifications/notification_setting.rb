@@ -1,5 +1,7 @@
-
+module Notifications
   class NotificationSetting < ApplicationRecord
+    self.table_name = 'notification_settings'
+    
     belongs_to :user
 
     # Validations
@@ -30,3 +32,4 @@
       setting ? setting.public_send("#{channel}_enabled") : true
     end
   end
+end

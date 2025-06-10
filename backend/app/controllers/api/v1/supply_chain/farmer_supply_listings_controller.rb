@@ -4,8 +4,8 @@ module Api
       class FarmerSupplyListingsController < BaseController
         include Pagy::Backend
 
-        before_action :authenticate_user!, except: [:index, :show]
-        before_action :set_supply_listing, only: [:show]
+        before_action :authenticate_user!, except: [ :index, :show ]
+        before_action :set_supply_listing, only: [ :show ]
 
         # GET /api/v1/supply_listings
         def index
@@ -92,7 +92,7 @@ module Api
             status: listing.status,
             created_at: listing.created_at,
             updated_at: listing.updated_at,
-            main_image: listing.supply_images.sorted.first&.image_url, 
+            main_image: listing.supply_images.sorted.first&.image_url,
             supplier: {
               id: listing.user.user_id,
               name: listing.user.user_name

@@ -5,77 +5,87 @@ module Api
         include Pagy::Backend
 
         before_action :authenticate_user!
-        before_action :set_marketplace_harvest, only: [ :show, :update, :destroy, :upload_payment_proof ]
-        before_action :set_product_listing, only: [ :create ]
 
         # GET /api/v1/marketplace/harvests
         def index
-          if current_user.farmer?
-            # Hộ sản xuất xem lịch thu hoạch của mình
-            harvests = ::Marketplace::MarketplaceHarvest.joins(:product_listing)
-                                        .where(product_listings: { user_id: current_user.user_id })
-          else
-            # Thương lái xem lịch thu hoạch đã đặt
-            harvests = ::Marketplace::MarketplaceHarvest.where(trader_id: current_user.user_id)
-          end
-
-          # Lọc theo trạng thái nếu có
-          harvests = harvests.where(status: params[:status]) if params[:status].present?
-
-          @pagy, harvests = pagy(harvests.includes(:product_listing).order(scheduled_date: :desc))
+          pagy, harvests = CleanArch.marketplace_list_harvests.execute(
+            user_id: current_user.user_id,
+            user_type: current_user.user_type,
+            status: params[:status],
+            page: params[:page] || 1,
+            per_page: params[:per_page] || 10
+          )
 
           render json: {
             harvests: harvests.map { |h| harvest_response(h) },
-            pagination: pagy_metadata(@pagy)
+            pagination: {
+              current_page: pagy.page,
+              total_pages: pagy.pages,
+              total_items: pagy.count
+            }
           }
         end
 
         # GET /api/v1/marketplace/harvests/:id
         def show
-          render json: {
-            harvest: harvest_response(@marketplace_harvest)
-          }
+          result = CleanArch.marketplace_get_harvest_details.execute(params[:id])
+          
+          if result[:success]
+            render json: {
+              harvest: harvest_response(result[:harvest])
+            }
+          else
+            render json: { error: result[:error] }, status: :not_found
+          end
         end
 
         # POST /api/v1/marketplace/harvests
         def create
-          harvest = current_user.marketplace_harvests.new(marketplace_harvest_params) # Đổi harvests thành marketplace_harvests
-          service = ::Marketplace::HarvestService.new(harvest, current_user)
-          result = service.create(params, @product_listing)
+          result = CleanArch.marketplace_create_harvest.execute(
+            marketplace_harvest_params.to_h,
+            current_user.user_id,
+            params[:product_listing_id]
+          )
           
           if result[:success]
             render json: {
-              message: "Đã lên lịch thu hoạch thành công",
+              message: result[:message],
               harvest: harvest_response(result[:harvest])
             }, status: :created
           else
-            render json: { errors: result[:errors] || [result[:error]] }, status: :unprocessable_entity
+            render json: { errors: [result[:error]] }, status: :unprocessable_entity
           end
         end
 
         # PATCH/PUT /api/v1/marketplace/harvests/:id
         def update
-          service = ::Marketplace::HarvestService.new(@marketplace_harvest, current_user)
-          result = service.update(marketplace_harvest_params)
+          result = CleanArch.marketplace_update_harvest.execute(
+            params[:id],
+            marketplace_harvest_params.to_h,
+            current_user.user_id
+          )
           
           if result[:success]
             render json: {
-              message: "Đã cập nhật lịch thu hoạch thành công",
+              message: result[:message],
               harvest: harvest_response(result[:harvest])
             }
           else
-            render json: { errors: result[:errors] || [result[:error]] }, status: :unprocessable_entity
+            render json: { errors: [result[:error]] }, status: :unprocessable_entity
           end
         end
 
         # POST /api/v1/marketplace/harvests/:id/payment_proof
         def upload_payment_proof
-          service = ::Marketplace::HarvestService.new(@marketplace_harvest, current_user)
-          result = service.process_payment(params)
+          result = CleanArch.marketplace_process_payment.execute(
+            params[:id],
+            params[:payment_proof],
+            current_user.user_id
+          )
           
           if result[:success]
             render json: {
-              message: "Đã cập nhật bằng chứng thanh toán thành công",
+              message: result[:message],
               harvest: harvest_response(result[:harvest])
             }
           else
@@ -85,8 +95,10 @@ module Api
 
         # DELETE /api/v1/marketplace/harvests/:id
         def destroy
-          service = ::Marketplace::HarvestService.new(@marketplace_harvest, current_user)
-          result = service.destroy
+          result = CleanArch.marketplace_delete_harvest.execute(
+            params[:id], 
+            current_user.user_id
+          )
           
           if result[:success]
             render json: { message: result[:message] }
@@ -97,37 +109,22 @@ module Api
 
         # GET /api/v1/marketplace/harvests/active_by_product
         def active_by_product
-          unless params[:product_listing_id].present?
-            return render json: { error: "Thiếu thông tin sản phẩm" }, status: :unprocessable_entity
-          end
-
-          # Tìm lịch thu hoạch mới nhất của sản phẩm
-          harvest = ::Marketplace::MarketplaceHarvest.where(product_listing_id: params[:product_listing_id])
-                                   .order(created_at: :desc)
-                                   .first
-
-          if harvest
+          result = CleanArch.marketplace_get_active_by_product.execute(
+            params[:product_listing_id]
+          )
+          
+          if result[:success]
             render json: {
-              harvest: harvest_response(harvest)
+              harvest: harvest_response(result[:harvest])
             }
           else
-            render json: {
-              message: "Không tìm thấy lịch thu hoạch cho sản phẩm này"
-            }, status: :not_found
+            status = result[:message] ? :not_found : :unprocessable_entity
+            message_key = result[:error] ? :error : :message
+            render json: { message_key => result[message_key] }, status: status
           end
         end
 
         private
-
-        def set_marketplace_harvest
-          @marketplace_harvest = ::Marketplace::MarketplaceHarvest.find_by(id: params[:id])
-          render json: { error: "Không tìm thấy lịch thu hoạch" }, status: :not_found unless @marketplace_harvest
-        end
-
-        def set_product_listing
-          @product_listing = ::Marketplace::ProductListing.find_by(id: params[:product_listing_id])
-          render json: { error: "Không tìm thấy sản phẩm" }, status: :not_found unless @product_listing
-        end
 
         def marketplace_harvest_params
           params.require(:marketplace_harvest).permit(
@@ -166,8 +163,8 @@ module Api
               price_expectation: harvest.product_listing.price_expectation,
               images: harvest.product_listing.product_images.map(&:image_url).compact
             },
-            trader: User.find_by(user_id: harvest.trader_id)&.as_json(only: [ :user_id, :user_name, :fullname, :phone ]),
-            farmer: harvest.farmer.as_json(only: [ :user_id, :user_name, :fullname, :phone ])
+            trader: harvest.trader_data,
+            farmer: harvest.farmer_data
           }
         end
       end

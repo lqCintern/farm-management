@@ -2,170 +2,213 @@ module Api
   module V1
     module Farming
       class PineappleCropsController < BaseController
-        include PaginationHelper
-        before_action :set_pineapple_crop, only: [ :show, :update, :destroy, :generate_plan, :advance_stage, :record_harvest, :confirm_plan, :clean_activities ]
-
+        before_action :authenticate_user!
+        
+        # GET /api/v1/farming/pineapple_crops
         def index
-          pineapple_crops = current_user.pineapple_crops
-
-          # Bộ lọc
-          pineapple_crops = pineapple_crops.where(season_type: params[:season_type]) if params[:season_type].present?
-          pineapple_crops = pineapple_crops.where(field_id: params[:field_id]) if params[:field_id].present?
-          pineapple_crops = pineapple_crops.where(status: params[:status]) if params[:status].present?
-          pineapple_crops = pineapple_crops.where(current_stage: params[:stage]) if params[:stage].present?
-
-          @pagy, pineapple_crops = pagy(pineapple_crops.order(created_at: :desc), items: 10)
-
-          render json: {
-            data: pineapple_crops,
-            pagination: pagy_metadata(@pagy)
-          }, status: :ok
+          # Format filter params
+          filter_params = ::Farming::PineappleCropFormatter.format_filter_params(params)
+          
+          # Execute use case
+          pagy, pineapple_crops = CleanArch.farming_list_pineapple_crops.execute(
+            user_id: current_user.user_id,
+            filters: filter_params,
+            page: params[:page] || 1,
+            per_page: params[:per_page] || 10
+          )
+          
+          # Format response using presenter
+          response = ::Farming::PineappleCropPresenter.present_collection(pineapple_crops, pagy)
+          
+          render json: response, status: :ok
         end
-
+        
+        # GET /api/v1/farming/pineapple_crops/:id
         def show
-          render json: { data: @pineapple_crop }, status: :ok
+          # Execute use case
+          result = CleanArch.farming_get_pineapple_crop.execute(params[:id])
+          
+          if result[:success]
+            # Format response using presenter
+            render json: ::Farming::PineappleCropPresenter.new(result[:pineapple_crop]).as_detail, 
+                   status: :ok
+          else
+            render json: { error: result[:error] }, status: :not_found
+          end
         end
-
+        
+        # POST /api/v1/farming/pineapple_crops
         def create
-          # Kiểm tra xem field đã có mùa vụ hiện tại hay chưa
-          existing_crop = PineappleCrop.find_by(field_id: pineapple_crop_params[:field_id], status: "active")
-
-          if existing_crop
-            render json: { error: "Field này đã có một mùa vụ đang hoạt động" }, status: :unprocessable_entity
-            return
-          end
-
-          # Nếu không có mùa vụ hiện tại, tạo mùa vụ mới
-          service = ::Farming::PineappleCropService.new(PineappleCrop.new, current_user)
-          pineapple_crop = service.create(pineapple_crop_params)
-
-          if pineapple_crop.errors.empty?
-            render json: {
-              message: "Đã tạo vụ trồng dứa thành công",
-              data: pineapple_crop
-            }, status: :created
+          # Format input params
+          create_params = ::Farming::PineappleCropFormatter.format_create_params(
+            pineapple_crop_params,
+            current_user.user_id
+          )
+          
+          # Execute use case
+          result = CleanArch.farming_create_pineapple_crop.execute(create_params)
+          
+          # Format response
+          response_data = ::Farming::PineappleCropPresenter.format_response(result)
+          
+          if result[:success]
+            render json: response_data, status: :created
           else
-            render json: { errors: pineapple_crop.errors.full_messages }, status: :unprocessable_entity
+            render json: response_data, status: :unprocessable_entity
           end
         end
-
+        
+        # PUT /api/v1/farming/pineapple_crops/:id
         def update
-          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
-          pineapple_crop = service.update(pineapple_crop_params)
-
-          if pineapple_crop.errors.empty?
-            render json: {
-              message: "Đã cập nhật vụ trồng dứa thành công",
-              data: pineapple_crop
-            }, status: :ok
+          # Format input params
+          update_params = ::Farming::PineappleCropFormatter.format_update_params(
+            pineapple_crop_params
+          )
+          
+          # Execute use case
+          result = CleanArch.farming_update_pineapple_crop.execute(
+            id: params[:id], 
+            attributes: update_params,
+            user_id: current_user.user_id
+          )
+          
+          # Format response
+          response_data = ::Farming::PineappleCropPresenter.format_response(result)
+          
+          if result[:success]
+            render json: response_data, status: :ok
           else
-            render json: { errors: pineapple_crop.errors.full_messages }, status: :unprocessable_entity
+            render json: response_data, status: :unprocessable_entity
           end
         end
-
+        
+        # DELETE /api/v1/farming/pineapple_crops/:id
         def destroy
-          if @pineapple_crop.destroy
-            render json: { message: "Đã xóa vụ trồng dứa thành công" }, status: :ok
+          result = CleanArch.farming_delete_pineapple_crop.execute(
+            id: params[:id], 
+            user_id: current_user.user_id
+          )
+          
+          if result[:success]
+            render json: { message: result[:message] }, status: :ok
           else
-            render json: { errors: @pineapple_crop.errors.full_messages }, status: :unprocessable_entity
+            render json: { error: result[:error] }, status: :unprocessable_entity
           end
         end
-
+        
+        # POST /api/v1/farming/pineapple_crops/:id/generate_plan
         def generate_plan
-          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
-
-          if service.generate_full_plan
+          result = CleanArch.farming_generate_pineapple_plan.execute(
+            id: params[:id], 
+            user_id: current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
-              message: "Đã tạo kế hoạch trồng dứa thành công",
-              data: @pineapple_crop
+              message: result[:message],
+              pineapple_crop: ::Farming::PineappleCropPresenter.new(result[:pineapple_crop]).as_detail
             }, status: :ok
           else
-            render json: { error: "Không thể tạo kế hoạch. Vui lòng kiểm tra ngày trồng." }, status: :unprocessable_entity
+            render json: { error: result[:error] }, status: :unprocessable_entity
           end
         end
 
+        # POST /api/v1/farming/pineapple_crops/:id/advance_stage
         def advance_stage
-          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
-
-          if service.advance_to_next_stage
+          result = CleanArch.farming_advance_stage.execute(
+            id: params[:id],
+            user_id: current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
-              message: "Đã chuyển sang giai đoạn tiếp theo",
-              data: @pineapple_crop
+              message: result[:message],
+              pineapple_crop: ::Farming::PineappleCropPresenter.new(result[:pineapple_crop]).as_json
             }, status: :ok
           else
-            render json: { error: "Không thể chuyển giai đoạn" }, status: :unprocessable_entity
+            render json: { error: result[:error] }, status: :unprocessable_entity
           end
         end
 
+        # POST /api/v1/farming/pineapple_crops/:id/record_harvest
         def record_harvest
-          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
-
-          if service.record_harvest(params[:quantity].to_f)
+          result = CleanArch.farming_record_harvest.execute(
+            id: params[:id],
+            quantity: params[:quantity],
+            user_id: current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
-              message: "Đã ghi nhận thu hoạch thành công",
-              data: @pineapple_crop
+              message: result[:message],
+              pineapple_crop: ::Farming::PineappleCropPresenter.new(result[:pineapple_crop]).as_json
             }, status: :ok
           else
-            render json: { error: "Không thể ghi nhận thu hoạch" }, status: :unprocessable_entity
+            render json: { error: result[:error] }, status: :unprocessable_entity
           end
         end
 
+        # POST /api/v1/farming/pineapple_crops/preview_plan
         def preview_plan
-          crop_params = pineapple_crop_params
-          service = ::Farming::PineappleCropService.new(nil, current_user)
-          preview_activities = service.preview_plan(crop_params)
-
-          render json: {
-            preview_activities: ApiRendererService.render_farm_activities(preview_activities, nil)[:farm_activities]
-          }, status: :ok
-        end
-
-        def confirm_plan
-          activities_params = params.require(:activities) # array các công đoạn đã chỉnh sửa
-
-          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
-          created_activities = service.save_plan(activities_params)
-
-          render json: {
-            message: "Đã lưu kế hoạch công việc thành công",
-            activities: ApiRendererService.render_farm_activities(created_activities, nil)[:farm_activities]
-          }, status: :ok
-        end
-
-        def statistics
-          overview = {
-            total_crops: current_user.pineapple_crops.count,
-            active_crops: current_user.pineapple_crops.active.count,
-            harvested_crops: current_user.pineapple_crops.harvested.count,
-            by_season: {
-              spring_summer: current_user.pineapple_crops.spring_summer.count,
-              fall_winter: current_user.pineapple_crops.fall_winter.count
-            },
-            by_stage: PineappleCrop.current_stages.keys.map { |stage|
-              { stage: stage, count: current_user.pineapple_crops.in_stage(stage).count }
-            },
-            upcoming_harvests: current_user.pineapple_crops.coming_harvest.count
-          }
-
-          render json: { statistics: overview }, status: :ok
-        end
-
-        def clean_activities
-          service = ::Farming::PineappleCropService.new(@pineapple_crop, current_user)
-
-          if service.clean_and_regenerate
-            render json: { message: "Đã dọn dẹp và tạo lại hoạt động thành công" }, status: :ok
+          result = CleanArch.farming_preview_plan.execute(pineapple_crop_params)
+          
+          response_data = ::Farming::PineappleCropPresenter.format_preview_plan(result)
+          
+          if result[:success]
+            render json: response_data, status: :ok
           else
-            render json: { error: "Không thể dọn dẹp hoạt động" }, status: :unprocessable_entity
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
-        private
-
-        def set_pineapple_crop
-          @pineapple_crop = current_user.pineapple_crops.find_by(id: params[:id])
-          render json: { error: "Không tìm thấy vụ trồng dứa" }, status: :not_found unless @pineapple_crop
+        # POST /api/v1/farming/pineapple_crops/:id/confirm_plan
+        def confirm_plan
+          activities_params = ::Farming::PineappleCropFormatter.format_activities_params(
+            params.require(:activities)
+          )
+          
+          result = CleanArch.farming_confirm_plan.execute(
+            id: params[:id],
+            activities_params: activities_params,
+            user_id: current_user.user_id
+          )
+          
+          response_data = ::Farming::PineappleCropPresenter.format_confirm_plan_response(result)
+          
+          if result[:success]
+            render json: response_data, status: :ok
+          else
+            render json: response_data, status: :unprocessable_entity
+          end
         end
+
+        # GET /api/v1/farming/pineapple_crops/statistics
+        def statistics
+          result = CleanArch.farming_get_statistics.execute(user_id: current_user.user_id)
+          
+          if result[:success]
+            render json: ::Farming::PineappleCropPresenter.format_statistics(result[:statistics]), 
+                   status: :ok
+          else
+            render json: { error: "Không thể lấy thống kê" }, status: :unprocessable_entity
+          end
+        end
+
+        # POST /api/v1/farming/pineapple_crops/:id/clean_activities
+        def clean_activities
+          result = CleanArch.farming_clean_activities.execute(
+            id: params[:id],
+            user_id: current_user.user_id
+          )
+          
+          if result[:success]
+            render json: { message: result[:message] }, status: :ok
+          else
+            render json: { error: result[:error] }, status: :unprocessable_entity
+          end
+        end
+        
+        private
 
         def pineapple_crop_params
           params.require(:pineapple_crop).permit(

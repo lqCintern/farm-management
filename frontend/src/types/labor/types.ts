@@ -88,7 +88,7 @@ export interface PineappleCropCreateParams {
 }
 
 export interface PineappleCropResponse {
-  data: PineappleCrop[];
+  items: PineappleCrop[];  // Thay đổi từ data thành items
   pagination: PaginationMetadata;
 }
 

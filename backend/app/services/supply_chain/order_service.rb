@@ -25,7 +25,7 @@ module SupplyChain
         end
       end
     rescue => e
-      return { success: false, error: "Lỗi xử lý: #{e.message}", status: :internal_server_error }
+      { success: false, error: "Lỗi xử lý: #{e.message}", status: :internal_server_error }
     end
 
     private
@@ -33,16 +33,16 @@ module SupplyChain
     def confirm_order
       # Xác nhận đơn hàng
       @order.status = :confirmed
-      
+
       # Kiểm tra số lượng tồn kho thực tế
       listing = @order.supply_listing
       if listing.quantity >= @order.quantity
         # Giảm số lượng tồn kho thực tế
         listing.decrement!(:quantity, @order.quantity)
-        
+
         # Giảm số lượng đang tạm giữ
         listing.decrement!(:pending_quantity, @order.quantity)
-        
+
         # Cập nhật trạng thái nếu hết hàng
         if listing.quantity <= 0
           listing.update(status: :sold_out)
@@ -65,7 +65,7 @@ module SupplyChain
     def ship_order
       # Chuyển sang trạng thái đang giao hàng
       @order.status = :shipped
-      
+
       if @order.save
         { success: true, message: "Đơn hàng đã được chuyển sang trạng thái đang giao" }
       else
@@ -77,7 +77,7 @@ module SupplyChain
     def deliver_order
       # Chuyển sang trạng thái đã giao hàng
       @order.status = :delivered
-      
+
       if @order.save
         { success: true, message: "Đơn hàng đã được chuyển sang trạng thái đã giao" }
       else
@@ -88,15 +88,15 @@ module SupplyChain
 
     def reject_order(rejection_reason)
       old_status = @order.status
-      
+
       # Từ chối đơn hàng
       @order.status = :rejected
       @order.rejection_reason = rejection_reason
-      
+
       # Nếu đơn đã được xác nhận, cần trả lại số lượng vật tư
       if old_status == "confirmed"
         @order.supply_listing.increment!(:quantity, @order.quantity)
-        
+
         # Cập nhật lại trạng thái nếu trước đó là hết hàng
         if @order.supply_listing.status == "sold_out" && @order.supply_listing.quantity > 0
           @order.supply_listing.update(status: :active)
@@ -105,7 +105,7 @@ module SupplyChain
         # Nếu từ chối đơn đang chờ, giảm số lượng đang tạm giữ
         @order.supply_listing.decrement!(:pending_quantity, @order.quantity)
       end
-      
+
       if @order.save
         { success: true, message: "Đơn hàng đã bị từ chối" }
       else

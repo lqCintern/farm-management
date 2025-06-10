@@ -92,7 +92,7 @@ export default function PineappleActivityTemplates() {
     try {
       setCropsLoading(true);
       const response = await getPineappleCrops();
-      setCrops(response.data || []);
+      setCrops(response.items || []);
     } catch (error) {
       message.error("Không thể tải danh sách vụ dứa");
       console.error("Error fetching crops:", error);

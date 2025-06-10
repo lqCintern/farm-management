@@ -1,8 +1,8 @@
 # app/models/product_image.rb
 module Marketplace
   class ProductImage < ApplicationRecord
-    self.table_name = 'product_images'
-    
+    self.table_name = "product_images"
+
     belongs_to :product_listing, class_name: "Marketplace::ProductListing"
 
     # Sử dụng Active Storage thay vì lưu đường dẫn

@@ -34,7 +34,7 @@ module Api
         def update
           # Lưu trạng thái cũ để xử lý logic
           old_status = @supply_order.status
-          
+
           # Sử dụng service object để xử lý cập nhật trạng thái
           service = ::SupplyChain::OrderService.new(@supply_order, current_user)
           result = service.update_status(params[:status], params[:rejection_reason])
@@ -42,7 +42,7 @@ module Api
           if result[:success]
             # Ghi nhật ký hoạt động
             log_order_activity(old_status, @supply_order.status)
-            
+
             render json: {
               status: "success",
               message: result[:message],
@@ -62,7 +62,7 @@ module Api
           # Sử dụng service object để lấy thống kê
           service = ::SupplyChain::SupplierDashboardService.new(current_user)
           stats = service.get_dashboard_stats
-          
+
           render json: {
             status: "success",
             data: stats
@@ -133,7 +133,7 @@ module Api
           ActivityLog.create(
             user_id: current_user.id,
             action_type: "order_status_change",
-            target_type: 'SupplyOrder',
+            target_type: "SupplyOrder",
             target_id: @supply_order.id,
             details: {
               old_status: old_status,

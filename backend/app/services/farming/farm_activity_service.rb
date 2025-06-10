@@ -9,28 +9,28 @@ module Farming
     def create_activity(params)
       # Tách materials khỏi params để xử lý riêng
       materials = params.delete(:materials)
-      
+
       # Đặt skip_materials_check = true để tránh validate materials khi chưa lưu
       @farm_activity.skip_materials_check = true if @farm_activity.respond_to?(:skip_materials_check=)
-      
+
       # Sử dụng transaction để đảm bảo tính nhất quán dữ liệu
       ActiveRecord::Base.transaction do
         # Gán thuộc tính từ params
         @farm_activity.assign_attributes(params)
-        
+
         # Xử lý lịch trình lặp lại
         process_recurring_schedule(params) if @farm_activity.frequency != "once"
-        
+
         if @farm_activity.save
           # Xử lý materials nếu có
           process_materials(materials) if materials.present?
-          
+
           # Kiểm tra lại sau khi xử lý vật tư
           if @farm_activity.requires_materials? && @farm_activity.activity_materials.reload.empty?
             @farm_activity.errors.add(:base, "Hoạt động cần có ít nhất một vật tư")
             raise ActiveRecord::Rollback
           end
-          
+
           # Cập nhật PineappleCrop nếu cần
           update_pineapple_crop_if_needed
         else
@@ -38,17 +38,17 @@ module Farming
           raise ActiveRecord::Rollback
         end
       end
-      
+
       # Kiểm tra nếu có lỗi sau khi xử lý
       return @farm_activity unless @farm_activity.persisted?
-      
+
       # Kiểm tra lại nếu hoạt động yêu cầu vật tư nhưng không có
       if @farm_activity.requires_materials? && @farm_activity.activity_materials.reload.empty?
         @farm_activity.errors.add(:base, "Hoạt động cần có ít nhất một vật tư")
         # Xóa record đã tạo nếu không có vật tư
         @farm_activity.destroy
       end
-      
+
       @farm_activity
     rescue ActiveRecord::RecordInvalid => e
       @farm_activity.errors.add(:base, e.message)
@@ -59,27 +59,27 @@ module Farming
     def update_activity(params)
       # Tách materials khỏi params để xử lý riêng
       materials = params.delete(:materials)
-      
+
       # Lưu trữ vật tư cũ để hoàn trả về kho nếu cần
-      old_materials = @farm_activity.activity_materials.map do |am| 
-        [am.respond_to?(:farm_material_id) ? am.farm_material_id : am.material_id, am.planned_quantity]
+      old_materials = @farm_activity.activity_materials.map do |am|
+        [ am.respond_to?(:farm_material_id) ? am.farm_material_id : am.material_id, am.planned_quantity ]
       end.to_h
 
       # Sử dụng transaction để đảm bảo tính nhất quán dữ liệu
       ActiveRecord::Base.transaction do
         # Cập nhật thông tin cơ bản
         @farm_activity.assign_attributes(params)
-        
+
         if @farm_activity.save
           # Xử lý materials nếu có
           if materials.present?
             # Trả lại vật tư cũ vào kho nếu cần
             return_materials_to_inventory(old_materials)
-            
+
             # Xử lý vật tư mới
             process_materials(materials)
           end
-          
+
           return @farm_activity
         else
           raise ActiveRecord::Rollback
@@ -98,9 +98,9 @@ module Farming
       ActiveRecord::Base.transaction do
         # Lấy vật tư đã gán trước đó
         old_materials = @farm_activity.activity_materials.map do |am|
-          [am.respond_to?(:farm_material_id) ? am.farm_material_id : am.material_id, am.planned_quantity]
+          [ am.respond_to?(:farm_material_id) ? am.farm_material_id : am.material_id, am.planned_quantity ]
         end.to_h
-        
+
         # Trả lại vật tư vào kho
         return_materials_to_inventory(old_materials)
 
@@ -130,10 +130,10 @@ module Farming
         if @farm_activity.save
           # Cập nhật pineapple_crop sau khi hoàn thành hoạt động
           update_pineapple_crop_after_completion
-          
+
           # Bổ sung: Kiểm tra chuyển giai đoạn
           suggestion = check_stage_completion
-          
+
           return { success: true, suggestion: suggestion }
         else
           raise ActiveRecord::Rollback
@@ -204,7 +204,7 @@ module Farming
     # Xử lý lịch trình lặp lại
     def process_recurring_schedule(params)
       return unless @farm_activity.respond_to?(:frequency) && @farm_activity.frequency.present?
-      
+
       case @farm_activity.frequency
       when "daily"
         interval_days = 1
@@ -307,88 +307,88 @@ module Farming
     def process_materials(materials)
       return unless materials.present?
       Rails.logger.info("Processing materials: #{materials.inspect}")
-      
+
       # Xóa các liên kết cũ nếu là update
       @farm_activity.activity_materials.destroy_all if @farm_activity.activity_materials.exists?
-      
+
       # Tạo mới các liên kết
       materials.each do |material_id, quantity|
         Rails.logger.info("Processing material_id: #{material_id}, quantity: #{quantity}")
-        
+
         # Chuyển đổi material_id từ string sang integer
         material_id = material_id.to_i if material_id.is_a?(String)
-        
+
         material = @user.farm_materials.find_by(id: material_id)
-        
+
         if material.nil?
           Rails.logger.warn("Material #{material_id} not found for user #{@user.id}")
           next
         end
-        
+
         if material.quantity < quantity.to_f
           raise ActiveRecord::RecordInvalid.new("Không đủ vật tư #{material.name} trong kho (cần: #{quantity}, còn: #{material.quantity})")
         end
-        
+
         if quantity.to_f <= 0
           Rails.logger.warn("Quantity #{quantity} is not positive")
           next
         end
-        
+
         # Trừ vật tư từ kho
         material.update!(quantity: material.quantity - quantity.to_f)
-        
+
         # Tạo liên kết
         activity_material = @farm_activity.activity_materials.create(
           farm_material_id: material_id,
           planned_quantity: quantity.to_f
         )
-        
+
         if !activity_material.persisted?
           Rails.logger.error("Failed to create activity_material: #{activity_material.errors.full_messages}")
         end
       end
-      
+
       # Kiểm tra nếu activity yêu cầu materials nhưng không có
       validate_materials_requirement
     end
-    
+
     # Phương thức kiểm tra yêu cầu vật tư
     def validate_materials_requirement
       # Sử dụng danh sách từ model để đảm bảo nhất quán
       required_activities = ::Farming::FarmActivity::MATERIAL_REQUIRED_ACTIVITIES
-      
+
       # Nếu hoạt động yêu cầu vật tư nhưng không có
-      if @farm_activity.respond_to?(:activity_type) && 
-         required_activities.include?(@farm_activity.activity_type.to_s) && 
+      if @farm_activity.respond_to?(:activity_type) &&
+         required_activities.include?(@farm_activity.activity_type.to_s) &&
          @farm_activity.activity_materials.reload.empty?
         @farm_activity.errors.add(:base, "Hoạt động này cần có ít nhất một vật tư")
         return false
       end
-      
+
       true
     end
-    
+
     # Cập nhật vật tư thực tế sử dụng và giảm số lượng trong kho
     def update_actual_materials(actual_materials)
       actual_materials.each do |material_id, quantity|
         quantity = quantity.to_f
         next if quantity <= 0
-        
+
         # Tìm liên kết activity_material (xử lý cả 2 trường hợp material_id và farm_material_id)
         activity_material = nil
         if @farm_activity.activity_materials.first.respond_to?(:farm_material_id)
           activity_material = @farm_activity.activity_materials.find_by(farm_material_id: material_id)
         else
-          activity_material = @farm_activity.activity_materials.find_by(material_id: material_id)  
+          activity_material = @farm_activity.activity_materials.find_by(material_id: material_id)
         end
-        
+
         material = @user.farm_materials.find_by(id: material_id)
-        
+
         # Kiểm tra xem còn đủ vật tư không
         if material.nil? || material.quantity < quantity
           return false # Không đủ vật tư
         end
-        
+
         # Nếu không tìm thấy, tạo mới liên kết
         unless activity_material
           activity_material = @farm_activity.activity_materials.create(
@@ -399,16 +399,16 @@ module Farming
         else
           activity_material.update(actual_quantity: quantity)
         end
-        
+
         # Giảm số lượng vật tư trong kho
         material.quantity -= quantity
         material.last_updated = Time.current
         material.save
       end
-      
+
       true
     end
-    
+
     # Trả lại vật tư vào kho
     def return_materials_to_inventory(materials_hash)
       materials_hash.each do |material_id, quantity|

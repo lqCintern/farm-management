@@ -3,84 +3,89 @@ module Api
   module V1
     module Notifications
       class NotificationsController < Api::BaseController
-        include PaginationHelper  # Thêm module này để sử dụng pagy
-        before_action :set_notification, only: [ :show, :mark_as_read, :mark_as_unread, :destroy ]
+        before_action :authenticate_user!
 
         def index
-          # Bắt đầu với scope cơ bản
-          scope = current_user.notifications.order(created_at: :desc)
-
-          # Optional category filter
-          scope = scope.by_category(params[:category]) if params[:category].present?
-
-          # Optional read/unread filter
-          if params[:status] == "read"
-            scope = scope.read
-          elsif params[:status] == "unread"
-            scope = scope.unread
-          end
-
-          # Sử dụng pagy thay vì kaminari
-          @pagy, @notifications = pagy(scope, items: params[:per_page] || 20)
+          result = CleanArch.notification_list.execute(
+            user_id: current_user.user_id,
+            category: params[:category],
+            status: params[:status],
+            page: params[:page] || 1,
+            per_page: params[:per_page] || 20
+          )
 
           render json: {
-            notifications: @notifications.map(&:display_data),
-            pagination: pagy_metadata(@pagy)
+            notifications: result[:notifications].map(&:display_data),
+            pagination: {
+              count: result[:pagy].count,
+              page: result[:pagy].page,
+              pages: result[:pagy].pages,
+              last: result[:pagy].last,
+              next: result[:pagy].next,
+              prev: result[:pagy].prev
+            }
           }
         end
 
         def show
-          render json: @notification.display_data
+          result = CleanArch.notification_get_details.execute(params[:id], current_user.user_id)
+
+          if result[:success]
+            render json: result[:notification].display_data
+          else
+            render json: { error: result[:error] }, status: :not_found
+          end
         end
 
         def mark_as_read
-          @notification.mark_as_read!
-          render json: {
-            success: true,
-            notification: @notification.display_data
-          }
+          result = CleanArch.notification_mark_as_read.execute(params[:id], current_user.user_id)
+
+          if result[:success]
+            render json: {
+              success: true,
+              notification: result[:notification].display_data
+            }
+          else
+            render json: { error: result[:error] }, status: :unprocessable_entity
+          end
         end
 
         def mark_as_unread
-          @notification.mark_as_unread!
-          render json: {
-            success: true,
-            notification: @notification.display_data
-          }
+          result = CleanArch.notification_mark_as_unread.execute(params[:id], current_user.user_id)
+
+          if result[:success]
+            render json: {
+              success: true,
+              notification: result[:notification].display_data
+            }
+          else
+            render json: { error: result[:error] }, status: :unprocessable_entity
+          end
         end
 
         def mark_all_as_read
-          scope = current_user.notifications.unread
-          scope = scope.by_category(params[:category]) if params[:category].present?
+          result = CleanArch.notification_mark_all_as_read.execute(
+            current_user.user_id,
+            params[:category]
+          )
 
-          count = scope.count
-          scope.update_all(read_at: Time.current)
-
-          render json: { success: true, count: count }
+          render json: { success: true, count: result[:count] }
         end
 
         def unread_count
-          # Get counts by category
-          counts = {
-            total: current_user.notifications.unread.count,
-            farm: current_user.notifications.unread.by_category("farm").count,
-            labor: current_user.notifications.unread.by_category("labor").count,
-            marketplace: current_user.notifications.unread.by_category("marketplace").count,
-            supply: current_user.notifications.unread.by_category("supply").count
-          }
+          result = CleanArch.notification_get_unread_count.execute(current_user.user_id)
 
-          render json: { counts: counts }
+          render json: { counts: result[:counts] }
         end
 
         def destroy
-          @notification.destroy
-          render json: { success: true }
-        end
+          result = CleanArch.notification_delete.execute(params[:id], current_user.user_id)
 
-        private
-
-        def set_notification
-          @notification = current_user.notifications.find(params[:id])
+          if result[:success]
+            render json: { success: true }
+          else
+            render json: { error: result[:error] }, status: :unprocessable_entity
+          end
         end
       end
     end

@@ -37,9 +37,9 @@ class FarmActivitySerializer
       overdue_days: [ 0, (today - end_date).to_i ].max
     }
   end
-  
+
   # Thêm thuộc tính để biết hoạt động có yêu cầu vật tư hay không
   attribute :requires_materials do |activity|
-    ["fertilizing", "pesticide", "planting"].include?(activity.activity_type)
+    [ "fertilizing", "pesticide", "planting" ].include?(activity.activity_type)
   end
 end
