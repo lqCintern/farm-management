@@ -6,7 +6,7 @@ module Api
 
         def index
           # Lấy cả templates mặc định và của user
-          templates = PineappleActivityTemplate.default_templates.to_a
+          templates = ::Farming::PineappleActivityTemplate.default_templates.to_a
           user_templates = current_user.pineapple_activity_templates.to_a
 
           all_templates = templates + user_templates
@@ -68,10 +68,10 @@ module Api
 
         # Áp dụng template cho một vụ dứa cụ thể
         def apply_to_crop
-          template = PineappleActivityTemplate.find(params[:template_id])
+          template = ::Farming::PineappleActivityTemplate.find(params[:template_id])
           crop = current_user.pineapple_crops.find(params[:crop_id])
 
-          service = PineappleCropService.new(crop, current_user)
+          service = ::Farming::PineappleCropService.new(crop, current_user)
 
           if service.send(:create_activity_from_template, template, crop.current_stage)
             render json: {
@@ -85,7 +85,7 @@ module Api
         private
 
         def set_template
-          @template = PineappleActivityTemplate.find_by(id: params[:id])
+          @template = ::Farming::PineappleActivityTemplate.find_by(id: params[:id])
           render json: { error: "Không tìm thấy mẫu hoạt động" }, status: :not_found unless @template
         end
 

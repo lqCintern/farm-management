@@ -7,7 +7,7 @@ module Api
         # GET /api/v1/harvests
         def index
           harvests = current_user.harvests
-                                .includes(:crop_animal, :field, :farm_activity)
+                                .includes(:pineapple_crop, :field, :farm_activity) # Thay :crop_animal thành :pineapple_crop
                                 .order(harvest_date: :desc)
 
           render json: {
@@ -28,9 +28,9 @@ module Api
         def create
           harvest = current_user.harvests.new(harvest_params)
 
-          # Tự động lấy field_id từ crop_animal nếu không được cung cấp
-          if harvest.field_id.blank? && harvest.crop_animal&.field_id.present?
-            harvest.field_id = harvest.crop_animal.field_id
+          # Tự động lấy field_id từ pineapple_crop nếu không được cung cấp
+          if harvest.field_id.blank? && harvest.pineapple_crop&.field_id.present?
+            harvest.field_id = harvest.pineapple_crop.field_id
           end
 
           if harvest.save
@@ -82,7 +82,7 @@ module Api
           field_id = params[:field_id]
           harvests = current_user.harvests
                                 .where(field_id: field_id)
-                                .includes(:crop_animal, :farm_activity)
+                                .includes(:pineapple_crop, :farm_activity) # Thay :crop_animal thành :pineapple_crop
                                 .order(harvest_date: :desc)
 
           render json: {
@@ -100,8 +100,8 @@ module Api
 
           # Thống kê theo cây trồng
           crop_stats = current_user.harvests
-                                  .joins(:crop_animal)
-                                  .group("crop_animals.name")
+                                  .joins(:pineapple_crop) # Thay :crop_animal thành :pineapple_crop
+                                  .group("pineapple_crops.name") # Giữ nguyên tên bảng trong DB
                                   .sum(:quantity)
 
           # Thống kê theo cánh đồng
@@ -147,11 +147,11 @@ module Api
             quantity: harvest.quantity,
             harvest_date: harvest.harvest_date,
             area: harvest.calculate_area,
-            crop: {
-              id: harvest.crop_animal.id,
-              name: harvest.crop_animal.name,
-              crop_type: harvest.crop_animal.crop_type
-            },
+            crop: harvest.pineapple_crop ? { # Thay crop_animal thành pineapple_crop
+              id: harvest.pineapple_crop.id,
+              name: harvest.pineapple_crop.name,
+              crop_type: harvest.pineapple_crop.crop_type
+            } : nil,
             field: harvest.field.present? ? {
               id: harvest.field.id,
               name: harvest.field.name,

@@ -32,26 +32,33 @@ class ApiRendererService
         required_activities = %w[fertilizing pesticide planting]
         result[:requires_materials] = required_activities.include?(activity.activity_type)
         
-        # Lấy và thêm materials
-        materials = []
-        activity_materials = activity.activity_materials.to_a
-        
-        if activity_materials.any?
-          materials = activity_materials.map do |am|
-            material = am.farm_material
-            next unless material
-            
-            {
-              id: material.id,
-              name: material.name,
-              quantity: am.planned_quantity,
-              unit: material.unit
-            }
-          end.compact
+        # Xử lý an toàn cho activity_materials với namespace mới
+        begin
+          activity_materials = activity.activity_materials.to_a
+          
+          # Lấy và thêm materials
+          materials = []
+          
+          if activity_materials.any?
+            materials = activity_materials.map do |am|
+              material = am.farm_material
+              next unless material
+              
+              {
+                id: material.id,
+                name: material.name,
+                quantity: am.planned_quantity,
+                unit: material.unit
+              }
+            end.compact
+          end
+          
+          # Gán danh sách materials
+          result[:materials] = materials
+        rescue => e
+          Rails.logger.error("Error processing materials: #{e.message}")
+          result[:materials] = []
         end
-        
-        # Gán danh sách materials
-        result[:materials] = materials
         
         result
       end

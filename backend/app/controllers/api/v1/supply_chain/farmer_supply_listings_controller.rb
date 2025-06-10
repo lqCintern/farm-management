@@ -9,7 +9,7 @@ module Api
 
         # GET /api/v1/supply_listings
         def index
-          @supply_listings = SupplyListing.where(status: :active)
+          @supply_listings = ::SupplyChain::SupplyListing.where(status: :active)
                                           .includes(:user, supply_images: { image_attachment: :blob })
                                           .order(created_at: :desc)
 
@@ -57,7 +57,7 @@ module Api
 
         # GET /api/v1/supply_listings/categories
         def categories
-          categories = SupplyListing.categories.keys.map do |category|
+          categories = ::SupplyChain::SupplyListing.categories.keys.map do |category|
             {
               value: category,
               label: I18n.t("supply_listing.categories.#{category}")
@@ -73,7 +73,7 @@ module Api
         private
 
         def set_supply_listing
-          @supply_listing = SupplyListing.find(params[:id])
+          @supply_listing = ::SupplyChain::SupplyListing.find(params[:id])
         rescue ActiveRecord::RecordNotFound
           render json: {
             status: "error",
@@ -92,7 +92,7 @@ module Api
             status: listing.status,
             created_at: listing.created_at,
             updated_at: listing.updated_at,
-            main_image: listing.supply_images.sorted.first&.image_url,
+            main_image: listing.supply_images.sorted.first&.image_url, 
             supplier: {
               id: listing.user.user_id,
               name: listing.user.user_name
@@ -127,7 +127,7 @@ module Api
                   position: img.position
                 }
               end,
-              similar_listings: SupplyListing.where(category: listing.category)
+              similar_listings: ::SupplyChain::SupplyListing.where(category: listing.category)
                                              .where.not(id: listing.id)
                                              .where(status: :active)
                                              .limit(6)

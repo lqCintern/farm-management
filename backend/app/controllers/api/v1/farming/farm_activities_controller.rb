@@ -9,7 +9,7 @@ module Api
         def index
           activities = current_user.farm_activities
 
-          activities = FarmActivityFilterService.new(
+          activities = ::Farming::FarmActivityFilterService.new(
             activities,
             params[:start_date],
             params[:end_date],
@@ -56,13 +56,13 @@ module Api
         end
 
         def create
-          service = FarmActivityService.new(current_user.farm_activities.new, current_user)
+          service = ::Farming::FarmActivityService.new(current_user.farm_activities.new, current_user)
           farm_activity = service.create_activity(farm_activity_params)
 
           if farm_activity.errors.empty?
             # Thêm thông báo nhắc nhở nếu hoạt động sắp diễn ra
             if farm_activity.start_date.present? && farm_activity.start_date < 7.days.from_now
-              ::Notification::FarmNotificationService.new.activity_reminder(farm_activity)
+              ::NotificationServices::FarmNotificationService.new.activity_reminder(farm_activity)
             end
 
             render json: {
@@ -80,7 +80,7 @@ module Api
             return render json: { error: "Không thể chỉnh sửa hoạt động đã hoàn thành" }, status: :unprocessable_entity
           end
 
-          service = FarmActivityService.new(@farm_activity, current_user)
+          service = ::Farming::FarmActivityService.new(@farm_activity, current_user)
           farm_activity = service.update_activity(farm_activity_params)
 
           if farm_activity.errors.empty?
@@ -90,7 +90,7 @@ module Api
               if farm_activity.try(:assignments).present?
                 farm_activity.assignments.each do |assignment|
                   if assignment.worker&.user
-                    Notification::FarmNotificationService.new.activity_updated(
+                    ::NotificationServices::FarmNotificationService.new.activity_updated(
                       farm_activity,
                       assignment.worker.user
                     )
@@ -114,7 +114,7 @@ module Api
             return render json: { error: "Không thể xóa hoạt động đã hoàn thành" }, status: :unprocessable_entity
           end
 
-          service = FarmActivityService.new(@farm_activity, current_user)
+          service = ::Farming::FarmActivityService.new(@farm_activity, current_user)
           service.destroy_activity
 
           render json: { message: "Đã hủy lịch chăm sóc thành công" }, status: :ok
@@ -126,13 +126,13 @@ module Api
           @farm_activity = current_user.farm_activities.find(params[:id])
 
           # Gọi service để xử lý hoàn thành
-          service = FarmActivityService.new(@farm_activity, current_user)
+          service = ::Farming::FarmActivityService.new(@farm_activity, current_user)
           result = service.complete_activity(completion_params)
 
           # Kiểm tra kết quả từ service
           if result[:success]
             # Tạo thông báo hoạt động đã hoàn thành
-            Notification::FarmNotificationService.new.activity_completed(@farm_activity)
+            ::NotificationServices::FarmNotificationService.new.activity_completed(@farm_activity)
 
             render json: {
               message: "Đã đánh dấu hoàn thành hoạt động",
@@ -152,7 +152,7 @@ module Api
           quarter = params[:quarter].present? ? params[:quarter].to_i : ((Date.today.month - 1) / 3 + 1)
           period = %w[month quarter year].include?(params[:period]) ? params[:period] : "month"
 
-          stats_service = FarmActivityStatsService.new(
+          stats_service = ::Farming::FarmActivityStatsService.new(
             current_user.farm_activities,
             period,
             year,
@@ -181,11 +181,11 @@ module Api
 
         # API để lấy danh sách hoạt động theo giai đoạn
         def stage_activities
-          crop = PineappleCrop.find(params[:pineapple_crop_id])
+          crop = ::Farming::PineappleCrop.find(params[:pineapple_crop_id])
 
           # Gọi service để xử lý logic
-          result = FarmActivityService.new(nil, current_user)
-                    .get_stage_activities(crop, params[:current_stage_only])
+          result = ::Farming::FarmActivityService.new(nil, current_user)
+                   .get_stage_activities(crop, params[:current_stage_only])
 
           @pagy, activities = pagy(result, items: 10)
 
@@ -201,11 +201,11 @@ module Api
           begin
             render json: {
               farm_activity: @farm_activity.as_json,
-              serializer_version: FarmActivitySerializer.instance_methods(false),
+              serializer_version: ::FarmActivitySerializer.instance_methods(false),
               has_activity_materials: @farm_activity.respond_to?(:farm_materials),
               activity_materials: @farm_activity.respond_to?(:farm_materials) ?
                                   @farm_activity.activity_materials.as_json : "Not available",
-              raw_serialized: FarmActivitySerializer.new(@farm_activity).serializable_hash.as_json
+              raw_serialized: ::FarmActivitySerializer.new(@farm_activity).serializable_hash.as_json
             }, status: :ok
           rescue => e
             render json: { error: e.message, backtrace: e.backtrace.first(10) }, status: :internal_server_error

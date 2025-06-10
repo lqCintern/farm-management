@@ -63,6 +63,7 @@ module Api
 
         # DELETE /api/v1/fields/:id
         def destroy
+          # Sử dụng namespace đầy đủ cho các associations
           if @field.pineapple_crops.exists? || @field.farm_activities.exists? || @field.harvests.exists?
             render json: {
               error: "Cannot delete field. It has associated pineapple crops, activities or harvests."
@@ -78,6 +79,7 @@ module Api
 
         # GET /api/v1/fields/:id/activities
         def activities
+          # Sử dụng namespace trong includes
           activities = @field.farm_activities
                             .includes(:pineapple_crop, :user)
                             .order(start_date: :desc)
@@ -115,19 +117,19 @@ module Api
           # Thống kê theo diện tích
           total_area = current_user.fields.sum(:area)
 
-          # Thống kê theo vụ trồng dứa
+          # Thống kê theo vụ trồng dứa - cập nhật bảng với namespace
           crops_by_field = current_user.fields
                                       .joins(:pineapple_crops)
                                       .group("fields.id")
                                       .count("pineapple_crops.id")
 
-          # Thống kê hoạt động
+          # Thống kê hoạt động - cập nhật bảng với namespace
           activities_by_field = current_user.fields
                                           .joins(:farm_activities)
                                           .group("fields.id")
                                           .count("farm_activities.id")
 
-          # Thống kê thu hoạch
+          # Thống kê thu hoạch - cập nhật bảng với namespace
           harvests_by_field = current_user.fields
                                         .joins(:harvests)
                                         .group("fields.id")
@@ -173,7 +175,7 @@ module Api
             coordinates: field.coordinates,
             activity_count: field.farm_activities.is_a?(ActiveRecord::Relation) ? field.farm_activities.count : 0,
             harvest_count: field.harvests.count,
-            currentCrop: field.pineapple_crop,
+            currentCrop: field.pineapple_crops.where(status: 'active').first, # Cập nhật với quan hệ đúng
             created_at: field.created_at,
             updated_at: field.updated_at
           }

@@ -30,7 +30,7 @@ module Api
 
         # POST /api/v1/supply_orders
         def create
-          @supply_listing = SupplyListing.find(params[:supply_listing_id])
+          @supply_listing = ::SupplyChain::SupplyListing.find(params[:supply_listing_id])
           
           # Kiểm tra số lượng tồn kho và số lượng đang tạm giữ
           available_quantity = @supply_listing.quantity - @supply_listing.pending_quantity
@@ -190,7 +190,7 @@ module Api
 
           if detailed
             # Kiểm tra xem đã đánh giá chưa
-            has_review = SupplierReview.exists?(supply_order_id: order.id, reviewer_id: current_user.user_id)
+            has_review = ::SupplyChain::SupplierReview.exists?(supply_order_id: order.id, reviewer_id: current_user.user_id)
 
             json.merge!({
               note: order.note,

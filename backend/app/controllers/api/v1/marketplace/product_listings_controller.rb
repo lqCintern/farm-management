@@ -9,7 +9,7 @@ module Api
         # GET /api/v1/product_listings
         def index
           # Lấy danh sách sản phẩm với các bộ lọc
-          @product_listings = ProductListing.published
+          @product_listings = ::Marketplace::ProductListing.published
             .by_product_type(params[:product_type])
             .by_location(params[:province])
             .includes(:product_images, :user)
@@ -18,8 +18,29 @@ module Api
           # Áp dụng phân trang
           @pagy, @product_listings = pagy(@product_listings, items: params[:per_page] || 12)
 
+          # Cập nhật cách xử lý ảnh
+          product_listings_with_images = @product_listings.map do |listing|
+            listing_json = listing.as_json
+            
+            # Xử lý ảnh đặc biệt, tránh lỗi với ActiveStorage
+            begin
+              images = listing.product_images.map do |pi|
+                pi.image.attached? ? pi.image_url : nil
+              end.compact
+              
+              listing_json[:images] = images
+              listing_json[:thumbnail] = images.first
+            rescue => e
+              Rails.logger.error("Error processing images for listing #{listing.id}: #{e.message}")
+              listing_json[:images] = []
+              listing_json[:thumbnail] = nil
+            end
+            
+            listing_json
+          end
+
           render json: {
-            product_listings: @product_listings,
+            product_listings: product_listings_with_images,
             pagination: {
               current_page: @pagy.page,
               total_pages: @pagy.pages,
@@ -30,14 +51,14 @@ module Api
 
         # GET /api/v1/product_listings/:id
         def show
-          # Tăng lượt xem khi xem chi tiết
-          @product_listing.increment_view_count! unless current_user&.id == @product_listing.user_id
-
+          service = ::Marketplace::ProductListingService.new(@product_listing, current_user)
+          service.increment_view
+          
           # Lấy thông tin bổ sung từ pineapple_crop nếu có
           if @product_listing.crop_animal_id.present?
-            pineapple_crop = PineappleCrop.find_by(id: @product_listing.crop_animal_id)
+            pineapple_crop = ::Farming::PineappleCrop.find_by(id: @product_listing.crop_animal_id)
             @product_listing_data = @product_listing.as_json.merge(
-              pineapple_crop: pineapple_crop.as_json(only: [ :variety, :planting_date, :field_id, :current_stage ])
+              pineapple_crop: pineapple_crop&.as_json(only: [ :variety, :planting_date, :field_id, :current_stage ])
             )
           else
             @product_listing_data = @product_listing
@@ -54,104 +75,32 @@ module Api
         def create
           # Tạo sản phẩm mới từ dữ liệu được gửi lên
           @product_listing = current_user.product_listings.new(product_listing_params)
-
-          # Xử lý trường min_size và max_size để tính average_size
-          if params[:product_listing][:min_size].present? && params[:product_listing][:max_size].present?
-            min_size = params[:product_listing][:min_size].to_f
-            max_size = params[:product_listing][:max_size].to_f
-            @product_listing.average_size = (min_size + max_size) / 2
-          end
-
-          # Thêm các trường bổ sung không có trong strong parameters
-          @product_listing.variety = params[:product_listing][:variety] if params[:product_listing][:variety].present?
-          @product_listing.location_note = params[:product_listing][:locationNote] if params[:product_listing][:locationNote].present?
-
-          # Xử lý coordinates nếu được gửi lên
-          if params[:product_listing][:coordinates].present?
-            begin
-              coordinates = JSON.parse(params[:product_listing][:coordinates])
-              # Tính trung tâm nếu cần
-              if coordinates.is_a?(Array) && coordinates.any?
-                lat_sum = lng_sum = 0
-                coordinates.each do |coord|
-                  lat_sum += coord["lat"].to_f
-                  lng_sum += coord["lng"].to_f
-                end
-                @product_listing.latitude = lat_sum / coordinates.size
-                @product_listing.longitude = lng_sum / coordinates.size
-              end
-            rescue JSON::ParserError => e
-              Rails.logger.error("Error parsing coordinates: #{e.message}")
-            end
-          end
-
-          # Xử lý hình ảnh nếu có
-          if params[:images].present?
-            params[:images].each_with_index do |image_url, index|
-              @product_listing.product_images.build(image_path: image_url, position: index)
-            end
-          end
-
-          if @product_listing.save
+          service = ::Marketplace::ProductListingService.new(@product_listing, current_user)
+          result = service.create(params[:product_listing])
+          
+          if result[:success]
             render json: {
-              message: "Sản phẩm đã được tạo thành công",
-              product_listing: @product_listing
+              message: result[:message],
+              product_listing: result[:product_listing]
             }, status: :created
           else
-            render json: { errors: @product_listing.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:errors] }, status: :unprocessable_entity
           end
         end
 
         # PUT /api/v1/product_listings/:id
         def update
-          # Cập nhật thông tin sản phẩm
-
-          # Xử lý trường min_size và max_size để tính average_size
-          if params[:product_listing][:min_size].present? && params[:product_listing][:max_size].present?
-            min_size = params[:product_listing][:min_size].to_f
-            max_size = params[:product_listing][:max_size].to_f
-            params[:product_listing][:average_size] = (min_size + max_size) / 2
-          end
+          service = ::Marketplace::ProductListingService.new(@product_listing, current_user)
+          result = service.update(params[:product_listing])
           
-          # Xử lý hình ảnh mới nếu có
-          if params[:images].present?
-            # Log để debug
-            Rails.logger.info "Processing #{params[:images].length} new images"
-            
-            params[:images].each_with_index do |image, index|
-              # Tìm vị trí cuối cùng
-              last_position = @product_listing.product_images.maximum(:position) || -1
-              new_position = last_position + index + 1
-              
-              # Tạo ảnh mới
-              img = @product_listing.product_images.build(position: new_position)
-              img.image.attach(image)
-              Rails.logger.info "Attached new image at position #{new_position}"
-            end
-          end
-          
-          # Xử lý retained_image_ids nếu có
-          if params[:retained_image_ids].present?
-            retained_ids = params[:retained_image_ids].reject(&:blank?).map(&:to_i)
-            Rails.logger.info "Retaining image IDs: #{retained_ids.inspect}"
-            
-            # Xóa các ảnh không còn trong danh sách giữ lại
-            @product_listing.product_images.where.not(id: retained_ids).destroy_all
-            Rails.logger.info "Deleted images not in retained list"
-          elsif params[:retained_image_ids] == [""] || params[:retained_image_ids] == []
-            # Nếu retained_image_ids là mảng rỗng, xóa tất cả ảnh cũ
-            Rails.logger.info "Empty retained_image_ids, deleting all existing images"
-            @product_listing.product_images.destroy_all
-          end
-
-          if @product_listing.update(product_listing_params)
+          if result[:success]
             render json: {
-              message: "Sản phẩm đã được cập nhật thành công",
-              product_listing: @product_listing,
-              product_images: @product_listing.product_images.map(&:image_url)
+              message: result[:message],
+              product_listing: result[:product_listing],
+              product_images: result[:product_images]
             }
           else
-            render json: { errors: @product_listing.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:errors] }, status: :unprocessable_entity
           end
         end
 
@@ -166,25 +115,31 @@ module Api
 
         # POST /api/v1/product_listings/:id/mark_as_sold
         def mark_as_sold
-          if @product_listing.update(status: ProductListing::STATUS_SOLD)
+          service = ::Marketplace::ProductListingService.new(@product_listing, current_user)
+          result = service.change_status("sold")
+          
+          if result[:success]
             render json: {
-              message: "Sản phẩm đã được đánh dấu là đã bán",
-              product_listing: @product_listing
+              message: result[:message],
+              product_listing: result[:product_listing]
             }
           else
-            render json: { errors: @product_listing.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:errors] }, status: :unprocessable_entity
           end
         end
 
         # POST /api/v1/product_listings/:id/mark_as_hidden
         def mark_as_hidden
-          if @product_listing.update(status: ProductListing::STATUS_HIDDEN)
+          service = ::Marketplace::ProductListingService.new(@product_listing, current_user)
+          result = service.change_status("hidden")
+          
+          if result[:success]
             render json: {
-              message: "Sản phẩm đã được ẩn",
-              product_listing: @product_listing
+              message: result[:message],
+              product_listing: result[:product_listing]
             }
           else
-            render json: { errors: @product_listing.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:errors] }, status: :unprocessable_entity
           end
         end
 
@@ -237,13 +192,13 @@ module Api
         private
 
         def set_product_listing
-          @product_listing = ProductListing.find(params[:id])
+          @product_listing = ::Marketplace::ProductListing.find(params[:id])
         rescue ActiveRecord::RecordNotFound
           render json: { error: "Không tìm thấy sản phẩm" }, status: :not_found
         end
 
         def authorize_user!
-          unless @product_listing.user_id == current_user.id
+          unless @product_listing.user_id == current_user.user_id
             render json: { error: "Bạn không có quyền truy cập sản phẩm này" }, status: :forbidden
           end
         end
@@ -254,7 +209,7 @@ module Api
             :total_weight, :average_size, :price_expectation,
             :province, :district, :ward, :address, :latitude, :longitude,
             :harvest_start_date, :harvest_end_date, :crop_animal_id,
-            :min_size, :max_size, :variety, :location_note, # Thêm các trường mới
+            :min_size, :max_size, :variety, :location_note,
             product_images_attributes: [ :id, :image_path, :position, :_destroy ]
           )
         end
