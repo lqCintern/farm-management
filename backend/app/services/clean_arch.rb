@@ -183,7 +183,13 @@ module CleanArch
     def notification_delete
       @notification_delete ||= Notification::DeleteNotification.new(notification_repository)
     end
-
+    
+    def prepare_labor_notification
+      @prepare_labor_notification ||= Notification::PrepareLaborRequestNotification.new(
+        labor_farm_household_repository
+      )
+    end
+    
     # Notification Service - phục vụ cho toàn bộ ứng dụng
     def notification_service
       @notification_service ||= NotificationServices::CleanNotificationService.new(notification_create)
@@ -547,6 +553,332 @@ module CleanArch
     def farming_get_harvest_stats
       @farming_get_harvest_stats ||= Farming::Harvests::GetHarvestStats.new(
         farming_harvest_repository
+      )
+    end
+
+    # Labor Farm Household repositories
+    def labor_farm_household_repository
+      @labor_farm_household_repository ||= Repositories::Labor::FarmHouseholdRepository.new
+    end
+
+    # Labor Farm Household use cases
+    def labor_list_farm_households
+      @labor_list_farm_households ||= Labor::FarmHouseholds::ListFarmHouseholds.new(
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_get_household_summary
+      @labor_get_household_summary ||= Labor::FarmHouseholds::GetHouseholdSummary.new(
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_create_farm_household
+      @labor_create_farm_household ||= Labor::FarmHouseholds::CreateFarmHousehold.new(
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_update_farm_household
+      @labor_update_farm_household ||= Labor::FarmHouseholds::UpdateFarmHousehold.new(
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_delete_farm_household
+      @labor_delete_farm_household ||= Labor::FarmHouseholds::DeleteFarmHousehold.new(
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_add_worker_to_household
+      @labor_add_worker_to_household ||= Labor::FarmHouseholds::AddWorkerToHousehold.new(
+        labor_farm_household_repository
+      )
+    end
+
+    # Labor Assignment repository
+    def labor_assignment_repository
+      @labor_assignment_repository ||= Repositories::Labor::LaborAssignmentRepository.new
+    end
+
+    # Labor Assignment use cases
+    def labor_create_assignment
+      @labor_create_assignment ||= Labor::LaborAssignments::CreateAssignment.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_batch_assign_workers
+      @labor_batch_assign_workers ||= Labor::LaborAssignments::BatchAssignWorkers.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_update_assignment_status
+      @labor_update_assignment_status ||= Labor::LaborAssignments::UpdateAssignmentStatus.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_list_worker_assignments
+      @labor_list_worker_assignments ||= Labor::LaborAssignments::ListWorkerAssignments.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_list_household_assignments
+      @labor_list_household_assignments ||= Labor::LaborAssignments::ListHouseholdAssignments.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_complete_multiple_assignments
+      @labor_complete_multiple_assignments ||= Labor::LaborAssignments::CompleteMultipleAssignments.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_rate_assignment
+      @labor_rate_assignment ||= Labor::LaborAssignments::RateAssignment.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_check_scheduling
+      @labor_check_scheduling ||= Labor::LaborAssignments::CheckScheduling.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_list_request_assignments
+      @labor_list_request_assignments ||= Labor::LaborAssignments::ListRequestAssignments.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_delete_assignment
+      @labor_delete_assignment ||= Labor::LaborAssignments::DeleteAssignment.new(
+        labor_assignment_repository
+      )
+    end
+
+    def labor_get_assignment
+      @labor_get_assignment ||= Labor::LaborAssignments::GetAssignment.new(
+        labor_assignment_repository
+      )
+    end
+
+    # Household Worker repository
+    def labor_household_worker_repository
+      @labor_household_worker_repository ||= Repositories::Labor::HouseholdWorkerRepository.new
+    end
+
+    # Worker Profile repository
+    def labor_worker_profile_repository
+      @labor_worker_profile_repository ||= Repositories::Labor::WorkerProfileRepository.new
+    end
+
+    # Household Worker use cases
+    def labor_list_household_workers
+      @labor_list_household_workers ||= Labor::HouseholdWorkers::ListHouseholdWorkers.new(
+        labor_household_worker_repository
+      )
+    end
+
+    def labor_add_worker_to_household
+      @labor_add_worker_to_household ||= Labor::HouseholdWorkers::AddWorkerToHousehold.new(
+        labor_household_worker_repository
+      )
+    end
+
+    def labor_remove_worker
+      @labor_remove_worker ||= Labor::HouseholdWorkers::RemoveWorker.new(
+        labor_household_worker_repository,
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_update_worker_status
+      @labor_update_worker_status ||= Labor::HouseholdWorkers::UpdateWorkerStatus.new(
+        labor_household_worker_repository,
+        labor_farm_household_repository
+      )
+    end
+
+    # Worker Profile use cases
+    def labor_create_or_update_profile
+      @labor_create_or_update_profile ||= Labor::WorkerProfiles::CreateOrUpdateProfile.new(
+        labor_worker_profile_repository
+      )
+    end
+
+    def labor_find_available_workers
+      @labor_find_available_workers ||= Labor::WorkerProfiles::FindAvailableWorkers.new(
+        labor_worker_profile_repository
+      )
+    end
+
+    def labor_get_worker_statistics
+      @labor_get_worker_statistics ||= Labor::WorkerProfiles::GetWorkerStatistics.new(
+        labor_worker_profile_repository
+      )
+    end
+
+    def labor_get_or_create_profile
+      @labor_get_or_create_profile ||= Labor::WorkerProfiles::GetOrCreateProfile.new(
+        labor_worker_profile_repository
+      )
+    end
+
+    def labor_check_worker_availability
+      @labor_check_worker_availability ||= Labor::WorkerProfiles::CheckWorkerAvailability.new(
+        labor_worker_profile_repository
+      )
+    end
+
+    # Labor Request repositories
+    def labor_request_repository
+      @labor_request_repository ||= Repositories::Labor::LaborRequestRepository.new
+    end
+
+    def labor_exchange_repository
+      @labor_exchange_repository ||= Repositories::Labor::LaborExchangeRepository.new
+    end
+
+    # Labor Request use cases
+    def labor_list_requests
+      @labor_list_requests ||= Labor::LaborRequests::ListRequests.new(
+        labor_request_repository
+      )
+    end
+
+    def labor_get_request
+      @labor_get_request ||= Labor::LaborRequests::GetRequest.new(
+        labor_request_repository
+      )
+    end
+
+    def labor_create_request
+      @labor_create_request ||= Labor::LaborRequests::CreateRequest.new(
+        labor_request_repository,
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_update_request
+      @labor_update_request ||= Labor::LaborRequests::UpdateRequest.new(
+        labor_request_repository,
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_delete_request
+      @labor_delete_request ||= Labor::LaborRequests::DeleteRequest.new(
+        labor_request_repository,
+        labor_farm_household_repository,
+        labor_assignment_repository
+      )
+    end
+
+    def labor_process_request
+      @labor_process_request ||= Labor::LaborRequests::ProcessLaborRequest.new(
+        labor_request_repository,
+        labor_farm_household_repository,
+        labor_assignment_repository,
+        notification_service
+      )
+    end
+
+    def labor_list_public_requests
+      @labor_list_public_requests ||= Labor::LaborRequests::ListPublicRequests.new(
+        labor_request_repository
+      )
+    end
+
+    def labor_join_request
+      @labor_join_request ||= Labor::LaborRequests::JoinRequest.new(
+        labor_request_repository,
+        labor_farm_household_repository
+      )
+    end
+
+        def labor_create_mixed_request
+      @labor_create_mixed_request ||= Labor::LaborRequests::CreateMixedRequest.new(
+        labor_request_repository,
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_get_group_status
+      @labor_get_group_status ||= Labor::LaborRequests::GetGroupStatus.new(
+        labor_request_repository
+      )
+    end
+
+    def labor_suggest_workers
+      @labor_suggest_workers ||= Labor::LaborRequests::SuggestWorkers.new(
+        labor_request_repository,
+        labor_worker_profile_repository
+      )
+    end
+
+    def labor_list_requests_by_activity
+      @labor_list_requests_by_activity ||= Labor::LaborRequests::ListRequestsByActivity.new(
+        labor_request_repository
+      )
+    end
+
+    # Labor Exchange use cases
+    def labor_list_household_exchanges
+      @labor_list_household_exchanges ||= Labor::LaborExchanges::ListHouseholdExchanges.new(
+        labor_exchange_repository
+      )
+    end
+
+    def labor_get_exchange_details
+      @labor_get_exchange_details ||= Labor::LaborExchanges::GetExchangeDetails.new(
+        labor_exchange_repository
+      )
+    end
+
+    def labor_reset_balance
+      @labor_reset_balance ||= Labor::LaborExchanges::ResetBalance.new(
+        labor_exchange_repository,
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_get_transaction_history
+      @labor_get_transaction_history ||= Labor::LaborExchanges::GetTransactionHistory.new(
+        labor_exchange_repository
+      )
+    end
+
+    def labor_adjust_balance
+      @labor_adjust_balance ||= Labor::LaborExchanges::AdjustBalance.new(
+        labor_exchange_repository,
+        labor_farm_household_repository
+      )
+    end
+
+    def labor_recalculate_balance
+      @labor_recalculate_balance ||= Labor::LaborExchanges::RecalculateBalance.new(
+        labor_exchange_repository
+      )
+    end
+
+    def labor_process_completed_assignment
+      @labor_process_completed_assignment ||= Labor::LaborExchanges::ProcessCompletedAssignment.new(
+        labor_exchange_repository
+      )
+    end
+
+    def labor_initialize_exchanges
+      @labor_initialize_exchanges ||= Labor::LaborExchanges::InitializeExchanges.new(
+        labor_exchange_repository,
+        labor_assignment_repository
       )
     end
 

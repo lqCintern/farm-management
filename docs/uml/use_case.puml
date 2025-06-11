@@ -1,0 +1,70 @@
+@startuml
+skinparam actorStyle awesome
+
+' Actors
+actor User as "Nông dân"
+actor Worker as "Người lao động"
+actor Household as "Hộ gia đình"
+actor System as "Hệ thống"
+
+' Use Cases
+rectangle "Farm Management System" {
+  usecase "Tạo hoạt động mới" as UC1
+  usecase "Cập nhật hoạt động" as UC2
+  usecase "Xóa hoạt động" as UC3
+  usecase "Đánh dấu hoàn thành" as UC4
+  usecase "Xem lịch sử hoạt động" as UC5
+  usecase "Thống kê hoạt động" as UC6
+  
+  usecase "Tạo cây trồng mới" as UC7
+  usecase "Cập nhật thông tin cây" as UC8
+  usecase "Theo dõi giai đoạn phát triển" as UC9
+  usecase "Xem lịch sử chăm sóc" as UC10
+  
+  usecase "Tạo yêu cầu công việc" as UC11
+  usecase "Tìm người làm việc" as UC12
+  usecase "Đổi công" as UC13
+  usecase "Trả công" as UC14
+  usecase "Thuê lao động" as UC15
+  usecase "Xem lịch sử trao đổi" as UC16
+  
+  usecase "Thêm vật tư mới" as UC17
+  usecase "Cập nhật số lượng" as UC18
+  usecase "Gán vật tư cho hoạt động" as UC19
+  usecase "Theo dõi sử dụng" as UC20
+}
+
+' Relationships
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+User --> UC7
+User --> UC8
+User --> UC9
+User --> UC10
+User --> UC17
+User --> UC18
+User --> UC19
+User --> UC20
+
+Worker --> UC12
+Worker --> UC13
+Worker --> UC14
+Worker --> UC15
+Worker --> UC16
+
+Household --> UC11
+Household --> UC12
+Household --> UC13
+Household --> UC14
+Household --> UC15
+Household --> UC16
+
+System --> UC6
+System --> UC9
+System --> UC20
+
+@enduml 

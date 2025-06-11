@@ -13,14 +13,14 @@ module Api
             }
           )
           
-          render json: Presenters::Farming::PineappleActivityTemplatePresenter.collection_as_json(result[:templates]), status: :ok
+          render json: ::Farming::PineappleActivityTemplatePresenter.collection_as_json(result[:templates]), status: :ok
         end
 
         def show
           result = CleanArch.farming_get_pineapple_activity_template.execute(params[:id])
           
           if result[:success]
-            render json: { data: Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template]) }, status: :ok
+            render json: { data: ::Farming::PineappleActivityTemplatePresenter.as_json(result[:template]) }, status: :ok
           else
             render json: { error: result[:error] }, status: :not_found
           end
@@ -35,7 +35,7 @@ module Api
           if result[:success]
             render json: {
               message: "Đã tạo mẫu hoạt động thành công",
-              data: Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
+              data: ::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
             }, status: :created
           else
             render json: { errors: result[:errors] }, status: :unprocessable_entity
@@ -52,7 +52,7 @@ module Api
           if result[:success]
             render json: {
               message: "Đã cập nhật mẫu hoạt động thành công",
-              data: Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
+              data: ::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
             }, status: :ok
           else
             render json: { errors: result[:error] || result[:errors] }, status: :unprocessable_entity
@@ -83,7 +83,7 @@ module Api
           if result[:success]
             render json: {
               message: "Đã áp dụng mẫu hoạt động thành công",
-              farm_activity: Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
+              farm_activity: ::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
             }, status: :created
           else
             render json: { error: result[:error] || result[:errors] }, status: :unprocessable_entity

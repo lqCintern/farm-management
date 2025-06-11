@@ -3,41 +3,44 @@ module Api
   module V1
     module Labor
       class LaborRequestsController < BaseController
-        before_action :require_household, except: [ :index, :show, :public_requests ]
-        before_action :set_labor_request, only: [ :show, :update, :destroy, :accept, :decline, :join, :complete, :cancel, :group_status ]
+        before_action :require_household, except: [:index, :show, :public_requests]
+        before_action :set_labor_request, only: [:show, :update, :destroy, :accept, :decline, :join, :complete, :cancel, :group_status, :suggest_workers]
 
         # Liệt kê tất cả các yêu cầu
         def index
-          @requests = current_household ?
-            ::Labor::LaborRequestService.find_requests_for_household(
-              current_household.id,
-              filters_from_params
-            ) :
-            ::Labor::LaborRequest.all
-
-          render_success_response(@requests)
+          filters = filters_from_params
+          
+          if current_household
+            requests = CleanArch.labor_list_requests.execute(current_household.id, filters)
+            render_success_response(requests)
+          else
+            render_success_response([])
+          end
         end
 
         # Hiển thị chi tiết của một yêu cầu
         def show
-          response_data = @labor_request.as_json
-          response_data[:requesting_household] = @labor_request.requesting_household.as_json(only: [ :id, :name ]) if @labor_request.requesting_household
-          response_data[:providing_household] = @labor_request.providing_household.as_json(only: [ :id, :name ]) if @labor_request.providing_household
-
-          render_success_response(response_data)
+          request_result = CleanArch.labor_get_request.execute(params[:id])
+          
+          if request_result[:success]
+            render_success_response(request_result[:request])
+          else
+            render_error_response(request_result[:errors], :not_found)
+          end
         end
 
-        # Tạo yêu cầu thông thường
+        # Tạo yêu cầu thường
         def create
-          result = ::Labor::LaborRequestService.create_request(
-            current_household,
-            labor_request_params
+          result = CleanArch.labor_create_request.execute(
+            current_household.id,
+            labor_request_params.to_h
           )
 
           if result[:success]
-            # Thêm thông báo cho người nhận yêu cầu
-            if result[:request].providing_household.present?
-              ::NotificationServices::LaborNotificationService.new.new_labor_request(result[:request])
+            # Thêm thông báo nếu có providing_household
+            if result[:request].providing_household_id.present?
+              notification_dto = CleanArch.prepare_labor_notification.execute(result[:request])
+              CleanArch.notification_service.new_labor_request(notification_dto)
             end
 
             render_success_response(result[:request], :created)
@@ -54,14 +57,22 @@ module Api
             max_acceptors: params[:max_acceptors]
           }
 
-          result = ::Labor::LaborRequestService.create_mixed_request(
-            current_household,
-            labor_request_params,
+          result = CleanArch.labor_create_mixed_request.execute(
+            current_household.id,
+            labor_request_params.to_h,
             provider_ids,
             options
           )
 
           if result[:success]
+            # Gửi thông báo cho các providing households
+            result[:child_requests].each do |child_request|
+              if child_request[:providing_household_id].present?
+                notification_dto = CleanArch.prepare_labor_notification.execute(child_request)
+                CleanArch.notification_service.new_labor_request(notification_dto)
+              end
+            end
+            
             render_success_response({
               parent_request: result[:parent_request],
               child_requests: result[:child_requests]
@@ -73,12 +84,16 @@ module Api
 
         # Tham gia vào một yêu cầu công khai
         def join
-          result = ::Labor::LaborRequestService.join_public_request(
-            @labor_request,
-            current_household
+          result = CleanArch.labor_join_request.execute(
+            params[:id], 
+            current_household.id, 
+            current_user.id
           )
 
           if result[:success]
+            # Thông báo cho người tạo yêu cầu
+              notification_dto = CleanArch.prepare_labor_notification.execute(result[:request])
+              CleanArch.notification_service.new_labor_request(notification_dto)
             render_success_response(result[:request], :created)
           else
             render_error_response(result[:errors], :unprocessable_entity)
@@ -87,48 +102,33 @@ module Api
 
         # Xem tình trạng của nhóm yêu cầu
         def group_status
-          if @labor_request.request_group_id.blank?
-            render_error_response("Yêu cầu này không thuộc nhóm nào", :bad_request)
-            return
+          result = CleanArch.labor_get_group_status.execute(params[:id])
+          
+          if result[:success]
+            render_success_response(result[:status])
+          else
+            render_error_response(result[:errors], :unprocessable_entity)
           end
-
-          related_requests = @labor_request.related_requests.includes(:providing_household)
-
-          render_success_response({
-            group_id: @labor_request.request_group_id,
-            parent_id: @labor_request.original_request? ? @labor_request.id : @labor_request.parent_request_id,
-            total: related_requests.count + 1,
-            accepted: related_requests.where(status: :accepted).count + (@labor_request.accepted? ? 1 : 0),
-            declined: related_requests.where(status: :declined).count + (@labor_request.declined? ? 1 : 0),
-            pending: related_requests.where(status: :pending).count + (@labor_request.pending? ? 1 : 0)
-          })
         end
 
         # Tìm các yêu cầu công khai
         def public_requests
-          @requests = ::Labor::LaborRequest.public_requests
-                       .where(status: :pending)
-                       .includes(:requesting_household)
-                       .order(created_at: :desc)
-
-          # Loại trừ yêu cầu từ các nhóm đã tham gia
-          if current_household && params[:exclude_joined] == "true"
-            joined_groups = ::Labor::LaborRequest.where(providing_household_id: current_household.id)
-                              .pluck(:request_group_id)
-                              .compact
-                              .uniq
-
-            @requests = @requests.where.not(request_group_id: joined_groups)
+          filters = public_request_filters_from_params
+          
+          if current_household
+            filters[:exclude_household_id] = current_household.id
           end
-
-          render_success_response(@requests)
+          
+          requests = CleanArch.labor_list_public_requests.execute(filters)
+          render_success_response(requests)
         end
 
         # Cập nhật yêu cầu
         def update
-          result = ::Labor::LaborRequestService.update_request(
-            @labor_request,
-            labor_request_params
+          result = CleanArch.labor_update_request.execute(
+            params[:id],
+            labor_request_params.to_h,
+            current_user.id
           )
 
           if result[:success]
@@ -140,25 +140,27 @@ module Api
 
         # Xóa yêu cầu
         def destroy
-          if @labor_request.destroy
-            render_success_response({ id: @labor_request.id, message: "Xóa yêu cầu thành công" })
+          result = CleanArch.labor_delete_request.execute(params[:id], current_user.id)
+          
+          if result[:success]
+            render_success_response({ id: params[:id], message: "Xóa yêu cầu thành công" })
           else
-            render_error_response("Không thể xóa yêu cầu", :unprocessable_entity)
+            render_error_response(result[:errors], :unprocessable_entity)
           end
         end
 
         # Chấp nhận yêu cầu
         def accept
-          result = ::Labor::LaborRequestService.process_request(
-            @labor_request,
-            :accept,
-            current_user
+          result = CleanArch.labor_process_request.execute(
+            params[:id], 
+            :accept, 
+            current_user.id
           )
 
           if result[:success]
-            # Thêm thông báo đã chấp nhận cho người tạo yêu cầu
-            ::NotificationServices::LaborNotificationService.new.labor_request_response(
-              @labor_request,
+            # Thông báo cho người tạo yêu cầu
+            CleanArch.notification_service.labor_request_response(
+              result[:request],
               "accepted"
             )
 
@@ -173,16 +175,16 @@ module Api
 
         # Từ chối yêu cầu
         def decline
-          result = ::Labor::LaborRequestService.process_request(
-            @labor_request,
-            :decline,
-            current_user
+          result = CleanArch.labor_process_request.execute(
+            params[:id], 
+            :decline, 
+            current_user.id
           )
 
           if result[:success]
-            # Thêm thông báo đã từ chối cho người tạo yêu cầu
-            ::NotificationServices::LaborNotificationService.new.labor_request_response(
-              @labor_request,
+            # Thông báo cho người tạo yêu cầu
+            CleanArch.notification_service.labor_request_response(
+              result[:request],
               "rejected"
             )
 
@@ -197,10 +199,10 @@ module Api
 
         # Hủy yêu cầu
         def cancel
-          result = ::Labor::LaborRequestService.process_request(
-            @labor_request,
-            :cancel,
-            current_user
+          result = CleanArch.labor_process_request.execute(
+            params[:id], 
+            :cancel, 
+            current_user.id
           )
 
           if result[:success]
@@ -215,16 +217,16 @@ module Api
 
         # Hoàn thành yêu cầu
         def complete
-          result = ::Labor::LaborRequestService.process_request(
-            @labor_request,
-            :complete,
-            current_user
+          result = CleanArch.labor_process_request.execute(
+            params[:id], 
+            :complete, 
+            current_user.id
           )
 
           if result[:success]
-            # Thêm thông báo hoàn thành cho các bên liên quan
-            ::NotificationServices::LaborNotificationService.new.labor_request_response(
-              @labor_request,
+            # Thông báo cho các bên liên quan
+            CleanArch.notification_service.labor_request_response(
+              result[:request],
               "completed"
             )
 
@@ -237,54 +239,58 @@ module Api
           end
         end
 
-        # Thêm endpoint để gợi ý người lao động
+        # Gợi ý người lao động
         def suggest_workers
           max_suggestions = params[:limit].to_i || 5
 
-          workers = ::Labor::LaborRequestService.suggest_workers(
-            @labor_request,
+          result = CleanArch.labor_suggest_workers.execute(
+            params[:id],
             max_suggestions
           )
 
-          render_success_response({
-            request_id: @labor_request.id,
-            suggested_workers: workers.map { |w|
-              {
-                id: w.id,
-                name: w.fullname || w.user_name,
-                skills: w.worker_profile&.skills || [],
-                profile_image: w.profile_image_url
-              }
-            }
-          })
+          if result[:success]
+            render_success_response({
+              request_id: params[:id],
+              suggested_workers: result[:workers]
+            })
+          else
+            render_error_response(result[:errors], :unprocessable_entity)
+          end
         end
 
-        # Bổ sung endpoint để lọc yêu cầu theo hoạt động nông nghiệp
+        # Lọc yêu cầu theo hoạt động nông nghiệp
         def for_activity
-          @farm_activity_id = params[:farm_activity_id]
-          unless @farm_activity_id
+          farm_activity_id = params[:farm_activity_id]
+          unless farm_activity_id
             render_error_response("Missing farm_activity_id", :bad_request)
             return
           end
 
-          @requests = ::Labor::LaborRequest.where(farm_activity_id: @farm_activity_id.to_i)
-                                         .where(requesting_household_id: current_household.id)
-                                         .or(::Labor::LaborRequest.where(providing_household_id: current_household.id))
+          result = CleanArch.labor_list_requests_by_activity.execute(
+            current_household.id,
+            farm_activity_id.to_i
+          )
 
-          render_success_response(@requests.as_json)
+          render_success_response(result)
         end
 
         private
 
         def set_labor_request
-          @labor_request = ::Labor::LaborRequest.includes(:requesting_household, :providing_household).find(params[:id])
+          result = CleanArch.labor_get_request.execute(params[:id])
+          
+          if result[:success]
+            @labor_request = result[:request]
+          else
+            render_error_response("Không tìm thấy yêu cầu lao động", :not_found)
+          end
         end
 
         def labor_request_params
           params.require(:labor_request).permit(
             :title, :description, :workers_needed, :request_type, :rate,
             :start_date, :end_date, :start_time, :end_time, :farm_activity_id,
-            :providing_household_id
+            :providing_household_id, :is_public, :max_acceptors
           )
         end
 
@@ -294,6 +300,20 @@ module Api
             include_children: params[:include_children] == "true",
             exclude_joined: params[:exclude_joined] == "true"
           }
+        end
+
+        def public_request_filters_from_params
+          filters = params.permit(:requesting_household_id).to_h
+          
+          if params[:date_range].present?
+            filters[:date_range] = params.require(:date_range).permit(:start, :end).to_h
+          end
+          
+          if params[:skills].present?
+            filters[:skills] = params[:skills].is_a?(Array) ? params[:skills] : [params[:skills]]
+          end
+          
+          filters
         end
       end
     end

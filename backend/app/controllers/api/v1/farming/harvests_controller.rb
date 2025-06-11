@@ -15,7 +15,7 @@ module Api
           
           render json: {
             message: "Harvests retrieved successfully",
-            data: Presenters::Farming::HarvestPresenter.collection_as_json(result[:harvests])
+            data: ::Farming::HarvestPresenter.collection_as_json(result[:harvests])
           }
         end
         
@@ -25,7 +25,7 @@ module Api
           if result[:success]
             render json: {
               message: "Harvest retrieved successfully",
-              data: Presenters::Farming::HarvestPresenter.as_json(result[:harvest])
+              data: ::Farming::HarvestPresenter.as_json(result[:harvest])
             }
           else
             render json: { error: result[:error] }, status: :not_found
@@ -41,7 +41,7 @@ module Api
           if result[:success]
             render json: {
               message: "Harvest created successfully",
-              data: Presenters::Farming::HarvestPresenter.as_json(result[:harvest])
+              data: ::Farming::HarvestPresenter.as_json(result[:harvest])
             }, status: :created
           else
             render json: { errors: result[:errors] }, status: :unprocessable_entity
@@ -58,7 +58,7 @@ module Api
           if result[:success]
             render json: {
               message: "Harvest updated successfully",
-              data: Presenters::Farming::HarvestPresenter.as_json(result[:harvest])
+              data: ::Farming::HarvestPresenter.as_json(result[:harvest])
             }
           else
             render json: { errors: result[:errors] || [result[:error]] }, status: :unprocessable_entity
@@ -88,7 +88,7 @@ module Api
           
           render json: {
             message: "Harvests for crop retrieved successfully",
-            data: Presenters::Farming::HarvestPresenter.collection_as_json(result[:harvests])
+            data: ::Farming::HarvestPresenter.collection_as_json(result[:harvests])
           }
         end
         
@@ -100,7 +100,7 @@ module Api
           
           render json: {
             message: "Harvests for field retrieved successfully",
-            data: Presenters::Farming::HarvestPresenter.collection_as_json(result[:harvests])
+            data: ::Farming::HarvestPresenter.collection_as_json(result[:harvests])
           }
         end
         

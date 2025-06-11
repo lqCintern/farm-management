@@ -1,0 +1,31 @@
+@startuml
+|User|
+start
+:Tạo hoạt động mới;
+
+|System|
+:Kiểm tra quy trình\n(validate_pineapple_process);
+
+if (Quy trình hợp lệ?) then (yes)
+  :Kiểm tra hoạt động tương tự\n(check_similar_activities);
+  
+  if (Hoạt động tương tự?) then (yes)
+    :Hiển thị cảnh báo;
+  else (no)
+    :Tiếp tục;
+  endif
+  
+  :Xử lý lịch lặp lại\n(nếu có);
+  :Xử lý vật tư\n(nếu có);
+  :Cập nhật thông tin cây trồng;
+  :Tạo thông báo\n(nếu cần);
+  
+else (no)
+  :Hiển thị lỗi;
+endif
+
+|User|
+:Hoàn thành;
+
+stop
+@enduml 

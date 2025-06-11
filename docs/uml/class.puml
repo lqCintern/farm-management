@@ -1,0 +1,69 @@
+@startuml
+class User {
+  -id: Integer
+  -email: String
+  -encrypted_password: String
+  +create_activity()
+  +update_activity()
+  +delete_activity()
+}
+
+class FarmActivity {
+  -id: Integer
+  -user_id: Integer
+  -field_id: Integer
+  -crop_animal_id: Integer
+  -activity_type: String
+  -status: String
+  -frequency: String
+  +validate_pineapple_process()
+  +check_similar_activities()
+  +process_materials()
+}
+
+class PineappleCrop {
+  -id: Integer
+  -field_id: Integer
+  -planting_date: Date
+  -current_stage: String
+  +advance_to_next_stage()
+  +update_planting_date()
+}
+
+class FarmMaterial {
+  -id: Integer
+  -user_id: Integer
+  -name: String
+  -quantity: Decimal
+  +update_quantity()
+  +check_availability()
+}
+
+class LaborRequest {
+  -id: Integer
+  -requesting_household_id: Integer
+  -providing_household_id: Integer
+  -status: String
+  +create_request()
+  +accept_request()
+  +decline_request()
+}
+
+class LaborExchange {
+  -id: Integer
+  -household_id: Integer
+  -partner_household_id: Integer
+  -balance: Decimal
+  +update_balance()
+  +reset_balance()
+}
+
+User "1" -- "*" FarmActivity
+User "1" -- "*" FarmMaterial
+Field "1" -- "*" PineappleCrop
+PineappleCrop "1" -- "*" FarmActivity
+FarmActivity "*" -- "*" FarmMaterial
+FarmHousehold "1" -- "*" LaborRequest
+FarmHousehold "1" -- "*" LaborExchange
+
+@enduml 

@@ -19,7 +19,7 @@ module Entities
         @title = attributes[:title]
         @message = attributes[:message]
         @metadata = attributes[:metadata] || {}
-        @priority = attributes[:priority] || 3
+        @priority = attributes[:priority] || 2
       end
 
       # Domain logic

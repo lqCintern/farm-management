@@ -238,12 +238,12 @@ module NotificationServices
       return unless request.providing_household_id
 
       # Xác định người nhận
-      recipient_id = request.providing_household&.owner_id
+      recipient_id = request.providing_household_id
       return unless recipient_id
 
       create_notification(
         recipient_id: recipient_id,
-        sender_id: request.requesting_household&.owner_id,
+        sender_id: request.requesting_household_id,
         notifiable_type: request.class.name,
         notifiable_id: request.id,
         category: "labor",
@@ -266,8 +266,8 @@ module NotificationServices
       return unless request
 
       # Người nhận là người tạo yêu cầu
-      recipient_id = request.requesting_household&.owner_id
-      sender_id = request.providing_household&.owner_id
+      recipient_id = request.requesting_household_id
+      sender_id = request.providing_household_id
 
       title = case status
       when "accepted" then "Yêu cầu đổi công được chấp nhận"
@@ -277,9 +277,9 @@ module NotificationServices
 
       message = case status
       when "accepted"
-                  "#{request.providing_household&.name} đã chấp nhận yêu cầu đổi công: #{request.title}"
+                  "#{request.providing_household_name} đã chấp nhận yêu cầu đổi công: #{request.title}"
       when "rejected"
-                  "#{request.providing_household&.name} đã từ chối yêu cầu đổi công: #{request.title}"
+                  "#{request.providing_household_name} đã từ chối yêu cầu đổi công: #{request.title}"
       else
                   "Có cập nhật về yêu cầu đổi công: #{request.title}"
       end
@@ -298,7 +298,7 @@ module NotificationServices
           request_title: request.title,
           status: status,
           providing_household_id: request.providing_household_id,
-          providing_household_name: request.providing_household&.name
+          providing_household_name: request.providing_household_name
         },
         priority: status == "accepted" ? 1 : 2 # Từ chối là ưu tiên cao hơn
       )

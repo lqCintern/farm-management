@@ -9,9 +9,9 @@ import {
   cancelRequest,
   joinRequest
 } from '@/services/labor/laborRequestService';
-import { getFarmActivityById } from '@/services/farming/farmService'; // Sử dụng service có sẵn
+import { getFarmActivityById } from '@/services/farming/farmService';
 import { LaborRequest, GroupStatus } from '@/types/labor/laborRequest.types';
-import { FarmActivity } from '@/types/labor/types'; // Import từ types có sẵn
+import { FarmActivity } from '@/types/labor/types';
 import StatusBadge from '@/components/common/StatusBadge';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -39,37 +39,52 @@ const LaborRequestDetail = () => {
       try {
         setLoading(true);
         const response = await getLaborRequestById(parseInt(id));
-        setRequest(response.data);
         
-        console.log("Labor request data:", response.data); // Log toàn bộ dữ liệu
-        console.log("Farm activity ID:", response.data.farm_activity_id); // Log farm_activity_id
-        
-        // Nếu có farm_activity_id, lấy thông tin về farm activity
-        if (response.data.farm_activity_id) {
-          try {
-            console.log("Fetching farm activity with ID:", response.data.farm_activity_id);
-            const activityResponse = await getFarmActivityById(response.data.farm_activity_id);
-            console.log("Farm activity response:", activityResponse);
-            if (activityResponse.data && typeof activityResponse.data === 'object' && 'data' in activityResponse.data) {
-              setFarmActivity((activityResponse.data as { data: FarmActivity }).data);
-            } else {
-              console.error('Invalid response format for farm activity');
+        // Cập nhật: Xử lý response mới với cấu trúc { success, data }
+        if (response.success && response.data) {
+          setRequest(response.data);
+          console.log("Labor request data:", response.data);
+          
+          // Nếu có farm_activity_id, lấy thông tin về farm activity
+          if (response.data.farm_activity_id) {
+            try {
+              console.log("Fetching farm activity with ID:", response.data.farm_activity_id);
+              const activityResponse = await getFarmActivityById(response.data.farm_activity_id);
+              console.log("Farm activity response:", activityResponse);
+              
+              // Sửa: Xử lý đúng cấu trúc response
+              if (
+                activityResponse.data &&
+                typeof activityResponse.data === 'object' &&
+                'data' in activityResponse.data
+              ) {
+                // Truy cập data trong data
+                setFarmActivity((activityResponse.data as { data: FarmActivity }).data);
+              } else if (activityResponse.data) {
+                // Trường hợp API đã unwrap và trả về data trực tiếp
+                setFarmActivity(activityResponse.data as FarmActivity);
+              } else {
+                setFarmActivity(null);
+                console.error('Invalid response format for farm activity');
+              }
+            } catch (err) {
+              console.error('Error loading farm activity', err);
             }
-          } catch (err) {
-            console.error('Error loading farm activity', err);
+          } else {
+            console.log("No farm_activity_id found in labor request");
+          }
+          
+          // Nếu có request_group_id, tải thông tin nhóm
+          if (response.data.request_group_id) {
+            try {
+              const groupResponse = await getGroupStatus(parseInt(id));
+              setGroupStatus(groupResponse.data);
+            } catch (err) {
+              console.error('Error loading group status', err);
+            }
           }
         } else {
-          console.log("No farm_activity_id found in labor request");
-        }
-        
-        // Nếu có request_group_id, tải thông tin nhóm
-        if (response.data.request_group_id) {
-          try {
-            const groupResponse = await getGroupStatus(parseInt(id));
-            setGroupStatus(groupResponse.data);
-          } catch (err) {
-            console.error('Error loading group status', err);
-          }
+          throw new Error('Invalid response format');
         }
         
         setError(null);
@@ -249,11 +264,11 @@ const LaborRequestDetail = () => {
                 <p><span className="text-gray-500">Giá công:</span> {request.rate.toLocaleString()} VND</p>
               )}
               <p>
-                <span className="text-gray-500">Hộ yêu cầu:</span> {request?.requesting_household?.name}
+                <span className="text-gray-500">Hộ yêu cầu:</span> {request?.requesting_household_name || `ID: ${request.requesting_household_id}`}
               </p>
-              {request?.providing_household && (
+              {request?.providing_household_id && (
                 <p>
-                  <span className="text-gray-500">Hộ thực hiện:</span> {request.providing_household.name}
+                  <span className="text-gray-500">Hộ thực hiện:</span> {request?.providing_household_name || `ID: ${request.providing_household_id}`}
                 </p>
               )}
             </div>
@@ -267,7 +282,7 @@ const LaborRequestDetail = () => {
               </p>
               {request?.start_time && request?.end_time && (
                 <p>
-                  <span className="text-gray-500">Giờ làm việc:</span> {request.start_time.substring(11, 16)} - {request.end_time.substring(11, 16)}
+                  <span className="text-gray-500">Giờ làm việc:</span> {String(request.start_time).substring(11, 16)} - {String(request.end_time).substring(11, 16)}
                 </p>
               )}
               {request?.created_at && (
@@ -299,7 +314,7 @@ const LaborRequestDetail = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <p><span className="text-gray-500">Ngày bắt đầu:</span> {formatDate(farmActivity.start_date)}</p>
                 <p><span className="text-gray-500">Ngày kết thúc:</span> {formatDate(farmActivity.end_date)}</p>
-                <p><span className="text-gray-500">Tần suất:</span> {farmActivity.frequency} ngày</p>
+                <p><span className="text-gray-500">Tần suất:</span> {farmActivity.frequency}</p>
                 <p>
                   <span className="text-gray-500">Trạng thái:</span> {
                     typeof farmActivity.status === 'string' ? 
@@ -309,13 +324,16 @@ const LaborRequestDetail = () => {
                 </p>
               </div>
 
-              {farmActivity.materials && Object.keys(farmActivity.materials).length > 0 && (
+              {/* Cập nhật: Hiển thị materials dưới dạng mảng thay vì object */}
+              {farmActivity.materials && farmActivity.materials.length > 0 && (
                 <div>
                   <h4 className="font-medium text-md mt-2 mb-1">Vật tư sử dụng:</h4>
                   <div className="bg-gray-50 p-3 rounded">
                     <ul className="list-disc pl-4">
-                      {Object.entries(farmActivity.materials).map(([key, value]) => (
-                        <li key={key}>{key}: {value}</li>
+                      {farmActivity.materials.map((material: { id: number; name: string; quantity: number; unit: string }) => (
+                        <li key={material.id}>
+                          {material.name}: {material.quantity} {material.unit}
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -332,7 +350,7 @@ const LaborRequestDetail = () => {
         </Card>
       )}
 
-      {/* Thông tin nhóm */}
+      {/* Thông tin nhóm - giữ nguyên */}
       {groupStatus && (
         <Card className="mb-6">
           <div className="p-6">

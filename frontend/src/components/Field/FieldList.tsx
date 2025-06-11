@@ -22,8 +22,9 @@ const FieldList: React.FC = () => {
     const fetchFields = async () => {
       try {
         const response = await fieldService.getFields();
-        const fieldsWithColors = response.data.map((field: Field) => ({
+        const fieldsWithColors = response.data.map((field: any) => ({
           ...field,
+          id: String(field.id), // Ensure id is a string
           color: getRandomColor(),
         }));
         setFields(fieldsWithColors);

@@ -1,0 +1,101 @@
+@startuml
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) #x#
+
+' Tables
+table(users) {
+  primary_key(id): INTEGER
+  email: VARCHAR(255)
+  encrypted_password: VARCHAR(255)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(fields) {
+  primary_key(id): INTEGER
+  foreign_key(user_id): INTEGER
+  name: VARCHAR(255)
+  area: DECIMAL
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(pineapple_crops) {
+  primary_key(id): INTEGER
+  foreign_key(field_id): INTEGER
+  planting_date: DATE
+  current_stage: VARCHAR(50)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(farm_activities) {
+  primary_key(id): INTEGER
+  foreign_key(user_id): INTEGER
+  foreign_key(field_id): INTEGER
+  foreign_key(crop_animal_id): INTEGER
+  activity_type: VARCHAR(50)
+  description: TEXT
+  status: VARCHAR(20)
+  frequency: VARCHAR(20)
+  start_date: DATE
+  end_date: DATE
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(farm_materials) {
+  primary_key(id): INTEGER
+  foreign_key(user_id): INTEGER
+  name: VARCHAR(255)
+  quantity: DECIMAL
+  unit: VARCHAR(50)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(activity_materials) {
+  primary_key(id): INTEGER
+  foreign_key(farm_activity_id): INTEGER
+  foreign_key(farm_material_id): INTEGER
+  planned_quantity: DECIMAL
+  actual_quantity: DECIMAL
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(labor_requests) {
+  primary_key(id): INTEGER
+  foreign_key(requesting_household_id): INTEGER
+  foreign_key(providing_household_id): INTEGER
+  activity_type: VARCHAR(50)
+  status: VARCHAR(20)
+  workers_needed: INTEGER
+  rate: DECIMAL
+  start_date: DATE
+  end_date: DATE
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(labor_exchanges) {
+  primary_key(id): INTEGER
+  foreign_key(household_id): INTEGER
+  foreign_key(partner_household_id): INTEGER
+  balance: DECIMAL
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+' Relationships
+users "1" -- "*" fields
+users "1" -- "*" farm_activities
+users "1" -- "*" farm_materials
+fields "1" -- "*" pineapple_crops
+pineapple_crops "1" -- "*" farm_activities
+farm_activities "*" -- "*" farm_materials
+farm_households "1" -- "*" labor_requests
+farm_households "1" -- "*" labor_exchanges
+
+@enduml 
