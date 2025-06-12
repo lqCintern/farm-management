@@ -70,6 +70,51 @@ module Repositories
         end
       end
 
+      # Method from Supply Chain module
+      def find_or_create_from_order(user_id, supply_listing, order_quantity)
+        begin
+          ActiveRecord::Base.transaction do
+            # Tìm hoặc tạo farm_material tương ứng
+            farm_material = ::Farming::FarmMaterial.find_or_initialize_by(
+              user_id: user_id,
+              name: supply_listing[:name],
+              unit: supply_listing[:unit],
+              category: supply_listing[:category]
+            )
+            
+            if farm_material.new_record?
+              # Nếu là vật tư mới
+              farm_material.quantity = order_quantity
+              farm_material.material_id = supply_listing[:id] # Lưu id của supply_listing gốc
+              farm_material.last_updated = Time.current
+              
+              if farm_material.save
+                { 
+                  success: true, 
+                  farm_material: map_to_entity(farm_material), 
+                  message: "Đã thêm vào kho vật tư nông trại" 
+                }
+              else
+                raise ActiveRecord::Rollback
+                { success: false, errors: farm_material.errors.full_messages }
+              end
+            else
+              # Nếu đã có vật tư, cộng thêm số lượng
+              farm_material.increment!(:quantity, order_quantity)
+              farm_material.update(last_updated: Time.current)
+              
+              { 
+                success: true, 
+                farm_material: map_to_entity(farm_material), 
+                message: "Đã cập nhật kho vật tư nông trại" 
+              }
+            end
+          end
+        rescue => e
+          { success: false, errors: ["Lỗi khi cập nhật kho vật tư: #{e.message}"] }
+        end
+      end
+
       private
       
       def apply_filters(query, filters)

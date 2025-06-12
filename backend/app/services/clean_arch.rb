@@ -882,6 +882,177 @@ module CleanArch
       )
     end
 
-    # Rest of CleanArch methods...
+    # Supply Chain Repositories
+    def supply_listing_repository
+      @supply_listing_repository ||= Repositories::SupplyChain::SupplyListingRepository.new
+    end
+    
+    def supply_image_repository
+      @supply_image_repository ||= Repositories::SupplyChain::SupplyImageRepository.new
+    end
+    
+    # Supply Chain - FarmerSupplyListings (Public listings)
+    def supply_list_listings
+      @supply_list_listings ||= SupplyChain::SupplyListings::ListSupplyListings.new(
+        supply_listing_repository
+      )
+    end
+    
+    def supply_get_listing_details
+      @supply_get_listing_details ||= SupplyChain::SupplyListings::GetSupplyListingDetails.new(
+        supply_listing_repository
+      )
+    end
+    
+    def supply_get_categories
+      @supply_get_categories ||= SupplyChain::SupplyListings::GetSupplyCategories.new(
+        supply_listing_repository
+      )
+    end
+    
+    # Supply Chain - SupplierListings (Supplier management)
+    def supplier_list_listings
+      @supplier_list_listings ||= SupplyChain::SupplierListings::ListSupplierListings.new(
+        supply_listing_repository
+      )
+    end
+
+    def supplier_get_listing_details
+      @supplier_get_listing_details ||= SupplyChain::SupplierListings::GetSupplierListingDetails.new(
+        supply_listing_repository
+      )
+    end
+
+    def supplier_create_listing
+      @supplier_create_listing ||= SupplyChain::SupplierListings::CreateSupplierListing.new(
+        supply_listing_repository,
+        supply_image_repository
+      )
+    end
+
+    def supplier_update_listing
+      @supplier_update_listing ||= SupplyChain::SupplierListings::UpdateSupplierListing.new(
+        supply_listing_repository,
+        supply_image_repository
+      )
+    end
+
+    def supplier_delete_listing
+      @supplier_delete_listing ||= SupplyChain::SupplierListings::DeleteSupplierListing.new(
+        supply_listing_repository
+      )
+    end
+
+    def supplier_change_listing_status
+      @supplier_change_listing_status ||= SupplyChain::SupplierListings::ChangeSupplierListingStatus.new(
+        supply_listing_repository
+      )
+    end
+
+        # Supply Chain Repositories
+    def supply_listing_repository
+      @supply_listing_repository ||= Repositories::SupplyChain::SupplyListingRepository.new
+    end
+    
+    def supply_image_repository
+      @supply_image_repository ||= Repositories::SupplyChain::SupplyImageRepository.new
+    end
+    
+    def supplier_review_repository
+      @supplier_review_repository ||= Repositories::SupplyChain::SupplierReviewRepository.new
+    end
+    
+    # Supply Order Repositories
+    def supply_order_repository
+      @supply_order_repository ||= Repositories::SupplyChain::SupplyOrderRepository.new
+    end
+
+    # Supply Orders - Farmer side
+    def farmer_list_orders
+      @farmer_list_orders ||= SupplyChain::SupplyOrders::ListFarmerOrders.new(
+        supply_order_repository
+      )
+    end
+
+    def farmer_get_order_details
+      @farmer_get_order_details ||= SupplyChain::SupplyOrders::GetFarmerOrderDetails.new(
+        supply_order_repository
+      )
+    end
+
+    def farmer_create_order
+      @farmer_create_order ||= SupplyChain::SupplyOrders::CreateFarmerOrder.new(
+        supply_order_repository,
+        supply_listing_repository
+      )
+    end
+
+    def farmer_cancel_order
+      @farmer_cancel_order ||= SupplyChain::SupplyOrders::CancelFarmerOrder.new(
+        supply_order_repository
+      )
+    end
+
+    def farmer_complete_order
+      @farmer_complete_order ||= SupplyChain::SupplyOrders::CompleteFarmerOrder.new(
+        supply_order_repository,
+        farming_farm_material_repository
+      )
+    end
+
+    def farmer_update_order
+      @farmer_update_order ||= SupplyChain::SupplyOrders::UpdateFarmerOrder.new(
+        supply_order_repository
+      )
+    end
+
+    # Supply Orders - Supplier side
+    def supplier_list_orders
+      @supplier_list_orders ||= SupplyChain::SupplyOrders::ListSupplierOrders.new(
+        supply_order_repository
+      )
+    end
+
+    def supplier_get_order_details
+      @supplier_get_order_details ||= SupplyChain::SupplyOrders::GetSupplierOrderDetails.new(
+        supply_order_repository
+      )
+    end
+
+    def supplier_update_order_status
+      @supplier_update_order_status ||= SupplyChain::SupplyOrders::UpdateSupplierOrderStatus.new(
+        supply_order_repository
+      )
+    end
+
+    def supplier_get_dashboard
+      @supplier_get_dashboard ||= SupplyChain::SupplyOrders::GetSupplierDashboard.new(
+        supply_order_repository
+      )
+    end
+
+    # Supplier Review Use Cases
+    def create_supplier_review
+      @create_supplier_review ||= SupplyChain::SupplierReviews::CreateSupplierReview.new(
+        supplier_review_repository
+      )
+    end
+
+    def list_supplier_reviews
+      @list_supplier_reviews ||= SupplyChain::SupplierReviews::ListSupplierReviews.new(
+        supplier_review_repository
+      )
+    end
+
+    def get_supplier_rating_stats
+      @get_supplier_rating_stats ||= SupplyChain::SupplierReviews::GetSupplierRatingStats.new(
+        supplier_review_repository,
+        user_repository
+      )
+    end
+
+    def user_repository
+      @user_repository ||= Repositories::Users::UserRepository.new
+    end
   end
 end
