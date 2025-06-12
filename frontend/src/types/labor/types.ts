@@ -50,24 +50,45 @@ export interface PaginationMetadata {
 }
 
 export interface PineappleCrop {
-  id: number;
-  name: string;
-  field_id: number;
+  id?: number;
+  name?: string;
+  crop_type?: number;
+  field_id?: number | string;
   planting_date: string;
   harvest_date?: string;
-  field_area: number;
-  season_type: string;
-  planting_density: number;
+  field_area?: number;
+  season_type?: string;
+  planting_density?: number;
+  status?: string;
   current_stage: string;
-  status: string;
+  current_stage_start_date?: string;
   description?: string;
-  variety: string;
+  location?: string | null;
+  variety?: string;
   source?: string;
-  expected_yield?: number;
-  location?: string;
-  created_at: string;
-  updated_at: string;
+  user_id?: number;
+  quantity?: number | null;
+  expected_yield?: number | null;
+  actual_yield?: string;
+  completion_percentage?: string;
+  
+  // Ngày quan trọng trong chu kỳ canh tác
+  land_preparation_date?: string;
+  expected_flower_date?: string;
+  actual_flower_date?: string | null;
+  flower_treatment_date?: string;
+  tie_date?: string;
+  
+  // Dữ liệu bổ sung
+  fertilizer_schedule?: any;
+  farm_activities?: Array<FarmActivity>;
   harvests?: Harvest[];
+  
+  // Metadata
+  created_at?: string;
+  updated_at?: string;
+  
+  // Hỗ trợ trường hợp nested (từ API field)
   currentCrop?: PineappleCrop;
 }
 
@@ -88,7 +109,7 @@ export interface PineappleCropCreateParams {
 }
 
 export interface PineappleCropResponse {
-  data: PineappleCrop[];
+  items: PineappleCrop[];  // Thay đổi từ data thành items
   pagination: PaginationMetadata;
 }
 

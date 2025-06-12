@@ -1,7 +1,7 @@
 module SupplyChain
   class SupplyImage < ApplicationRecord
-    self.table_name = 'supply_images'
-    
+    self.table_name = "supply_images"
+
     belongs_to :supply_listing, class_name: "SupplyChain::SupplyListing"
 
     # Sử dụng Active Storage thay vì lưu đường dẫn

@@ -56,11 +56,15 @@ const PineappleCropFormPage: React.FC = () => {
       try {
         const response = await fieldService.getFields();
         if (response && response.data) {
-          setFields(response.data.map((field: Field) => ({
-            id: field.id,
-            name: field.name,
-            area: field.area
-          })));
+          setFields(
+            response.data
+              .filter((field: any) => typeof field.id === 'number' && typeof field.name === 'string' && typeof field.area === 'number')
+              .map((field: any) => ({
+                id: field.id as number,
+                name: field.name as string,
+                area: field.area as number
+              }))
+          );
         }
       } catch (error) {
         console.error('Error fetching fields:', error);
@@ -79,16 +83,16 @@ const PineappleCropFormPage: React.FC = () => {
         const response = await pineappleCropService.getPineappleCropById(Number(id));
         const crop = (response as { data: PineappleCrop }).data;
 
-        setName(crop.name);
-        setFieldId(crop.field_id);
+        setName(crop.name ?? '');
+        setFieldId(typeof crop.field_id === 'number' ? crop.field_id : '');
         setPlantingDate(crop.planting_date);
-        setFieldArea(crop.field_area);
-        setSeasonType(crop.season_type);
-        setPlantingDensity(crop.planting_density);
+        setFieldArea(typeof crop.field_area === 'number' ? crop.field_area : '');
+        setSeasonType(crop.season_type ?? 'spring_summer');
+        setPlantingDensity(typeof crop.planting_density === 'number' ? crop.planting_density : '');
         setCurrentStage(crop.current_stage);
-        setStatus(crop.status);
+        setStatus(crop.status ?? 'planning');
         setDescription(crop.description || '');
-        setVariety(crop.variety);
+        setVariety(crop.variety ?? 'Queen');
         setSource(crop.source || '');
       } catch (error) {
         console.error('Error fetching pineapple crop data:', error);

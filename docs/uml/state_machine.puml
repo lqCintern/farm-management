@@ -1,0 +1,15 @@
+@startuml
+[*] --> Pending : create
+Pending --> InProgress : start_activity
+InProgress --> Completed : complete_activity
+Pending --> Cancelled : cancel_activity
+InProgress --> Cancelled : cancel_activity
+Completed --> [*]
+Cancelled --> [*]
+
+state Pending : Chờ thực hiện
+state InProgress : Đang thực hiện
+state Completed : Đã hoàn thành
+state Cancelled : Đã hủy
+
+@enduml 

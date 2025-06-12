@@ -6,125 +6,119 @@ module Api
         include Pagy::Backend
 
         before_action :authenticate_user!
-        before_action :set_product_order, only: [ :show, :update ]
-        before_action :authorize_order_action, only: [ :update ]
 
-        # GET /api/v1/product_orders
+        # GET /api/v1/marketplace/product_orders
         def index
-          if current_user.farmer?
-            orders = ::Marketplace::ProductOrder.for_seller(current_user.user_id)
-          else
-            orders = current_user.product_orders
-          end
-
-          # Filter by status
-          if params[:status].present?
-            orders = orders.where(status: params[:status])
-          end
-
-          @pagy, orders = pagy(orders.includes(:product_listing).order(created_at: :desc), items: params[:per_page] || 10)
+          filter_params = ::Marketplace::ProductOrderFormatter.format_filter_params(
+            user_id: current_user.user_id,
+            user_type: current_user.user_type,
+            status: params[:status],
+            page: params[:page],
+            per_page: params[:per_page]
+          )
           
-          order_service = ::Marketplace::ProductOrderService.new(nil, current_user)
-          stats = order_service.get_order_statistics(current_user)
-
-          render json: {
-            orders: orders.as_json(include: {
-              product_listing: {
-                include: { product_images: { methods: [ :image_url ], limit: 1 } },
-                only: [ :id, :title, :product_type, :quantity, :price_expectation ]
-              },
-              buyer: { only: [ :user_id, :user_name, :fullname, :phone ] }
-            }),
-            pagination: {
-              count: @pagy.count,
-              page: @pagy.page,
-              pages: @pagy.pages,
-              last: @pagy.last,
-              next: @pagy.next,
-              prev: @pagy.prev
-            },
-            statistics: stats
-          }, status: :ok
+          result = CleanArch.marketplace_list_orders.execute(**filter_params)
+          
+          render json: ::Marketplace::ProductOrderPresenter.format_index_response(result),
+                 status: :ok
         end
 
-        # GET /api/v1/product_orders/:id
+        # GET /api/v1/marketplace/product_orders/:id
         def show
-          render json: {
-            order: @product_order.as_json(include: {
-              product_listing: {
-                include: {
-                  user: { only: [ :user_id, :user_name, :fullname, :phone ] },
-                  product_images: { methods: [ :image_url ] }
-                }
-              },
-              buyer: { only: [ :user_id, :user_name, :fullname, :phone ] }
-            })
-          }, status: :ok
-        end
-
-        # POST /api/v1/product_orders
-        def create
-          product_order = ::Marketplace::ProductOrder.new(product_order_params)
-          service = ::Marketplace::ProductOrderService.new(product_order, current_user)
-          result = service.create(product_order_params)
+          result = CleanArch.marketplace_get_order_details.execute(
+            params[:id], 
+            current_user.user_id
+          )
+          
+          response_data = ::Marketplace::ProductOrderPresenter.format_show_response(result)
           
           if result[:success]
+            render json: response_data, status: :ok
+          else
+            render json: response_data, status: :not_found
+          end
+        end
+
+        # POST /api/v1/marketplace/product_orders
+        def create
+          permitted_params = params.require(:product_order).permit(
+            :product_listing_id, :quantity, :price, :note
+          )
+
+          # Sửa lỗi ở đây: Thêm current_user.user_id làm tham số thứ hai
+          result = CleanArch.marketplace_create_order.execute(
+            permitted_params.to_h,  # Tham số thứ nhất: attributes
+            current_user.user_id    # Tham số thứ hai: user_id
+          )
+
+          if result[:success]
             render json: {
-              message: "Đã gửi yêu cầu đặt mua thành công",
-              order: result[:order].as_json(include: { product_listing: { only: [ :id, :title ] } }),
+              success: true,
+              message: result[:message],
+              order: result[:order],
               conversation_id: result[:conversation_id]
             }, status: :created
           else
-            render json: { errors: result[:errors] || [result[:error]] }, 
-                   status: result[:status] || :unprocessable_entity
+            status = result[:status] || :unprocessable_entity
+            render json: {
+              success: false,
+              error: result[:error] || result[:errors]&.join(", ") || "Không thể tạo đơn hàng"
+            }, status: status
           end
+        rescue ActionController::ParameterMissing => e
+          render json: { success: false, error: e.message }, status: :bad_request
+        rescue => e
+          Rails.logger.error("Error creating order: #{e.message}\n#{e.backtrace.join("\n")}")
+          render json: { success: false, error: "Đã xảy ra lỗi khi tạo đơn hàng" }, status: :internal_server_error
         end
 
-        # PUT/PATCH /api/v1/product_orders/:id
+        # PUT/PATCH /api/v1/marketplace/product_orders/:id
         def update
-          # Cập nhật trạng thái
           if params[:status].present?
-            service = ::Marketplace::ProductOrderService.new(@product_order, current_user)
-            result = service.update_status(params[:status], params[:reason])
+            status_params = ::Marketplace::ProductOrderFormatter.format_status_params(
+              params[:id],
+              params[:status],
+              current_user.user_id,
+              params[:reason]
+            )
+            
+            result = CleanArch.marketplace_update_order_status.execute(
+              status_params[:order_id],
+              status_params[:new_status],
+              status_params[:user_id],
+              status_params[:reason]
+            )
+            
+            # Presenter định dạng response
+            response_data = ::Marketplace::ProductOrderPresenter.format_status_update_response(result)
             
             if result[:success]
-              render json: {
-                message: result[:message],
-                status: result[:status],
-                order: @product_order.as_json(include: {
-                  product_listing: { only: [ :id, :title, :status ] }
-                })
-              }, status: :ok
+              render json: response_data, status: :ok
             else
-              render json: { error: result[:error] }, status: :unprocessable_entity
+              render json: response_data, status: :unprocessable_entity
             end
           else
-            # Các cập nhật khác
-            if @product_order.update(product_order_update_params)
-              render json: {
-                message: "Đã cập nhật đơn hàng",
-                order: @product_order
-              }, status: :ok
+            update_params = ::Marketplace::ProductOrderFormatter.format_update_params(
+              product_order_update_params.to_h
+            )
+            
+            result = CleanArch.marketplace_update_order_details.execute(
+              params[:id],
+              update_params,
+              current_user.user_id
+            )
+            
+            response_data = ::Marketplace::ProductOrderPresenter.format_update_response(result)
+            
+            if result[:success]
+              render json: response_data, status: :ok
             else
-              render json: { errors: @product_order.errors.full_messages }, status: :unprocessable_entity
+              render json: response_data, status: :unprocessable_entity
             end
           end
         end
 
         private
-
-        def set_product_order
-          @product_order = ::Marketplace::ProductOrder.find_by(id: params[:id])
-          render json: { error: "Không tìm thấy đơn hàng" }, status: :not_found unless @product_order
-        end
-
-        def authorize_order_action
-          # Kiểm tra là người mua hoặc người bán
-          order_owner = @product_order.product_listing.user_id == current_user.user_id ||
-                        @product_order.buyer_id == current_user.user_id
-
-          render json: { error: "Không có quyền thực hiện hành động này" }, status: :forbidden unless order_owner
-        end
 
         def product_order_params
           params.require(:product_order).permit(
@@ -133,7 +127,6 @@ module Api
         end
 
         def product_order_update_params
-          # Các trường có thể cập nhật khi không thay đổi status
           params.require(:product_order).permit(:quantity, :price, :note)
         end
       end

@@ -3,21 +3,26 @@ module Api
   module V1
     module Labor
       class FarmHouseholdsController < BaseController
-        before_action :set_household, only: [ :show, :update, :destroy ]
-        before_action :require_household_owner, only: [ :update, :destroy ]
+        before_action :set_household_id, only: [:show, :update, :destroy]
+        before_action :require_household_owner, only: [:update, :destroy]
 
         def index
-          @households = ::Labor::FarmHousehold.all
-          render_success_response(@households)
+          households = CleanArch.labor_list_farm_households.execute
+          render_success_response(households)
         end
 
         def show
-          summary = ::Labor::HouseholdService.household_summary(@household)
-          render_success_response(summary)
+          summary = CleanArch.labor_get_household_summary.execute(params[:id])
+          
+          if summary
+            render_success_response(summary)
+          else
+            render_error_response(["Không tìm thấy hộ sản xuất"], :not_found)
+          end
         end
 
         def create
-          result = ::Labor::HouseholdService.create_household(current_user, household_params.to_h)
+          result = CleanArch.labor_create_farm_household.execute(current_user, household_params.to_h)
 
           if result[:success]
             render_success_response(result[:household], :created)
@@ -27,7 +32,7 @@ module Api
         end
 
         def update
-          result = ::Labor::HouseholdService.update_household(@household, household_params.to_h)
+          result = CleanArch.labor_update_farm_household.execute(params[:id], household_params.to_h)
 
           if result[:success]
             render_success_response(result[:household])
@@ -37,17 +42,28 @@ module Api
         end
 
         def destroy
-          if @household.destroy
-            render_success_response({ message: "Đã xóa hộ sản xuất thành công" })
+          result = CleanArch.labor_delete_farm_household.execute(params[:id])
+          
+          if result[:success]
+            render_success_response({ message: result[:message] })
           else
-            render_error_response(@household.errors.full_messages, :unprocessable_entity)
+            render_error_response(result[:errors], :unprocessable_entity)
           end
         end
 
         private
 
-        def set_household
-          @household = ::Labor::FarmHousehold.find(params[:id])
+        def set_household_id
+          # Chỉ set ID, không load household
+          @household_id = params[:id]
+        end
+        
+        def require_household_owner
+          household = CleanArch.labor_farm_household_repository.find(@household_id)
+          
+          unless household && household.owner_id == current_user.id
+            render_error_response(["Bạn không có quyền thực hiện thao tác này"], :forbidden)
+          end
         end
 
         def household_params

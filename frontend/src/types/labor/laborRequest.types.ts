@@ -21,9 +21,9 @@ export interface LaborRequest {
   end_time?: string;
   status: RequestStatus;
   requesting_household_id: number;
-  requesting_household?: FarmHousehold;
   providing_household_id?: number;
-  providing_household?: FarmHousehold;
+  requesting_household_name: string;
+  providing_household_name: string;
   farm_activity_id?: number;
   parent_request_id?: number;
   request_group_id?: string;

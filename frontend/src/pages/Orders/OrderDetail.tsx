@@ -65,9 +65,9 @@ const OrderDetail: React.FC = () => {
   const userInfo = getUserInfo();
   const currentUserId = userInfo?.user_id;
   
-  // Các phương thức kiểm tra quyền đơn giản hơn
-  const isSellerOfOrder = currentUserId && order?.product_listing?.user_id === currentUserId;
-  const isBuyerOfOrder = currentUserId && order?.buyer?.user_id === currentUserId;
+  // Thay đổi cách kiểm tra quyền để phù hợp với cấu trúc mới
+  const isSellerOfOrder = currentUserId && order?.seller?.id === currentUserId;
+  const isBuyerOfOrder = currentUserId && order?.buyer?.id === currentUserId;
   
   // Fetch data
   useEffect(() => {
@@ -288,9 +288,10 @@ const OrderDetail: React.FC = () => {
             <Title level={4}>Thông tin sản phẩm</Title>
             <Card className="bg-gray-50">
               <div className="flex items-center">
-                {order.product_listing?.product_images?.[0]?.image_url && (
+                {/* Thay đổi cách truy cập hình ảnh */}
+                {order.product_listing?.main_image_url && (
                   <img
-                    src={order.product_listing.product_images[0].image_url}
+                    src={order.product_listing.main_image_url}
                     alt={order.product_listing.title}
                     className="w-16 h-16 object-cover rounded-md mr-4"
                   />
@@ -308,10 +309,11 @@ const OrderDetail: React.FC = () => {
                   {order.quantity} kg
                 </Descriptions.Item>
                 <Descriptions.Item label="Giá đề xuất">
-                  {formatCurrency(order.price)}/kg
+                  {formatCurrency(Number(order.price))}/kg
                 </Descriptions.Item>
                 <Descriptions.Item label="Tổng giá trị">
-                  {formatCurrency(order.price * order.quantity)}
+                  {/* Sử dụng total_amount có sẵn */}
+                  {formatCurrency(Number(order.total_amount))}
                 </Descriptions.Item>
               </Descriptions>
               
@@ -338,19 +340,27 @@ const OrderDetail: React.FC = () => {
               {isSellerOfOrder ? (
                 <Descriptions column={1}>
                   <Descriptions.Item label="Tên">
-                    {order.buyer.fullname || order.buyer.user_name}
+                    {/* Thay đổi cách truy cập thông tin người dùng */}
+                    {order.buyer.name || 'Không có thông tin'}
                   </Descriptions.Item>
                   <Descriptions.Item label="Số điện thoại">
                     {order.buyer.phone || 'Chưa cập nhật'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Địa chỉ">
+                    {order.buyer.address || 'Chưa cập nhật'}
                   </Descriptions.Item>
                 </Descriptions>
               ) : (
                 <Descriptions column={1}>
                   <Descriptions.Item label="Tên">
-                    {order.product_listing?.user?.fullname || order.product_listing?.user?.user_name || 'Không có thông tin'}
+                    {/* Thay đổi cách truy cập thông tin người bán */}
+                    {order.seller.name || 'Không có thông tin'}
                   </Descriptions.Item>
                   <Descriptions.Item label="Số điện thoại">
-                    {order.product_listing?.user?.phone || 'Chưa cập nhật'}
+                    {order.seller.phone || 'Chưa cập nhật'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Địa chỉ">
+                    {order.seller.address || 'Chưa cập nhật'}
                   </Descriptions.Item>
                 </Descriptions>
               )}

@@ -4,138 +4,73 @@ module Api
       class FarmerSupplyListingsController < BaseController
         include Pagy::Backend
 
-        before_action :authenticate_user!, except: [:index, :show]
-        before_action :set_supply_listing, only: [:show]
+        before_action :authenticate_user!, except: [:index, :show, :categories]
 
         # GET /api/v1/supply_listings
         def index
-          @supply_listings = ::SupplyChain::SupplyListing.where(status: :active)
-                                          .includes(:user, supply_images: { image_attachment: :blob })
-                                          .order(created_at: :desc)
-
-          # Lọc theo danh mục
-          @supply_listings = @supply_listings.where(category: params[:category]) if params[:category].present?
-
-          # Lọc theo vị trí địa lý
-          @supply_listings = @supply_listings.where(province: params[:province]) if params[:province].present?
-          @supply_listings = @supply_listings.where(district: params[:district]) if params[:district].present?
-
-          # Lọc theo khoảng giá
-          if params[:min_price].present? && params[:max_price].present?
-            @supply_listings = @supply_listings.where(price: params[:min_price]..params[:max_price])
-          elsif params[:min_price].present?
-            @supply_listings = @supply_listings.where("price >= ?", params[:min_price])
-          elsif params[:max_price].present?
-            @supply_listings = @supply_listings.where("price <= ?", params[:max_price])
-          end
-
-          # Tìm kiếm theo tên
-          @supply_listings = @supply_listings.where("name LIKE ?", "%#{params[:name]}%") if params[:name].present?
-
-          # Phân trang với Pagy
-          @pagy, @supply_listings = pagy(@supply_listings, items: params[:per_page] || 15)
-
-          render json: {
-            status: "success",
-            total_pages: @pagy.pages,
-            current_page: @pagy.page,
-            total_count: @pagy.count,
-            data: @supply_listings.map { |listing| supply_listing_json(listing) }
+          filters = {
+            category: params[:category],
+            province: params[:province],
+            district: params[:district],
+            min_price: params[:min_price],
+            max_price: params[:max_price],
+            name: params[:name]
           }
+          
+          result = CleanArch.supply_list_listings.execute(
+            filters,
+            params.fetch(:page, 1).to_i, 
+            params.fetch(:per_page, 15).to_i
+          )
+          
+          if result[:success]
+            render json: {
+              status: "success",
+              total_pages: result[:data][:pagination].total_pages,
+              current_page: result[:data][:pagination].current_page,
+              total_count: result[:data][:pagination].total_count,
+              data: result[:data][:listings]
+            }
+          else
+            render json: {
+              status: "error",
+              message: result[:errors].join(", ")
+            }, status: :unprocessable_entity
+          end
         end
 
         # GET /api/v1/supply_listings/:id
         def show
-          # Tăng số lượt xem
-          @supply_listing.increment!(:view_count)
-
-          render json: {
-            status: "success",
-            data: supply_listing_json(@supply_listing, true)
-          }
+          result = CleanArch.supply_get_listing_details.execute(params[:id])
+          
+          if result[:success]
+            render json: {
+              status: "success",
+              data: result[:data]
+            }
+          else
+            render json: {
+              status: "error",
+              message: result[:errors].join(", ")
+            }, status: :not_found
+          end
         end
 
         # GET /api/v1/supply_listings/categories
         def categories
-          categories = ::SupplyChain::SupplyListing.categories.keys.map do |category|
-            {
-              value: category,
-              label: I18n.t("supply_listing.categories.#{category}")
+          result = CleanArch.supply_get_categories.execute
+          
+          if result[:success]
+            render json: {
+              status: "success",
+              data: result[:data]
             }
+          else
+            render json: {
+              status: "error",
+              message: result[:errors].join(", ")
+            }, status: :unprocessable_entity
           end
-
-          render json: {
-            status: "success",
-            data: categories
-          }
-        end
-
-        private
-
-        def set_supply_listing
-          @supply_listing = ::SupplyChain::SupplyListing.find(params[:id])
-        rescue ActiveRecord::RecordNotFound
-          render json: {
-            status: "error",
-            message: "Không tìm thấy vật tư"
-          }, status: :not_found
-        end
-
-        def supply_listing_json(listing, detailed = false)
-          json = {
-            id: listing.id,
-            name: listing.name,
-            category: listing.category,
-            price: listing.price,
-            unit: listing.unit,
-            quantity: listing.quantity,
-            status: listing.status,
-            created_at: listing.created_at,
-            updated_at: listing.updated_at,
-            main_image: listing.supply_images.sorted.first&.image_url, 
-            supplier: {
-              id: listing.user.user_id,
-              name: listing.user.user_name
-            }
-          }
-
-          if detailed
-            supplier_rating = listing.user.average_rating
-
-            json.merge!({
-              description: listing.description,
-              brand: listing.brand,
-              manufacturer: listing.manufacturer,
-              manufacturing_date: listing.manufacturing_date,
-              expiry_date: listing.expiry_date,
-              province: listing.province,
-              district: listing.district,
-              ward: listing.ward,
-              address: listing.address,
-              view_count: listing.view_count,
-              supplier: {
-                id: listing.user.user_id,
-                name: listing.user.user_name,
-                phone: listing.user.phone,
-                address: listing.user.address,
-                average_rating: supplier_rating
-              },
-              images: listing.supply_images.sorted.map do |img|
-                {
-                  id: img.id,
-                  url: img.image_url,
-                  position: img.position
-                }
-              end,
-              similar_listings: ::SupplyChain::SupplyListing.where(category: listing.category)
-                                             .where.not(id: listing.id)
-                                             .where(status: :active)
-                                             .limit(6)
-                                             .map { |l| supply_listing_json(l) }
-            })
-          end
-
-          json
         end
       end
     end

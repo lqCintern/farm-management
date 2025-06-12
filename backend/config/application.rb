@@ -10,7 +10,23 @@ module Backend
     config.load_defaults 8.0
 
     config.autoload_lib(ignore: %w[assets tasks])
-    config.autoload_paths += %W[#{config.root}/app/decorators]
+
+    # CLEAN ARCHITECTURE SETUP - ĐƠN GIẢN HÓA
+    # ---------------------------
+    # 1. Autoload paths - chỉ các thư mục gốc
+    config.autoload_paths += %w[
+      app/decorators
+      app/domain
+      app/formatters # Thêm formatters
+      app/infrastructure
+      app/interfaces
+      app/presenters # Thêm presenters
+      app/use_cases
+    ].map { |path| "#{config.root}/#{path}" }
+
+    # 2. Eager load trong development để giúp debug
+    config.eager_load = true if Rails.env.development?
+
     require Rails.root.join("app", "middleware", "authenticate_user")
     config.api_only = true
 

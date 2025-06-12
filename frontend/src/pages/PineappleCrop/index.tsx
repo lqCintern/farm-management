@@ -110,10 +110,11 @@ export default function PineappleCrops() {
       const params: any = { 
         ...filters,
         page: pagination.current,
+        per_page: pagination.pageSize
       };
       
       const response = await getPineappleCrops(params);
-      setCrops(response.data || []);
+      setCrops(response.items || []); // Sửa từ response.data thành response.items
       setPagination({
         ...pagination,
         total: response.pagination?.total_items || 0

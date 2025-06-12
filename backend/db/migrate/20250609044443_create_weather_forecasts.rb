@@ -12,7 +12,7 @@ class CreateWeatherForecasts < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
-    add_index :weather_forecasts, [:latitude, :longitude]
+
+    add_index :weather_forecasts, [ :latitude, :longitude ]
   end
 end

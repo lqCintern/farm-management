@@ -1,7 +1,7 @@
 module SupplyChain
   class SupplierReview < ApplicationRecord
-    self.table_name = 'supplier_reviews'
-    
+    self.table_name = "supplier_reviews"
+
     belongs_to :supply_listing, class_name: "SupplyChain::SupplyListing"
     belongs_to :supply_order, class_name: "SupplyChain::SupplyOrder"
     belongs_to :reviewer, class_name: "User", foreign_key: "reviewer_id", primary_key: "user_id"
@@ -15,17 +15,17 @@ module SupplyChain
 
     # Chỉ những đơn hàng đã hoàn thành mới được đánh giá
     validate :order_must_be_completed
-    
+
     # Trả về thông tin đánh giá kèm thông tin người đánh giá
     def as_json(options = {})
       review_json = super(options)
-      
+
       unless options[:skip_associations]
-        review_json[:reviewer] = reviewer.as_json(only: [:user_id, :user_name, :fullname])
-        review_json[:supplier] = supplier.as_json(only: [:user_id, :user_name, :fullname])
-        review_json[:supply_listing] = supply_listing.as_json(only: [:id, :name])
+        review_json[:reviewer] = reviewer.as_json(only: [ :user_id, :user_name, :fullname ])
+        review_json[:supplier] = supplier.as_json(only: [ :user_id, :user_name, :fullname ])
+        review_json[:supply_listing] = supply_listing.as_json(only: [ :id, :name ])
       end
-      
+
       review_json
     end
 

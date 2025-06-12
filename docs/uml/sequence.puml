@@ -1,0 +1,45 @@
+@startuml
+actor User
+participant "FarmActivitiesController" as Controller
+participant "CreateActivity" as UseCase
+participant "FarmActivityRepository" as Repository
+participant "FarmActivity" as Model
+participant "NotificationService" as Notification
+
+User -> Controller: create(params)
+activate Controller
+
+Controller -> UseCase: execute(params)
+activate UseCase
+
+UseCase -> Repository: create(attributes)
+activate Repository
+
+Repository -> Model: create!
+activate Model
+
+Model -> Model: validate_pineapple_process
+Model -> Model: check_similar_activities
+
+Model --> Repository: return activity
+deactivate Model
+
+Repository --> UseCase: return activity
+deactivate Repository
+
+UseCase -> UseCase: process_recurring_schedule
+UseCase -> UseCase: process_materials
+UseCase -> UseCase: update_pineapple_crop
+
+UseCase --> Controller: return activity
+deactivate UseCase
+
+Controller -> Notification: activity_reminder
+activate Notification
+Notification --> Controller: done
+deactivate Notification
+
+Controller --> User: render response
+deactivate Controller
+
+@enduml 

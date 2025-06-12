@@ -16,6 +16,20 @@ const HarvestInfoSection: React.FC<SectionProps> = ({
   // Kiểm tra nếu đã có thông tin từ pineapple_crop
   const hasCropInfo = formValues.pineapple_crop && formValues.pineapple_crop.current_stage === "harvesting";
 
+  // Sử dụng harvest_date từ API nếu có khi component mount
+  useEffect(() => {
+    if (formValues.pineapple_crop?.harvest_date && !formValues.harvest_start_date) {
+      // Nếu có harvest_date từ vụ mùa và chưa set trước đó
+      const harvestDate = dayjs(formValues.pineapple_crop.harvest_date);
+      // Tự động thiết lập khoảng thời gian thu hoạch là 7 ngày trước và sau ngày thu hoạch dự kiến
+      setFormValues({
+        ...formValues,
+        harvest_start_date: harvestDate.subtract(7, 'day').format('YYYY-MM-DD'),
+        harvest_end_date: harvestDate.add(7, 'day').format('YYYY-MM-DD')
+      });
+    }
+  }, [formValues.pineapple_crop]);
+
   const handleDateRangeChange = (dates: any) => {
     if (dates && dates.length === 2) {
       // Kiểm tra ngày bắt đầu < ngày kết thúc
@@ -63,6 +77,17 @@ const HarvestInfoSection: React.FC<SectionProps> = ({
           message="Trạng thái cây trồng: Đang thu hoạch"
           description="Hệ thống đã xác định cây trồng của bạn đang trong giai đoạn thu hoạch."
           type="success"
+          showIcon
+          className="mb-4"
+        />
+      )}
+
+      {/* Hiển thị thêm thông tin từ pineapple_crop nếu có */}
+      {formValues.pineapple_crop?.harvest_date && (
+        <Alert
+          message="Ngày thu hoạch dự kiến"
+          description={`Theo kế hoạch vụ mùa, ngày thu hoạch dự kiến là: ${dayjs(formValues.pineapple_crop.harvest_date).format('DD/MM/YYYY')}`}
+          type="info"
           showIcon
           className="mb-4"
         />

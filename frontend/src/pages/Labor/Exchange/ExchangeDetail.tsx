@@ -33,10 +33,27 @@ interface DetailedRequest {
 
 interface Transaction {
   id: number;
-  date: string;
-  amount: number;
-  description?: string;
-  // Add other fields as needed based on your backend response
+  labor_exchange_id: number;
+  labor_assignment_id: number | null;
+  hours: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  worker_name?: string;
+  work_date?: string;
+  readable_description?: string;  // Thêm mô tả dễ đọc
+  transaction_role?: 'requester' | 'provider' | 'other'; // Thêm vai trò trong giao dịch
+  assignment_details?: {
+    worker_name: string;
+    work_date: string;
+    hours_worked: string;
+    request_title: string;
+  };
+  direction_info?: { // Add direction_info property
+    requesting_household_id: number;
+    providing_household_id: number;
+    providing_household_name: string;
+  };
 }
 
 interface ExchangeDetailResponse {
@@ -59,6 +76,7 @@ interface ExchangeDetail {
   balance: number;
   direction: 'positive' | 'negative' | 'neutral';
   detailed_history?: DetailedRequest[];
+  transactions?: Transaction[]; // Added transactions property
 }
 
 const ExchangeDetail = () => {
@@ -85,9 +103,54 @@ const ExchangeDetail = () => {
       
       try {
         setLoading(true);
-        const response = await getExchangeDetails(parseInt(householdId)) as { data: ExchangeDetail };
-        setExchangeDetail((response as { data: ExchangeDetail }).data);
-        setError(null);
+        const response = await getExchangeDetails(parseInt(householdId));
+        
+        // Kiểm tra cấu trúc response và chuyển đổi nếu cần
+        const typedResponse = response as { success: boolean; data: any };
+        if (typedResponse.success && typedResponse.data) {
+          // Cấu trúc response mới có thể là data.transactions
+          if ((response as { data: { transactions: Transaction[] } }).data.transactions) {
+            // Tạo cấu trúc compatible cho component từ dữ liệu transactions
+            const partnerInfo: Transaction['direction_info'] = (response as { data: { transactions: Transaction[] } }).data.transactions[0]?.direction_info || {
+              requesting_household_id: 0,
+              providing_household_id: 0,
+              providing_household_name: "Unknown",
+            };
+            
+            const transformedData = {
+              exchange: {
+                id: (response as { data: { transactions: Transaction[] } }).data.transactions[0]?.labor_exchange_id || 0,
+                household_a_id: partnerInfo.requesting_household_id || 0,
+                household_b_id: partnerInfo.providing_household_id || 0,
+                household_b_name: partnerInfo.providing_household_name || "Hộ không xác định",
+                hours_balance: 0, // Sẽ tính toán từ transactions
+                last_transaction_date: (response as { data: { transactions: Transaction[] } }).data.transactions[0]?.created_at || new Date().toISOString()
+              },
+              balance: 0, // Sẽ tính toán từ transactions
+              direction: 'neutral',
+              transactions: (response as { data: { transactions: Transaction[] } }).data.transactions
+            };
+            
+            // Tính tổng balance từ transactions
+            const totalBalance = (response as { data: { transactions: Transaction[] } }).data.transactions.reduce((sum, tx) => {
+              return sum + parseFloat(tx.hours || "0");
+            }, 0);
+            
+            transformedData.balance = totalBalance;
+            transformedData.exchange.hours_balance = totalBalance;
+            transformedData.direction = (totalBalance > 0 ? 'positive' : 
+                                       totalBalance < 0 ? 'negative' : 'neutral') as 'neutral' | 'positive' | 'negative';
+            
+            setExchangeDetail(transformedData as ExchangeDetail);
+          } else {
+            // Nếu response có định dạng cũ
+            setExchangeDetail((response as { data: ExchangeDetail }).data);
+          }
+          
+          setError(null);
+        } else {
+          throw new Error('Invalid response format');
+        }
       } catch (err) {
         console.error('Error fetching exchange details:', err);
         setError('Không thể tải thông tin trao đổi công');
@@ -210,6 +273,78 @@ const ExchangeDetail = () => {
     }
   };
 
+  // Cập nhật component hiển thị giao dịch
+  const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
+    // Xác định vai trò từ direction_info
+    const hours = parseFloat(transaction.hours);
+    const isPositive = hours > 0;
+    
+    // Sử dụng direction_info để xác định vai trò nếu transaction_role chưa được thiết lập
+    let transactionRole = transaction.transaction_role;
+    if (!transactionRole && transaction.direction_info) {
+      // Giả sử current_household_id là ID của hộ người dùng hiện tại
+      // Bạn có thể lấy từ context hoặc props
+      const currentHouseholdId = parseInt(householdId || '0');
+      
+      if (transaction.direction_info.requesting_household_id === currentHouseholdId) {
+        transactionRole = 'requester';
+      } else if (transaction.direction_info.providing_household_id === currentHouseholdId) {
+        transactionRole = 'provider';
+      } else {
+        transactionRole = 'other';
+      }
+    }
+
+    // Tạo readable description nếu chưa có
+    let description = transaction.readable_description || transaction.description;
+    if (!description && transaction.assignment_details) {
+      const workerName = transaction.worker_name || transaction.assignment_details.worker_name;
+      const workDate = transaction.work_date || transaction.assignment_details.work_date;
+      
+      if (transactionRole === 'requester') {
+        description = `Bạn đã nhận ${Math.abs(hours)} giờ công từ ${workerName} vào ${new Date(workDate).toLocaleDateString('vi-VN')}`;
+      } else if (transactionRole === 'provider') {
+        description = `${workerName} đã cung cấp ${Math.abs(hours)} giờ công vào ${new Date(workDate).toLocaleDateString('vi-VN')}`;
+      } else {
+        description = transaction.description || `Giao dịch ${Math.abs(hours)} giờ công`;
+      }
+    }
+
+    return (
+      <div className="border-b pb-4 mb-4">
+        <div className="flex justify-between">
+          <div className="text-sm text-gray-500">
+            {new Date(transaction.created_at).toLocaleDateString('vi-VN')}
+          </div>
+          <div className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositive ? '+' : ''}{transaction.hours} giờ
+          </div>
+        </div>
+        
+        <div className="mt-1">{description}</div>
+        
+        {transactionRole && (
+          <div className={`mt-1 text-sm ${
+            transactionRole === 'requester' ? 'text-blue-500' : 
+            transactionRole === 'provider' ? 'text-green-500' : ''
+          }`}>
+            {transactionRole === 'requester' ? '(Bạn yêu cầu công)' : 
+             transactionRole === 'provider' ? '(Bạn cung cấp công)' : ''}
+          </div>
+        )}
+        
+        {transaction.assignment_details && (
+          <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+            <div>Công việc: {transaction.assignment_details.request_title}</div>
+            {transaction.assignment_details.work_date && (
+              <div>Ngày làm việc: {new Date(transaction.assignment_details.work_date).toLocaleDateString('vi-VN')}</div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-4">
       {loading ? (
@@ -320,11 +455,11 @@ const ExchangeDetail = () => {
           </Card>
 
           {/* Thêm hiển thị lịch sử chi tiết */}
-          {exchangeDetail && (
+          {exchangeDetail && exchangeDetail.detailed_history && exchangeDetail.detailed_history.length > 0 ? (
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-3">Lịch sử chi tiết theo yêu cầu</h3>
               <div className="space-y-4">
-                {exchangeDetail.detailed_history?.map((item) => (
+                {exchangeDetail.detailed_history.map((item) => (
                   <div key={item.request_id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-medium">{item.title}</h4>
@@ -380,6 +515,82 @@ const ExchangeDetail = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          ) : (
+            // Hiển thị thông báo hoặc tạo detailed history từ transactions
+            <div className="mt-6">
+              <Card>
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold mb-3">Chi tiết yêu cầu đổi công</h3>
+                  
+                  {exchangeDetail && exchangeDetail.transactions && exchangeDetail.transactions.length > 0 ? (
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-3">
+                        {exchangeDetail.transactions[0].assignment_details?.request_title || 'Giao dịch đổi công'}
+                      </h4>
+                      
+                      <div className="text-sm mb-3">
+                        <span className="font-medium">Yêu cầu:</span> {exchangeDetail.transactions[0].direction_info
+                          ? `Nhà mình`
+                          : 'Không xác định'} → 
+                        <span className="font-medium">Cung cấp:</span> {exchangeDetail.transactions[0].direction_info?.providing_household_name || 'Không xác định'}
+                      </div>
+                      
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Người lao động</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Ngày làm việc</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Giờ công</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Mô tả</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {exchangeDetail.transactions.map((tx) => (
+                            <tr key={tx.id}>
+                              <td className="px-4 py-2">{tx.worker_name || tx.assignment_details?.worker_name || 'Không xác định'}</td>
+                              <td className="px-4 py-2">
+                                {tx.work_date || tx.assignment_details?.work_date ? 
+                                  new Date(tx.work_date || tx.assignment_details?.work_date || '').toLocaleDateString('vi-VN') : 
+                                  'Không xác định'}
+                              </td>
+                              <td className="px-4 py-2">{tx.hours} giờ</td>
+                              <td className="px-4 py-2">{tx.description}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      Chưa có thông tin chi tiết về các yêu cầu đổi công giữa hai hộ.
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Cập nhật phần hiển thị transactions */}
+          {exchangeDetail && exchangeDetail.transactions && exchangeDetail.transactions.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-3">Các giao dịch gần đây</h3>
+              <Card>
+                <div className="p-4">
+                  {exchangeDetail.transactions.map(transaction => (
+                    <TransactionCard key={transaction.id} transaction={transaction} />
+                  ))}
+                  
+                  <div className="text-center mt-4">
+                    <Button 
+                      buttonType="text"
+                      onClick={() => navigate(`/labor/exchanges/${householdId}/history`)}
+                    >
+                      Xem tất cả giao dịch
+                    </Button>
+                  </div>
+                </div>
+              </Card>
             </div>
           )}
         </>

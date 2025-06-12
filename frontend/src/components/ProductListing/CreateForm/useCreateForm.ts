@@ -3,8 +3,9 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { message } from "antd";
 import { FormValues } from "./types";
 import { createProductListing } from "@/services/marketplace/productListingsService";
-import fieldService from "@/services/farming/fieldService";
+import fieldService, { Field, FieldResponse } from "@/services/farming/fieldService";
 import { getPineappleCropById } from "@/services/farming/pineappleCropService";
+import { PineappleCrop } from "@/types/labor/types";
 
 export const useCreateForm = () => {
   const [searchParams] = useSearchParams();
@@ -32,39 +33,100 @@ export const useCreateForm = () => {
     const fetchFieldAndCropData = async () => {
       if (fieldId) {
         try {
+          setIsLoading(true);
+          // Lấy dữ liệu field
           const fieldResponse = await fieldService.getFieldById(Number(fieldId));
+          
+          // Truy cập vào data theo cấu trúc API mới
           const fieldData = fieldResponse.data;
 
-          if (fieldData) {
-            const centerCoords = calculateCenter(fieldData.coordinates);
+          console.log("Field data response:", fieldResponse);
+          console.log("Field data:", fieldData);
+          console.log("Current crop from field:", fieldData.currentCrop);
 
+          if (fieldData) {
+            // Tính toán tọa độ trung tâm của field
+            const centerCoords = calculateCenter(fieldData.coordinates || []);
+            
+            // Parse area vì API trả về là string
+            const parsedArea = fieldService.parseArea(
+              fieldData.area !== undefined ? fieldData.area : 0
+            );
+
+            // Cập nhật state với dữ liệu field
             setFormValues((prev) => ({
               ...prev,
               fieldName: fieldData.name,
+              field_id: fieldData.id,
               coordinates: fieldData.coordinates,
+              location: fieldData.location, 
               latitude: centerCoords.lat,
               longitude: centerCoords.lng,
+              // Thêm google maps URL
+              google_maps_url: centerCoords.lat && centerCoords.lng 
+                ? `https://www.google.com/maps/place/${centerCoords.lat},${centerCoords.lng}`
+                : undefined,
             }));
 
-            if (cropId) {
-              const response = await getPineappleCropById(Number(cropId));
-              const cropData = (response as { data?: any }).data;
-              if (cropData) {
-                setFormValues((prev) => {
-                  const newValues = {
-                    ...prev,
-                    product_type: cropData.variety,
-                    crop_animal_id: cropData.id,
-                    title: `Dứa ${cropData.variety || "tươi"} từ ${fieldData.name}`,
-                  };
-                  return newValues;
-                });
-              }
+            // Xử lý thông tin về crop
+            if (fieldData.currentCrop) {
+              console.log("Found currentCrop:", fieldData.currentCrop);
+              
+              // Clone object để tránh tham chiếu đến cùng một object
+              const cropData = JSON.parse(JSON.stringify(fieldData.currentCrop));
+              
+              console.log("Formatted cropData before setting:", cropData);
+              
+              // Set tất cả dữ liệu cùng một lúc
+              setFormValues((prev) => {
+                const updatedValues = {
+                  ...prev,
+                  fieldName: fieldData.name,
+                  field_id: fieldData.id,
+                  coordinates: fieldData.coordinates,
+                  location: fieldData.location,
+                  latitude: centerCoords.lat,
+                  longitude: centerCoords.lng,
+                  google_maps_url: centerCoords.lat && centerCoords.lng 
+                    ? `https://www.google.com/maps/place/${centerCoords.lat},${centerCoords.lng}`
+                    : undefined,
+                  // Crop data
+                  product_type: cropData.variety || "Queen",
+                  crop_animal_id: cropData.id,
+                  pineapple_crop: cropData,
+                  title: prev.title || `Dứa ${cropData.variety || "tươi"} từ ${fieldData.name}`,
+                  description: prev.description || `Sản phẩm dứa ${cropData.variety || "tươi"} được trồng tại ${fieldData.location || "vùng đồng bằng Thanh Hóa"}, diện tích ${parsedArea.toLocaleString()} m².`,
+                };
+
+                // Nếu có harvest_date, tự động thiết lập khoảng thời gian thu hoạch
+                if (cropData.harvest_date) {
+                  const harvestDateObj = new Date(cropData.harvest_date);
+                  
+                  // Ngày bắt đầu: 7 ngày trước harvest_date
+                  const startDate = new Date(harvestDateObj);
+                  startDate.setDate(harvestDateObj.getDate() - 7);
+                  
+                  // Ngày kết thúc: 14 ngày sau harvest_date
+                  const endDate = new Date(harvestDateObj);
+                  endDate.setDate(harvestDateObj.getDate() + 14);
+                  
+                  // Format dates
+                  updatedValues.harvest_start_date = startDate.toISOString().split('T')[0];
+                  updatedValues.harvest_end_date = endDate.toISOString().split('T')[0];
+                }
+                
+                console.log("Final form values being set:", updatedValues);
+                return updatedValues;
+              });
+            } else {
+              console.log("No currentCrop found in field data");
             }
           }
         } catch (error) {
           console.error("Error fetching data:", error);
           message.error("Không thể lấy thông tin vườn/cây trồng");
+        } finally {
+          setIsLoading(false);
         }
       }
     };
@@ -103,62 +165,67 @@ export const useCreateForm = () => {
 
     setIsLoading(true);
     try {
-      // Calculate total weight from quantity and size range
-      let totalWeight = null;
-      if (formValues.quantity && formValues.min_size && formValues.max_size) {
-        const avgSize = (formValues.min_size + formValues.max_size) / 2;
-        totalWeight = (formValues.quantity * avgSize) / 1000; // Convert to kg
+      // Tính toán giá trị average_size từ min_size và max_size
+      let averageSize = null;
+      if (formValues.min_size && formValues.max_size) {
+        averageSize = (formValues.min_size + formValues.max_size) / 2;
       }
 
-      const data = {
-        ...formValues,
-        total_weight: totalWeight,
+      // Chỉ giữ lại các field mà backend chấp nhận
+      const filteredData = {
+        title: formValues.title,
+        description: formValues.description,
+        status: formValues.status,
+        product_type: formValues.product_type,
+        quantity: formValues.quantity,
+        total_weight: formValues.total_weight,
+        average_size: averageSize, // Sử dụng giá trị đã tính
+        price_expectation: formValues.price_expectation,
+        province: formValues.province,
+        district: formValues.district,
+        ward: formValues.ward,
+        address: formValues.address,
+        latitude: formValues.latitude,
+        longitude: formValues.longitude,
+        harvest_start_date: formValues.harvest_start_date,
+        harvest_end_date: formValues.harvest_end_date,
+        crop_animal_id: formValues.pineapple_crop?.id || formValues.crop_animal_id || null,
       };
+
+      // Lọc bỏ các giá trị null/undefined
+      const cleanedData = Object.fromEntries(
+        Object.entries(filteredData).filter(([key, value]) => value !== null && value !== undefined)
+      );
+
+      console.log("Final data being sent:", cleanedData);
 
       const formData = new FormData();
 
-      Object.entries(data).forEach(([key, value]) => {
+      // Thêm tất cả field vào FormData
+      Object.entries(cleanedData).forEach(([key, value]) => {
         if (value === undefined || value === null) {
-          return;
+          return; // Bỏ qua các giá trị null/undefined
         }
-
-        if (key === "coordinates" && Array.isArray(value)) {
-          formData.append(`product_listing[${key}]`, JSON.stringify(value));
-        } else if (Array.isArray(value)) {
-          if (key === "images") {
-            value.forEach((item, idx) => {
-              if (typeof item === "string") {
-                formData.append(`images[]`, item);
-              }
-            });
-          } else {
-            formData.append(`product_listing[${key}]`, JSON.stringify(value));
-          }
-        } else if (typeof value === "object") {
-          formData.append(`product_listing[${key}]`, JSON.stringify(value));
-        } else {
-          formData.append(`product_listing[${key}]`, value.toString());
-        }
+        formData.append(`product_listing[${key}]`, value.toString());
       });
 
-      // THÊM ĐOẠN CODE NÀY: Xử lý uploadedImages riêng
+      // Xử lý images riêng
       if (uploadedImages.length > 0) {
-        // Log để debug
         console.log(`Appending ${uploadedImages.length} images to FormData`);
-
-        // Thêm từng file ảnh vào formData với key "images[]"
+        
         uploadedImages.forEach((image) => {
           formData.append("images[]", image);
-          console.log(`Added image: ${image.name}, size: ${image.size}`);
         });
       }
 
-      // Log toàn bộ keys trong formData để kiểm tra
+      // Debug - kiểm tra các field được gửi đi
       console.log("FormData keys:", Array.from(formData.keys()));
 
-      await createProductListing(formData);
+      // Gửi request
+      const response = await createProductListing(formData);
+      console.log("Product created successfully:", response);
       message.success("Sản phẩm đã được đăng thành công");
-      navigate("/products"); // Redirect to products page
+      navigate("/products");
     } catch (error) {
       console.error("Error creating product:", error);
       message.error("Lỗi khi đăng sản phẩm. Vui lòng thử lại");
@@ -171,46 +238,53 @@ export const useCreateForm = () => {
   const saveDraft = async () => {
     setIsLoading(true);
     try {
-      // Tương tự code ở trên nhưng cần thêm status: 0
-      let totalWeight = null;
-      if (formValues.quantity && formValues.min_size && formValues.max_size) {
-        const avgSize = (formValues.min_size + formValues.max_size) / 2;
-        totalWeight = (formValues.quantity * avgSize) / 1000;
+      // Tính toán giá trị average_size từ min_size và max_size
+      let averageSize = null;
+      if (formValues.min_size && formValues.max_size) {
+        averageSize = (formValues.min_size + formValues.max_size) / 2;
       }
 
-      const data = {
-        ...formValues,
-        total_weight: totalWeight,
+      // Chỉ giữ lại các field mà backend chấp nhận
+      const filteredData = {
+        title: formValues.title || "Bản nháp",
+        description: formValues.description,
         status: 0, // Draft status
+        product_type: formValues.product_type,
+        quantity: formValues.quantity,
+        total_weight: formValues.total_weight,
+        average_size: averageSize,
+        price_expectation: formValues.price_expectation,
+        province: formValues.province,
+        district: formValues.district,
+        ward: formValues.ward,
+        address: formValues.address,
+        latitude: formValues.latitude,
+        longitude: formValues.longitude,
+        harvest_start_date: formValues.harvest_start_date,
+        harvest_end_date: formValues.harvest_end_date,
+        crop_animal_id: formValues.pineapple_crop?.id || formValues.crop_animal_id,
       };
 
-      // Convert data object to FormData - lồng ghép dữ liệu vào product_listing
       const formData = new FormData();
 
-      // Thêm các trường dữ liệu với khóa "product_listing[field]"
-      Object.entries(data).forEach(([key, value]) => {
+      // Thêm tất cả field vào FormData
+      Object.entries(filteredData).forEach(([key, value]) => {
         if (value === undefined || value === null) {
           return;
         }
-
-        if (key === "coordinates" && Array.isArray(value)) {
-          formData.append(`product_listing[${key}]`, JSON.stringify(value));
-        } else if (Array.isArray(value)) {
-          if (key === "images") {
-            value.forEach((item, idx) => {
-              if (typeof item === "string") {
-                formData.append(`images[]`, item);
-              }
-            });
-          } else {
-            formData.append(`product_listing[${key}]`, JSON.stringify(value));
-          }
-        } else if (typeof value === "object") {
-          formData.append(`product_listing[${key}]`, JSON.stringify(value));
-        } else {
-          formData.append(`product_listing[${key}]`, value.toString());
-        }
+        formData.append(`product_listing[${key}]`, value.toString());
       });
+
+      // Xử lý images riêng
+      if (uploadedImages.length > 0) {
+        uploadedImages.forEach((image) => {
+          formData.append("images[]", image);
+        });
+      }
+
+      const response = await createProductListing(formData);
+      message.success("Sản phẩm đã được lưu nháp");
+      navigate("/products");
     } catch (error) {
       console.error("Error saving draft:", error);
       message.error("Lỗi khi lưu nháp. Vui lòng thử lại");
@@ -244,19 +318,41 @@ export const useCreateForm = () => {
 };
 
 // Minimal dayjs-like implementation for adding days and formatting dates
-function dayjs(harvest_date: string) {
+function dayjs(date: string) {
+  const dateObj = new Date(date);
+  let daysToAdd = 0;
+
   return {
     add: (days: number, unit: string) => {
       if (unit !== "day") throw new Error("Only 'day' unit is supported.");
-      const date = new Date(harvest_date);
-      date.setDate(date.getDate() + days);
+      daysToAdd += days;
+      const newDate = new Date(dateObj);
+      newDate.setDate(newDate.getDate() + daysToAdd);
+      
       return {
         format: (formatStr: string) => {
           // Only supports 'YYYY-MM-DD'
           if (formatStr !== "YYYY-MM-DD") throw new Error("Only 'YYYY-MM-DD' format is supported.");
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, "0");
-          const day = String(date.getDate()).padStart(2, "0");
+          const year = newDate.getFullYear();
+          const month = String(newDate.getMonth() + 1).padStart(2, "0");
+          const day = String(newDate.getDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        },
+      };
+    },
+    subtract: (days: number, unit: string) => {
+      if (unit !== "day") throw new Error("Only 'day' unit is supported.");
+      daysToAdd -= days;
+      const newDate = new Date(dateObj);
+      newDate.setDate(newDate.getDate() + daysToAdd);
+      
+      return {
+        format: (formatStr: string) => {
+          // Only supports 'YYYY-MM-DD'
+          if (formatStr !== "YYYY-MM-DD") throw new Error("Only 'YYYY-MM-DD' format is supported.");
+          const year = newDate.getFullYear();
+          const month = String(newDate.getMonth() + 1).padStart(2, "0");
+          const day = String(newDate.getDate()).padStart(2, "0");
           return `${year}-${month}-${day}`;
         },
       };

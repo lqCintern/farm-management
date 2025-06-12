@@ -2,20 +2,20 @@ module Api
   module V1
     module Climate
       class WeatherController < Api::BaseController
-        before_action :set_field, only: [:field_forecast]
-        
+        before_action :set_field, only: [ :field_forecast ]
+
         # GET /api/v1/climate/weather/current
         def current
           location = get_location_params
-          
+
           service = ::Climate::WeatherService.new(
-            location[:latitude], 
+            location[:latitude],
             location[:longitude],
-            'metric' # Thay vì current_user.weather_setting&.temperature_unit || 'metric'
+            "metric" # Thay vì current_user.weather_setting&.temperature_unit || 'metric'
           )
-          
+
           weather_data = service.get_current_weather
-          
+
           render json: {
             status: "success",
             demo_mode: ::Climate::WeatherService::DEMO_MODE, # Thông báo nếu đang ở chế độ demo
@@ -23,22 +23,22 @@ module Api
             data: weather_data
           }
         end
-        
+
         # GET /api/v1/climate/weather/forecast
         def forecast
           location = get_location_params
-          
+
           service = ::Climate::WeatherService.new(
-            location[:latitude], 
+            location[:latitude],
             location[:longitude],
-            'metric' # Thay vì current_user.weather_setting&.temperature_unit || 'metric'
+            "metric" # Thay vì current_user.weather_setting&.temperature_unit || 'metric'
           )
-          
+
           forecast = service.get_and_update_forecast(
-            nil, 
+            nil,
             location[:name] || "Custom location"
           )
-          
+
           render json: {
             status: "success",
             demo_mode: ::Climate::WeatherService::DEMO_MODE, # Thông báo nếu đang ở chế độ demo
@@ -56,12 +56,12 @@ module Api
             }
           }
         end
-        
+
         # GET /api/v1/climate/weather/field/:id/forecast
         def field_forecast
           # Tính toán điểm trung tâm từ danh sách coordinates
           coordinates = @field.coordinates
-          
+
           # Kiểm tra nếu không có coordinates
           if coordinates.blank?
             render json: {
@@ -70,31 +70,31 @@ module Api
             }, status: :unprocessable_entity
             return
           end
-          
+
           # Tính trung bình các lat và lng để có điểm trung tâm
           total_lat = 0
           total_lng = 0
-          
+
           coordinates.each do |coord|
             total_lat += coord["lat"].to_f
             total_lng += coord["lng"].to_f
           end
-          
+
           avg_lat = total_lat / coordinates.size
           avg_lng = total_lng / coordinates.size
-          
+
           # Sử dụng điểm trung tâm để lấy dữ liệu thời tiết
           service = ::Climate::WeatherService.new(
-            avg_lat, 
+            avg_lat,
             avg_lng,
-            'metric' # Luôn sử dụng metric làm đơn vị mặc định
+            "metric" # Luôn sử dụng metric làm đơn vị mặc định
           )
-          
+
           forecast = service.get_and_update_forecast(
-            @field.id, 
+            @field.id,
             @field.name
           )
-          
+
           render json: {
             status: "success",
             demo_mode: ::Climate::WeatherService::DEMO_MODE, # Thông báo nếu đang ở chế độ demo
@@ -120,13 +120,13 @@ module Api
             }
           }
         end
-        
+
         private
-        
+
         def set_field
-          @field = Field.find(params[:id])
+          @field = ::Farming::Field.find(params[:id])
         end
-        
+
         def get_location_params
           if params[:latitude].present? && params[:longitude].present?
             {

@@ -1,7 +1,7 @@
 module Marketplace
   class MarketplaceHarvest < ApplicationRecord
-    self.table_name = 'marketplace_harvests'
-    
+    self.table_name = "marketplace_harvests"
+
     # Quan hệ
     belongs_to :product_listing, class_name: "Marketplace::ProductListing"
     belongs_to :trader, class_name: "User", foreign_key: "trader_id", primary_key: "user_id"

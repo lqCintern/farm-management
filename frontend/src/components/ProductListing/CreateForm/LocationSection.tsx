@@ -1,113 +1,65 @@
-import { Form, Input, Typography, Button, Tooltip } from "antd";
+import { Form, Input, Typography, Card, Descriptions } from "antd";
+import { EnvironmentOutlined } from "@ant-design/icons";
 import { SectionProps } from "@/components/ProductListing/CreateForm/types";
-import { EnvironmentOutlined, LinkOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 const LocationSection: React.FC<SectionProps> = ({
   formValues,
   setFormValues,
   errors,
 }) => {
-  // Tọa độ từ API
-  const latitude = formValues.latitude || "";
-  const longitude = formValues.longitude || "";
-  const hasCoordinates = latitude && longitude;
+  // Lấy thông tin field từ formValues
+  const fieldName = formValues.fieldName || "Chưa chọn cánh đồng";
+  const fieldId = formValues.field_id;
 
   return (
     <div>
-      <Title level={4}>Vị trí sản phẩm</Title>
+      <Title level={4}>Thông tin địa điểm</Title>
       <Text type="secondary" className="mb-4 block">
-        Thông tin được lấy từ cánh đồng đã đăng ký
+        Thông tin về vị trí thu hoạch sản phẩm
       </Text>
 
       <Form layout="vertical" className="mt-4">
-        {/* Hiển thị thông tin cánh đồng nếu có */}
-        {formValues.pineapple_crop && formValues.pineapple_crop.field_id && (
-          <Form.Item label="Cánh đồng / vườn">
-            <Input
-              prefix={<EnvironmentOutlined />}
-              value={`ID: ${formValues.pineapple_crop.field_id}, Giống: ${formValues.pineapple_crop.variety || formValues.product_type}`}
-              disabled
-              style={{ background: "#fafafa", color: "#222" }}
-            />
-          </Form.Item>
-        )}
+        {/* Field Info Card */}
+        <Card size="small" className="mb-4 bg-gray-50" bordered={false}>
+          <Descriptions size="small" column={1} className="mb-2">
+            <Descriptions.Item label="Tên cánh đồng">
+              <span className="font-medium">{fieldName}</span>
+            </Descriptions.Item>
+            <Descriptions.Item label="ID cánh đồng">
+              {fieldId}
+            </Descriptions.Item>
 
-        {/* Hiển thị tọa độ */}
-        {hasCoordinates && (
-          <Form.Item label="Tọa độ">
-            <Input
-              value={`${latitude}, ${longitude}`}
-              disabled
-              style={{ background: "#fafafa", color: "#222" }}
-            />
-            {formValues.google_maps_url && (
-              <div className="mt-2">
-                <Button 
-                  type="link" 
-                  icon={<LinkOutlined />} 
-                  onClick={() => window.open(formValues.google_maps_url, "_blank")}
-                >
-                  Xem trên Google Maps
-                </Button>
-              </div>
-            )}
-          </Form.Item>
-        )}
+          </Descriptions>
 
-        {/* Cho phép cập nhật địa chỉ nếu chưa có */}
-        <Form.Item 
-          label="Tỉnh/Thành phố" 
-          validateStatus={errors.province ? "error" : ""}
-          help={errors.province}
-          required={false} // Đặt là false để không bắt buộc
-        >
-          <Input
-            placeholder="Nhập tỉnh/thành phố"
-            value={formValues.province || ""}
-            onChange={e => setFormValues({ ...formValues, province: e.target.value })}
-          />
-        </Form.Item>
+          {formValues.coordinates && formValues.coordinates.length > 0 && (
+            <div className="mt-2">
+              <a
+                href={formValues.google_maps_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-500 hover:underline flex items-center"
+              >
+                <EnvironmentOutlined className="mr-1" /> Xem vị trí trên Google
+                Maps
+              </a>
+            </div>
+          )}
+        </Card>
 
-        <Form.Item 
-          label="Quận/Huyện"
-          validateStatus={errors.district ? "error" : ""}
-          help={errors.district}
-          required={false}
-        >
-          <Input
-            placeholder="Nhập quận/huyện"
-            value={formValues.district || ""}
-            onChange={e => setFormValues({ ...formValues, district: e.target.value })}
-          />
-        </Form.Item>
-
-        <Form.Item 
-          label="Phường/Xã"
-          validateStatus={errors.ward ? "error" : ""}
-          help={errors.ward}
-          required={false}
-        >
-          <Input
-            placeholder="Nhập phường/xã"
-            value={formValues.ward || ""}
-            onChange={e => setFormValues({ ...formValues, ward: e.target.value })}
-          />
-        </Form.Item>
-
-        <Form.Item 
-          label="Địa chỉ chi tiết"
-          validateStatus={errors.address ? "error" : ""}
-          help={errors.address}
-          required={false}
-        >
-          <TextArea
+        {/* Additional Location Note */}
+        <Form.Item label="Ghi chú về địa điểm (tuỳ chọn)">
+          <Input.TextArea
             rows={3}
-            placeholder="Nhập địa chỉ chi tiết (nếu cần)"
-            value={formValues.address || ""}
-            onChange={e => setFormValues({ ...formValues, address: e.target.value })}
+            placeholder="Nhập ghi chú về địa điểm (hướng dẫn đường đi, đặc điểm nhận biết...)"
+            value={formValues.locationNote || ""}
+            onChange={(e) =>
+              setFormValues({
+                ...formValues,
+                locationNote: e.target.value,
+              })
+            }
           />
         </Form.Item>
       </Form>

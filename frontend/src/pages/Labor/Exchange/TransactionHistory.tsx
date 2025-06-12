@@ -7,29 +7,38 @@ import Pagination from '@/components/common/Pagination';
 
 interface Transaction {
   id: number;
-  hours: number;
-  transaction_type: string;
+  labor_exchange_id: number;
+  labor_assignment_id: number;
+  hours: string; // Thay đổi từ number thành string
   description: string;
   created_at: string;
-  request?: {
-    id: number;
-    title: string;
-  };
-  assignment?: {
-    id: number;
+  updated_at: string;
+  worker_name: string;
+  work_date: string;
+  assignment_details?: {
+    worker_name: string;
     work_date: string;
+    hours_worked: string;
+    request_title: string;
   };
+  // Thêm transaction_type cho tương thích ngược
+  transaction_type?: string;
 }
 
+// Cập nhật response structure với nested data
 interface TransactionHistoryResponse {
-  transactions: Transaction[];
-  total: number;
-  pagination: {
-    page: number;
-    per_page: number;
-    total_pages: number;
+  success: boolean;
+  data: {
+    success: boolean;
+    transactions: Transaction[];
+    total: number;
+    pagination: {
+      current_page: number; // Thay đổi từ page thành current_page
+      per_page: number;
+      total_pages: number;
+    };
+    household_name?: string;
   };
-  household_name?: string; // Added household_name property
 }
 
 const TransactionHistory = () => {
@@ -51,12 +60,49 @@ const TransactionHistory = () => {
           parseInt(householdId),
           page,
           perPage
-        ) as { data: TransactionHistoryResponse };
-        setHistory(response.data);
+        ) as TransactionHistoryResponse;
         
-        // Set household name if available
-        if (response.data.household_name) {
-          setHouseholdName(response.data.household_name);
+        // Xử lý cấu trúc response mới
+        if (response.success && response.data) {
+          // Thêm transaction_type cho tương thích với UI hiện tại
+          const processedTransactions = response.data.transactions.map(tx => {
+            // Determine transaction_type based on available data
+            let transaction_type = 'other';
+            
+            if (tx.labor_assignment_id) {
+              transaction_type = 'completed_assignment';
+            } else if (tx.description?.toLowerCase().includes('reset')) {
+              transaction_type = 'reset';
+            } else if (tx.description?.toLowerCase().includes('điều chỉnh') || 
+                      tx.description?.toLowerCase().includes('adjustment')) {
+              transaction_type = 'adjustment';
+            }
+            
+            return {
+              ...tx,
+              transaction_type,
+              // Keep hours as string to match Transaction type
+            };
+          });
+          
+          // Set data with the nested structure preserved
+          setHistory({
+            success: response.success,
+            data: {
+              success: response.data.success,
+              transactions: processedTransactions,
+              total: response.data.total,
+              pagination: response.data.pagination,
+              household_name: response.data.household_name
+            }
+          });
+          
+          // Set household name if available
+          if (response.data.household_name) {
+            setHouseholdName(response.data.household_name);
+          }
+        } else {
+          throw new Error('Invalid response format');
         }
         
         setError(null);
@@ -132,7 +178,7 @@ const TransactionHistory = () => {
       ) : history ? (
         <Card>
           <div className="p-4">
-            {history.transactions.length === 0 ? (
+            {history.data.transactions.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 Chưa có giao dịch nào giữa hai hộ
               </div>
@@ -157,7 +203,7 @@ const TransactionHistory = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {history.transactions.map((transaction) => (
+                      {history.data.transactions.map((transaction) => (
                         <tr key={transaction.id}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -178,18 +224,19 @@ const TransactionHistory = () => {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {transaction.description || 
-                              (transaction.request ? `Yêu cầu: ${transaction.request.title}` : '') ||
-                              (transaction.assignment ? `Công việc ngày ${formatDate(transaction.assignment.work_date)}` : 'Không có mô tả')}
+                              (transaction.assignment_details ? 
+                                `Yêu cầu: ${transaction.assignment_details.request_title}` : 
+                                `Công việc ngày ${formatDate(transaction.work_date || '')}`)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              transaction.hours > 0 
+                              parseFloat(transaction.hours) > 0 
                                 ? 'bg-green-100 text-green-800' 
-                                : transaction.hours < 0 
+                                : parseFloat(transaction.hours) < 0 
                                   ? 'bg-red-100 text-red-800' 
                                   : 'bg-gray-100 text-gray-800'
                             }`}>
-                              {transaction.hours > 0 ? `+${transaction.hours}` : transaction.hours} giờ
+                              {parseFloat(transaction.hours) > 0 ? `+${transaction.hours}` : transaction.hours} giờ
                             </span>
                           </td>
                         </tr>
@@ -198,11 +245,12 @@ const TransactionHistory = () => {
                   </table>
                 </div>
                 
-                {history.total > perPage && (
+                {history && history.data.total > perPage && (
                   <div className="mt-4">
                     <Pagination
-                      currentPage={page}
-                      totalPages={history.pagination.total_pages}
+                      // Sử dụng current_page thay vì page nếu có
+                      currentPage={history.data.pagination.current_page || page}
+                      totalPages={history.data.pagination.total_pages}
                       onPageChange={handlePageChange}
                     />
                   </div>

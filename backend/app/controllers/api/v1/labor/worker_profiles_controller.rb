@@ -3,27 +3,27 @@ module Api
   module V1
     module Labor
       class WorkerProfilesController < BaseController
-        before_action :set_worker_profile, only: [ :show, :update ]
-        before_action :authorize_profile, only: [ :update ]
+        before_action :set_worker_profile, only: [:show]
+        before_action :authorize_profile, only: [:update]
 
         def index
           filters = params.permit(:skills, :max_daily_rate, :max_hourly_rate, :exclude_household_id).to_h
-          @profiles = ::Labor::WorkerService.find_available_workers(filters)
-          render_success_response(@profiles)
+          profiles = CleanArch.labor_find_available_workers.execute(filters)
+          render_success_response(profiles)
         end
 
         def show
           # Lấy thông tin chi tiết về worker bao gồm cả thống kê
-          stats = ::Labor::WorkerService.worker_statistics(@worker_profile.user)
+          stats = CleanArch.labor_get_worker_statistics.execute(@worker_profile.user)
           render_success_response(stats)
         end
 
         def create
-          result = ::Labor::WorkerService.create_or_update_profile(
+          result = CleanArch.labor_create_or_update_profile.execute(
             current_user,
             worker_profile_params.to_h
           )
-
+          
           if result[:success]
             render_success_response(result[:profile], :created)
           else
@@ -32,11 +32,11 @@ module Api
         end
 
         def update
-          result = ::Labor::WorkerService.create_or_update_profile(
+          result = CleanArch.labor_create_or_update_profile.execute(
             current_user,
             worker_profile_params.to_h
           )
-
+          
           if result[:success]
             render_success_response(result[:profile])
           else
@@ -45,31 +45,34 @@ module Api
         end
 
         def my_profile
-          profile = ::Labor::WorkerProfile.find_by(user_id: current_user.id)
-
-          unless profile
-            # Tạo mới profile nếu chưa có
-            result = ::Labor::WorkerService.create_or_update_profile(
-              current_user,
-              { availability: :available }
-            )
-
-            if result[:success]
-              stats = ::Labor::WorkerService.worker_statistics(current_user)
-              render_success_response(stats)
-            else
-              render_error_response(result[:errors], :unprocessable_entity)
-            end
-          else
-            stats = ::Labor::WorkerService.worker_statistics(current_user)
+          result = CleanArch.labor_get_or_create_profile.execute(current_user)
+          
+          if result[:success]
+            stats = CleanArch.labor_get_worker_statistics.execute(current_user)
             render_success_response(stats)
+          else
+            render_error_response(result[:errors], :unprocessable_entity)
           end
         end
 
         def available_workers
           filters = params.permit(:skills, :max_daily_rate, :max_hourly_rate, :exclude_household_id).to_h
-          @workers = ::Labor::WorkerService.find_available_workers(filters)
-          render_success_response(@workers)
+          workers = CleanArch.labor_find_available_workers.execute(filters)
+          render_success_response(workers)
+        end
+        
+        def worker_availability
+          worker_id = params[:worker_id].to_i
+          start_date = params[:start_date] || Date.today.to_s
+          end_date = params[:end_date] || (Date.today + 14.days).to_s
+          
+          result = CleanArch.labor_check_worker_availability.execute(
+            worker_id,
+            start_date,
+            end_date
+          )
+          
+          render_success_response(result)
         end
 
         private

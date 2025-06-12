@@ -2,159 +2,149 @@ module Api
   module V1
     module Farming
       class FieldsController < BaseController
-        before_action :set_field, only: [ :show, :update, :destroy, :activities, :harvests, :pineapple_crops ]
-
-        # GET /api/v1/fields
         def index
-          fields = current_user.fields.order(created_at: :desc)
-
+          result = CleanArch.farming_list_fields.execute(
+            current_user.user_id,
+            {
+              name: params[:name],
+              location: params[:location]
+            }
+          )
+          
           render json: {
             message: "Fields retrieved successfully",
-            data: fields.map { |f| field_response(f) }
+            data: ::Farming::FieldPresenter.collection_as_json(result[:fields])[:data]
           }
         end
-
-        # GET /api/v1/fields/:id
+        
         def show
-          render json: {
-            message: "Field retrieved successfully",
-            data: field_response(@field)
-          }
-        end
-
-        # POST /api/v1/fields
-        def create
-          field = current_user.fields.new(field_params)
-
-          if field_params[:area].present?
-            field.area = field_params[:area]
+          result = CleanArch.farming_get_field.execute(params[:id], current_user.user_id)
+          
+          if result[:success]
+            render json: {
+              message: "Field retrieved successfully",
+              data: ::Farming::FieldPresenter.as_json(result[:field])
+            }
           else
-            field.area = field.calculate_area if field.coordinates.present?
+            render json: { error: result[:error] }, status: :not_found
           end
-
-          if field.save
+        end
+        
+        def create
+          result = CleanArch.farming_create_field.execute(
+            field_params.to_h,
+            current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
               message: "Field created successfully",
-              data: field_response(field)
+              data: ::Farming::FieldPresenter.as_json(result[:field])
             }, status: :created
           else
-            render json: { errors: field.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:errors] }, status: :unprocessable_entity
           end
         end
-
-        # PUT /api/v1/fields/:id
+        
         def update
-          # Tính diện tích tự động từ tọa độ nếu có thay đổi
-          if field_params[:coordinates].present?
-            # Cần gán tạm để tính diện tích
-            @field.assign_attributes(field_params)
-            @field.area = field_params[:area] || @field.calculate_area
-          end
-
-          if @field.update(field_params)
+          result = CleanArch.farming_update_field.execute(
+            params[:id],
+            field_params.to_h,
+            current_user.user_id
+          )
+          
+          if result[:success]
             render json: {
               message: "Field updated successfully",
-              data: field_response(@field)
+              data: ::Farming::FieldPresenter.as_json(result[:field])
             }
           else
-            render json: { errors: @field.errors.full_messages }, status: :unprocessable_entity
+            render json: { errors: result[:errors] || [result[:error]] }, status: :unprocessable_entity
           end
         end
-
-        # DELETE /api/v1/fields/:id
+        
         def destroy
-          # Sử dụng namespace đầy đủ cho các associations
-          if @field.pineapple_crops.exists? || @field.farm_activities.exists? || @field.harvests.exists?
-            render json: {
-              error: "Cannot delete field. It has associated pineapple crops, activities or harvests."
-            }, status: :unprocessable_entity
-            return
+          result = CleanArch.farming_delete_field.execute(
+            params[:id],
+            current_user.user_id
+          )
+          
+          if result[:success]
+            render json: { message: "Field deleted successfully" }
+          else
+            render json: { error: result[:error] }, status: :unprocessable_entity
           end
-
-          @field.destroy
-          render json: {
-            message: "Field deleted successfully"
-          }
         end
-
-        # GET /api/v1/fields/:id/activities
+        
         def activities
-          # Sử dụng namespace trong includes
-          activities = @field.farm_activities
-                            .includes(:pineapple_crop, :user)
-                            .order(start_date: :desc)
-
-          render json: {
-            message: "Field activities retrieved successfully",
-            data: activities.map { |a| activity_response(a) }
-          }
-        end
-
-        # GET /api/v1/fields/:id/harvests
-        def harvests
-          harvests = @field.harvests
-                          .includes(:pineapple_crop, :user)
-                          .order(harvest_date: :desc)
-
-          render json: {
-            message: "Field harvests retrieved successfully",
-            data: harvests.map { |h| harvest_response(h) }
-          }
-        end
-
-        # GET /api/v1/fields/:id/pineapple_crops
-        def pineapple_crops
-          pineapple_crops = @field.pineapple_crops
-
-          render json: {
-            message: "Field pineapple crops retrieved successfully",
-            data: pineapple_crops.map { |c| pineapple_crop_response(c) }
-          }
-        end
-
-        # GET /api/v1/fields/stats
-        def stats
-          # Thống kê theo diện tích
-          total_area = current_user.fields.sum(:area)
-
-          # Thống kê theo vụ trồng dứa - cập nhật bảng với namespace
-          crops_by_field = current_user.fields
-                                      .joins(:pineapple_crops)
-                                      .group("fields.id")
-                                      .count("pineapple_crops.id")
-
-          # Thống kê hoạt động - cập nhật bảng với namespace
-          activities_by_field = current_user.fields
-                                          .joins(:farm_activities)
-                                          .group("fields.id")
-                                          .count("farm_activities.id")
-
-          # Thống kê thu hoạch - cập nhật bảng với namespace
-          harvests_by_field = current_user.fields
-                                        .joins(:harvests)
-                                        .group("fields.id")
-                                        .sum("harvests.quantity")
-
-          render json: {
-            message: "Field statistics retrieved successfully",
-            data: {
-              total_fields: current_user.fields.count,
-              total_area: total_area,
-              crops_by_field: crops_by_field,
-              activities_by_field: activities_by_field,
-              harvests_by_field: harvests_by_field
+          result = CleanArch.farming_get_field_activities.execute(
+            params[:id],
+            current_user.user_id
+          )
+          
+          if result[:success]
+            render json: {
+              message: "Field activities retrieved successfully",
+              data: result[:records].map { |record| ::Farming::FieldActivityPresenter.as_json(record) }
             }
-          }
+          else
+            render json: { error: result[:error] }, status: :not_found
+          end
         end
-
+        
+        def harvests
+          result = CleanArch.farming_get_field_harvests.execute(
+            params[:id],
+            current_user.user_id
+          )
+          
+          if result[:success]
+            render json: {
+              message: "Field harvests retrieved successfully",
+              data: result[:records].map { |record| ::Farming::FieldHarvestPresenter.as_json(record) }
+            }
+          else
+            render json: { error: result[:error] }, status: :not_found
+          end
+        end
+        
+        def pineapple_crops
+          result = CleanArch.farming_get_field_pineapple_crops.execute(
+            params[:id],
+            current_user.user_id
+          )
+          
+          if result[:success]
+            render json: {
+              message: "Field pineapple crops retrieved successfully",
+              data: result[:records].map { |record| ::Farming::FieldPineappleCropPresenter.as_json(record) }
+            }
+          else
+            render json: { error: result[:error] }, status: :not_found
+          end
+        end
+        
+        def stats
+          result = CleanArch.farming_get_field_stats.execute(current_user.user_id)
+          
+          if result[:success]
+            render json: {
+              message: "Field statistics retrieved successfully",
+              data: {
+                total_fields: result[:total_fields],
+                total_area: result[:total_area],
+                crops_by_field: result[:crops_by_field],
+                activities_by_field: result[:activities_by_field],
+                harvests_by_field: result[:harvests_by_field]
+              }
+            }
+          else
+            render json: { error: result[:error] }, status: :unprocessable_entity
+          end
+        end
+        
         private
-
-        def set_field
-          @field = current_user.fields.find(params[:id])
-        rescue ActiveRecord::RecordNotFound
-          render json: { error: "Field not found" }, status: :not_found
-        end
-
+        
         def field_params
           params.require(:field).permit(
             :name,
@@ -163,76 +153,6 @@ module Api
             :area,
             coordinates: [ [ :lat, :lng ] ]
           )
-        end
-
-        def field_response(field)
-          {
-            id: field.id,
-            name: field.name,
-            description: field.description,
-            location: field.location,
-            area: field.area,
-            coordinates: field.coordinates,
-            activity_count: field.farm_activities.is_a?(ActiveRecord::Relation) ? field.farm_activities.count : 0,
-            harvest_count: field.harvests.count,
-            currentCrop: field.pineapple_crops.where(status: 'active').first, # Cập nhật với quan hệ đúng
-            created_at: field.created_at,
-            updated_at: field.updated_at
-          }
-        end
-
-        def activity_response(activity)
-          {
-            id: activity.id,
-            activity_type: activity.activity_type,
-            description: activity.description,
-            start_date: activity.start_date,
-            end_date: activity.end_date,
-            status: activity.status,
-            frequency: activity.frequency,
-            pineapple_crop: activity.pineapple_crop ? {
-              id: activity.pineapple_crop.id,
-              name: activity.pineapple_crop.name,
-              current_stage: activity.pineapple_crop.current_stage
-            } : nil,
-            coordinates: activity.coordinates,
-            created_at: activity.created_at,
-            updated_at: activity.updated_at
-          }
-        end
-
-        def harvest_response(harvest)
-          {
-            id: harvest.id,
-            quantity: harvest.quantity,
-            harvest_date: harvest.harvest_date,
-            pineapple_crop: harvest.pineapple_crop ? {
-              id: harvest.pineapple_crop.id,
-              name: harvest.pineapple_crop.name,
-              current_stage: harvest.pineapple_crop.current_stage
-            } : nil,
-            coordinates: harvest.coordinates,
-            created_at: harvest.created_at,
-            updated_at: harvest.updated_at
-          }
-        end
-
-        def pineapple_crop_response(crop)
-          {
-            id: crop.id,
-            name: crop.name,
-            season_type: crop.season_type,
-            current_stage: crop.current_stage,
-            status: crop.status,
-            planting_date: crop.planting_date,
-            field_area: crop.field_area,
-            planting_density: crop.planting_density,
-            variety: crop.variety,
-            source: crop.source,
-            description: crop.description,
-            created_at: crop.created_at,
-            updated_at: crop.updated_at
-          }
         end
       end
     end

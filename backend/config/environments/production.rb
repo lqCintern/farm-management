@@ -9,6 +9,14 @@ Rails.application.configure do
   # Eager load code on boot for better performance and memory savings (ignored by Rake tasks).
   config.eager_load = true
 
+  # Eager load toàn bộ application
+  config.eager_load_paths += [
+    Rails.root.join("app/domain"),
+    Rails.root.join("app/infrastructure"),
+    Rails.root.join("app/interfaces"),
+    Rails.root.join("app/use_cases")
+  ]
+
   # Full error reports are disabled.
   config.consider_all_requests_local = false
 

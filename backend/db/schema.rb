@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_09_044512) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -409,6 +409,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_044512) do
     t.integer "order_count", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "location_note"
     t.index ["crop_animal_id"], name: "index_product_listings_on_crop_animal_id"
     t.index ["harvest_start_date", "harvest_end_date"], name: "idx_on_harvest_start_date_harvest_end_date_55751c2310"
     t.index ["product_type"], name: "index_product_listings_on_product_type"

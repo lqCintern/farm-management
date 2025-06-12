@@ -19,8 +19,8 @@ interface Field {
     id: number;
     name: string;
     crop_type: number;
-    // Add other fields as needed
-  }[];
+    [key: string]: any; // để hỗ trợ các thuộc tính khác từ API
+  };
 }
 
 interface Props {
@@ -80,13 +80,21 @@ export default function FarmActivityModal({
   const fetchFields = async () => {
     try {
       const response = await fieldService.getFields();
+      console.log("Fields API response:", response); // Debug log
+      
       if (response && response.data) {
-        setFields(response.data.map((field: any) => ({
-          id: field.id,
-          name: field.name,
-          area: field.area,
-          currentCrop: field.currentCrop || []
-        })));
+        setFields(response.data.map((field: any) => {
+          // Log dữ liệu từng field để debug
+          console.log(`Field ${field.id} currentCrop:`, field.currentCrop);
+          
+          return {
+            id: field.id,
+            name: field.name,
+            area: parseFloat(field.area || '0'),
+            // Giữ nguyên cấu trúc currentCrop từ API
+            currentCrop: field.currentCrop
+          };
+        }));
       }
     } catch (error) {
       console.error('Error fetching fields:', error);
@@ -265,28 +273,32 @@ export default function FarmActivityModal({
 
   const handleSelectField = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = Number(e.target.value);
-    setFormData(prev => ({
-      ...prev,
-      field_id: selectedId.toString()
-    }));
+    
+    const updateData: Partial<typeof formData> = {
+      field_id: selectedId ? selectedId.toString() : ""
+    };
     
     // Tự động điền crop_animal_id nếu chọn cánh đồng
     if (selectedId) {
       const selectedField = fields.find(field => field.id === selectedId);
-      if (selectedField) {
-        const newFormData = {
-          ...formData, 
-          field_id: selectedId.toString()
-        };
-        
-        // Đặt crop_animal_id nếu currentCrop tồn tại
-        if (selectedField.currentCrop && selectedField.currentCrop.length > 0) {
-          newFormData.crop_animal_id = selectedField.currentCrop[0].id.toString();
+      console.log("Selected field:", selectedField);
+      
+      if (selectedField && selectedField.currentCrop) {
+        // Trường hợp currentCrop là object (từ API mới)
+        if (typeof selectedField.currentCrop === 'object' && !Array.isArray(selectedField.currentCrop) && selectedField.currentCrop.id) {
+          console.log("Using object currentCrop with ID:", selectedField.currentCrop.id);
+          updateData.crop_animal_id = selectedField.currentCrop.id.toString();
+        } 
+        // Trường hợp currentCrop là array (từ API cũ)
+        else if (Array.isArray(selectedField.currentCrop) && selectedField.currentCrop.length > 0) {
+          console.log("Using array currentCrop with ID:", selectedField.currentCrop[0].id);
+          updateData.crop_animal_id = selectedField.currentCrop[0].id.toString();
         }
-        
-        setFormData(newFormData);
       }
     }
+    
+    console.log("Form data update:", updateData);
+    setFormData(prev => ({ ...prev, ...updateData }));
   };
 
   if (!isOpen) return null;
@@ -340,8 +352,11 @@ export default function FarmActivityModal({
                 {fields.map((field) => (
                   <option key={field.id} value={field.id}>
                     {field.name} ({field.area.toLocaleString()} m²)
-                    {field.currentCrop && field.currentCrop.length > 0 ? 
-                      ` - ${field.currentCrop[0].name}` : ''}
+                    {field.currentCrop && Array.isArray(field.currentCrop) && field.currentCrop.length > 0
+                      ? ` - ${field.currentCrop[0].name}`
+                      : field.currentCrop && !Array.isArray(field.currentCrop)
+                        ? ` - ${field.currentCrop.name}`
+                        : ''}
                   </option>
                 ))}
               </select>
@@ -350,24 +365,45 @@ export default function FarmActivityModal({
             
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
-                Mã cây trồng/vật nuôi
+                Hoạt động này cho vụ mùa:
               </label>
               <div className="relative">
-                <input
-                  type="text"
-                  name="crop_animal_id"
-                  value={formData.crop_animal_id}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                {formData.field_id && (() => {
-                  const selectedField = fields.find(f => f.id === Number(formData.field_id));
-                  return selectedField?.currentCrop?.length ? selectedField.currentCrop.length > 0 : false;
-                })() && (
-                  <div className="text-xs text-green-600 mt-1">
-                    Đã tự động điền từ cây trồng hiện tại
-                  </div>
-                )}
+                {/* Thay đổi input để hiển thị tên vụ mùa thay vì ID */}
+                {(() => {
+                  const selectedField = fields.find(field => field.id.toString() === formData.field_id);
+                  let cropName = "";
+                  
+                  if (selectedField?.currentCrop) {
+                    if (Array.isArray(selectedField.currentCrop) && selectedField.currentCrop.length > 0) {
+                      cropName = selectedField.currentCrop[0].name;
+                    } else if (typeof selectedField.currentCrop === 'object') {
+                      cropName = selectedField.currentCrop.name;
+                    }
+                  }
+                  
+                  return (
+                    <>
+                      <input
+                        type="text"
+                        value={cropName}
+                        className="w-full border rounded-lg p-2"
+                        readOnly
+                        placeholder="Chọn cánh đồng để tự động điền"
+                      />
+                      {/* Input ẩn để vẫn giữ giá trị crop_animal_id khi submit */}
+                      <input
+                        type="hidden"
+                        name="crop_animal_id"
+                        value={formData.crop_animal_id}
+                      />
+                      {formData.crop_animal_id && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Mã vụ mùa: {formData.crop_animal_id}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
             
