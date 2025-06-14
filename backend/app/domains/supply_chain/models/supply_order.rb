@@ -1,7 +1,7 @@
 module SupplyChain
   class SupplyOrder < ApplicationRecord
-    self.table_name = 'supply_orders'
-    
+    self.table_name = "supply_orders"
+
     belongs_to :supply_listing, class_name: "SupplyChain::SupplyListing"
     belongs_to :user, foreign_key: "user_id", primary_key: "user_id"
     has_many :supplier_reviews, class_name: "SupplyChain::SupplierReview", dependent: :destroy
@@ -35,6 +35,30 @@ module SupplyChain
         supply_listing.increment!(:quantity, quantity)
         supply_listing.update(status: :active) if supply_listing.sold_out?
       end
-    end 
+    end
+
+    # Kiểm tra đã đánh giá chưa
+    def reviewed?
+      supplier_reviews.exists?
+    end
+
+    # Lấy đánh giá nếu có
+    def review
+      supplier_reviews.first
+    end
+
+    # Trả về thông tin đơn hàng kèm thông tin cung cấp và người mua
+    def as_json(options = {})
+      order_json = super(options)
+
+      unless options[:skip_associations]
+        order_json[:supply_listing] = supply_listing.as_json(only: [ :id, :name, :price, :unit, :category ])
+        order_json[:buyer] = user.as_json(only: [ :user_id, :user_name, :fullname, :phone ])
+        order_json[:supplier] = supplier.as_json(only: [ :user_id, :user_name, :fullname, :phone ])
+        order_json[:total_amount] = total_amount
+      end
+
+      order_json
+    end
   end
 end

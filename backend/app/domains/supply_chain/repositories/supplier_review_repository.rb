@@ -1,7 +1,7 @@
 module Repositories
   module SupplyChain
     class SupplierReviewRepository
-      include ::Repositories::SupplyChain::SupplierReviewRepositoryInterface
+      include Interfaces::Repositories::SupplyChain::SupplierReviewRepositoryInterface
       
       def find_by_supplier(supplier_id, page = 1, per_page = 10)
         query = ::SupplyChain::SupplierReview
