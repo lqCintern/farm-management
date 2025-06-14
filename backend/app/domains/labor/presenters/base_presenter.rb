@@ -1,4 +1,5 @@
-
+module Labor
+  module Presenters
   class BasePresenter
     def self.present(object)
       new(object).as_json
@@ -27,3 +28,5 @@
       raise NotImplementedError, "Subclasses must implement as_json"
     end
   end
+end
+end

@@ -1,5 +1,5 @@
-module Entities
-  module SupplyChain
+module SupplyChain
+  module Entities
     class SupplierReview
       attr_accessor :id, :supply_order_id, :supply_listing_id, :reviewer_id, :supplier_id,
                     :rating, :content, :created_at, :updated_at,
@@ -18,5 +18,5 @@ module Entities
         errors
       end
     end
-  end
+    end
 end

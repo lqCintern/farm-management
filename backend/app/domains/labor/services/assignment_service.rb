@@ -1,6 +1,7 @@
 # app/services/labor/assignment_service.rb
 module Labor
-  class AssignmentService
+  module Services
+    class AssignmentService
     def self.create_assignment(labor_request, params, current_household)
       # Xử lý start_time và end_time để kết hợp với work_date
       work_date = Date.parse(params[:work_date].to_s)
@@ -321,5 +322,6 @@ module Labor
 
       query.includes(:worker, labor_request: [ :requesting_household, :providing_household ])
     end
+      end
   end
 end

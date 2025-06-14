@@ -1,5 +1,5 @@
-module Repositories
-  module Farming
+module Farming
+  module Repositories
     class HarvestRepository
       def find_by_id(id, user_id = nil)
         query = ::Farming::Harvest
@@ -177,5 +177,5 @@ module Repositories
         entity
       end
     end
-  end
+    end
 end

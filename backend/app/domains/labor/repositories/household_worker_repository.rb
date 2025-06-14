@@ -1,7 +1,6 @@
-module Repositories
-  module Labor
+module Labor
+  module Repositories
     class HouseholdWorkerRepository
-      include HouseholdWorkerRepositoryInterface
       
       def find(id)
         record = ::Labor::HouseholdWorker.find_by(id: id)
@@ -117,5 +116,5 @@ module Repositories
         )
       end
     end
-  end
+    end
 end

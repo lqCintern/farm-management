@@ -1,6 +1,5 @@
-# app/domain/entities/marketplace/marketplace_harvest.rb
-module Entities
-  module Marketplace
+module Marketplace
+  module Entities
     class MarketplaceHarvest
       attr_reader :id, :scheduled_date, :location, :notes, :estimated_quantity,
                  :actual_quantity, :estimated_price, :final_price, :status,
@@ -61,5 +60,5 @@ module Entities
         status_map[status.to_s] || status.to_s.humanize
       end
     end
-  end
+    end
 end

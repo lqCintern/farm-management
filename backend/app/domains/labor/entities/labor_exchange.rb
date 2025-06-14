@@ -1,5 +1,5 @@
-module Entities
-  module Labor
+module Labor
+  module Entities
     class LaborExchange
       attr_accessor :id, :household_a_id, :household_b_id, :hours_balance,
                     :last_transaction_date, :created_at, :updated_at,
@@ -58,5 +58,5 @@ module Entities
         end
       end
     end
-  end
+    end
 end

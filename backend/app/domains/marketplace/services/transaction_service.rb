@@ -1,5 +1,6 @@
 module Marketplace
-  class TransactionService
+  module Services
+    class TransactionService
     # Tạo transaction khi hoàn thành thanh toán
     def create_sale_transaction(source, amount: nil, description: nil)
       return unless defined?(::Marketplace::Transaction)
@@ -84,5 +85,6 @@ module Marketplace
       # Đồng thời tạo bản ghi Sale
       create_sale_record(order)
     end
+      end
   end
 end

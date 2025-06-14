@@ -1,8 +1,6 @@
-module Repositories
-  module SupplyChain
-    class SupplierReviewRepository
-      include Interfaces::Repositories::SupplyChain::SupplierReviewRepositoryInterface
-      
+module SupplyChain
+  module Repositories
+    class SupplierReviewRepository      
       def find_by_supplier(supplier_id, page = 1, per_page = 10)
         query = ::SupplyChain::SupplierReview
           .where(supplier_id: supplier_id)
@@ -159,5 +157,5 @@ module Repositories
         end
       end
     end
-  end
+    end
 end

@@ -1,5 +1,6 @@
 module Labor
-  class LaborRequest < ApplicationRecord
+  module Models
+    class LaborRequest < ApplicationRecord
     self.table_name = "labor_requests"
 
     # Relationships
@@ -153,5 +154,6 @@ module Labor
         errors.add(:providing_household_id, "không thể giống với hộ yêu cầu")
       end
     end
+      end
   end
 end

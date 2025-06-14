@@ -1,5 +1,5 @@
-module Dtos
-  module SupplyChain
+module SupplyChain
+  module Dtos
     class SupplyListingDto
       attr_reader :id, :name, :description, :category, :price, :unit, :quantity, 
                  :brand, :manufacturer, :manufacturing_date, :expiry_date,
@@ -99,5 +99,5 @@ module Dtos
         result
       end
     end
-  end
+    end
 end

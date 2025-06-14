@@ -1,5 +1,6 @@
 module Marketplace
-  class HarvestService
+  module Services
+    class HarvestService
     def initialize(harvest, user)
       @harvest = harvest
       @user = user
@@ -169,5 +170,6 @@ module Marketplace
         { success: false, error: "Không thể xóa lịch thu hoạch" }
       end
     end
+      end
   end
 end

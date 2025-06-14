@@ -1,5 +1,5 @@
-module Repositories
-  module Marketplace
+module Marketplace
+  module Repositories
     class MarketplaceHarvestRepository
       def find(id)
         record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
@@ -224,5 +224,5 @@ module Repositories
         }
       end
     end
-  end
+    end
 end

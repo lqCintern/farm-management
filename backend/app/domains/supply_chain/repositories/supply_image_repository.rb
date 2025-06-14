@@ -1,5 +1,5 @@
-module Repositories
-  module SupplyChain
+module SupplyChain
+  module Repositories
     class SupplyImageRepository
       def create(entity)
         record = ::SupplyChain::SupplyImage.new(
@@ -44,5 +44,5 @@ module Repositories
         )
       end
     end
-  end
+    end
 end

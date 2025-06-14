@@ -1,8 +1,6 @@
-module Repositories
-  module SupplyChain
-    class SupplyListingRepository
-      include SupplyListingRepositoryInterface
-      
+module SupplyChain
+  module Repositories
+    class SupplyListingRepository      
       def find(id)
         begin
           record = ::SupplyChain::SupplyListing.includes(:user, supply_images: { image_attachment: :blob }).find(id)
@@ -261,5 +259,5 @@ module Repositories
           .count
       end
     end
-  end
+    end
 end

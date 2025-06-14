@@ -1,5 +1,5 @@
-module Repositories
-  module Farming
+module Farming
+  module Repositories
     class PineappleActivityTemplateRepository
       def find_by_id(id)
         record = ::Farming::PineappleActivityTemplate.find_by(id: id)
@@ -137,5 +137,5 @@ module Repositories
         )
       end
     end
-  end
+    end
 end

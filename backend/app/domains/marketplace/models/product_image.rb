@@ -1,6 +1,7 @@
 # app/models/product_image.rb
 module Marketplace
-  class ProductImage < ApplicationRecord
+  module Models
+    class ProductImage < ApplicationRecord
     self.table_name = "product_images"
 
     belongs_to :product_listing, class_name: "Marketplace::ProductListing"
@@ -63,5 +64,6 @@ module Marketplace
         image.purge # Xóa file không hợp lệ
       end
     end
+      end
   end
 end

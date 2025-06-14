@@ -1,5 +1,5 @@
-module Entities
-  module Labor
+module Labor
+  module Entities
     class HouseholdWorker
       attr_accessor :id, :household_id, :worker_id, :relationship, 
                     :is_active, :joined_date, :notes
@@ -14,5 +14,5 @@ module Entities
         @notes = attrs[:notes]
       end
     end
-  end
+    end
 end

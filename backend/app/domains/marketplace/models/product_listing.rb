@@ -1,5 +1,6 @@
 module Marketplace
-  class ProductListing < ApplicationRecord
+  module Models
+    class ProductListing < ApplicationRecord
     self.table_name = "product_listings"
 
     # Associations
@@ -92,5 +93,6 @@ module Marketplace
 
       self.title = title_parts.join(" ")
     end
+      end
   end
 end

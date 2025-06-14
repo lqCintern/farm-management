@@ -1,4 +1,5 @@
 module SupplyChain
+  module Models
   class SupplierReview < ApplicationRecord
     self.table_name = "supplier_reviews"
 
@@ -36,5 +37,6 @@ module SupplyChain
         errors.add(:supply_order, "chưa được hoàn thành, không thể đánh giá")
       end
     end
+  end
   end
 end

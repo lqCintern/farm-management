@@ -1,4 +1,5 @@
 module SupplyChain
+  module Models
   class SupplyImage < ApplicationRecord
     self.table_name = "supply_images"
 
@@ -62,5 +63,6 @@ module SupplyChain
         image.purge # Xóa file không hợp lệ
       end
     end
+  end
   end
 end

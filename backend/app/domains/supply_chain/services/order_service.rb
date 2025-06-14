@@ -1,4 +1,5 @@
 module SupplyChain
+  module Services
   class OrderService
     def initialize(order, user)
       @order = order
@@ -112,6 +113,7 @@ module SupplyChain
         raise ActiveRecord::Rollback
         { success: false, error: "Không thể cập nhật đơn hàng", errors: @order.errors }
       end
+    end
     end
   end
 end

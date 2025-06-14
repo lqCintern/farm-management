@@ -1,5 +1,5 @@
-module Dtos
-  module SupplyChain
+module SupplyChain
+  module Dtos
     class SupplyOrderDto
       attr_reader :id, :status, :quantity, :price, :total, :created_at, :purchase_date,
                   :supply_listing, :supplier, :buyer, :note, :rejection_reason,
@@ -95,5 +95,5 @@ module Dtos
         result
       end
     end
-  end
+    end
 end

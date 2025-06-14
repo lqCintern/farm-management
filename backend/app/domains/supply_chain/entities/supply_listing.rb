@@ -1,5 +1,5 @@
-module Entities
-  module SupplyChain
+module SupplyChain
+  module Entities
     class SupplyListing
       attr_accessor :id, :name, :description, :category, :price, :unit, :quantity,
                    :brand, :manufacturer, :manufacturing_date, :expiry_date,
@@ -46,5 +46,5 @@ module Entities
         I18n.t("supply_listing.statuses.#{status}", default: status.to_s.humanize)
       end
     end
-  end
+    end
 end

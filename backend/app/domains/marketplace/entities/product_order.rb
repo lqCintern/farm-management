@@ -1,5 +1,5 @@
-module Entities
-  module Marketplace
+module Marketplace
+  module Entities
     class ProductOrder
       attr_reader :id, :product_listing_id, :buyer_id, :quantity, :price,
                   :note, :status, :rejection_reason, :created_at, :updated_at,
@@ -56,5 +56,5 @@ module Entities
         status_map[status.to_s] || status.to_s.humanize
       end
     end
-  end
+    end
 end

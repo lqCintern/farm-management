@@ -1,5 +1,6 @@
 module Labor
-  class HouseholdWorker < ApplicationRecord
+  module Models
+    class HouseholdWorker < ApplicationRecord
     self.table_name = "labor_household_workers"
 
     # Relationships
@@ -30,5 +31,6 @@ module Labor
     def deactivate!
       update(is_active: false)
     end
+      end
   end
 end

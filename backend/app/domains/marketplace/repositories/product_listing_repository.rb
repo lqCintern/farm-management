@@ -1,5 +1,5 @@
-module Repositories
-  module Marketplace
+module Marketplace
+  module Repositories
     class ProductListingRepository
       def find(id)
         record = ::Marketplace::ProductListing.find_by(id: id)
@@ -282,5 +282,5 @@ module Repositories
         end
       end
     end
-  end
+    end
 end

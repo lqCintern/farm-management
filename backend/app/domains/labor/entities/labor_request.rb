@@ -1,5 +1,5 @@
-module Entities
-  module Labor
+module Labor
+  module Entities
     class LaborRequest
       attr_accessor :id, :title, :description, :request_type, :status,
                     :requesting_household_id, :providing_household_id,
@@ -81,5 +81,5 @@ module Entities
         errors
       end
     end
-  end
+    end
 end

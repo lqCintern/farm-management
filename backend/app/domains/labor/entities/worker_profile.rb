@@ -1,5 +1,5 @@
-module Entities
-  module Labor
+module Labor
+  module Entities
     class WorkerProfile
       attr_accessor :id, :user_id, :skills, :availability,
                     :daily_rate, :hourly_rate
@@ -27,5 +27,5 @@ module Entities
         @average_rating = attrs[:average_rating]
       end
     end
-  end
+    end
 end

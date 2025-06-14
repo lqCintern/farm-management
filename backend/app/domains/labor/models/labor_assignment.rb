@@ -1,5 +1,6 @@
 module Labor
-  class LaborAssignment < ApplicationRecord
+  module Models
+    class LaborAssignment < ApplicationRecord
     self.table_name = "labor_assignments"
 
     # Relationships
@@ -114,5 +115,6 @@ module Labor
       # Đánh dấu đã xử lý để tránh trùng lặp
       update_column(:exchange_processed, true)
     end
+      end
   end
 end

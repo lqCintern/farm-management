@@ -1,5 +1,6 @@
 module Marketplace
-  class MarketplaceHarvest < ApplicationRecord
+  module Models
+    class MarketplaceHarvest < ApplicationRecord
     self.table_name = "marketplace_harvests"
 
     # Quan hệ
@@ -87,5 +88,6 @@ module Marketplace
         receiver_id: trader_id
       )
     end
+      end
   end
 end

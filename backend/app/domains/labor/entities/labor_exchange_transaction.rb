@@ -1,5 +1,5 @@
-module Entities
-  module Labor
+module Labor
+  module Entities
     class LaborExchangeTransaction
       attr_accessor :id, :labor_exchange_id, :labor_assignment_id, :hours,
                     :description, :created_at, :updated_at,
@@ -26,5 +26,5 @@ module Entities
         errors
       end
     end
-  end
+    end
 end

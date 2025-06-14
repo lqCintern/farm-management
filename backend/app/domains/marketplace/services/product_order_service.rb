@@ -1,5 +1,6 @@
 module Marketplace
-  class ProductOrderService
+  module Services
+    class ProductOrderService
     def initialize(order, user)
       @order = order
       @user = user
@@ -144,5 +145,6 @@ module Marketplace
         total: base_orders.count
       }
     end
+      end
   end
 end

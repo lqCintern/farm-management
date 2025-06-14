@@ -1,6 +1,7 @@
 # app/services/labor/exchange_service.rb
 module Labor
-  class ExchangeService
+  module Services
+    class ExchangeService
     def self.process_completed_assignment(assignment)
       result = { success: false, errors: [] }
 
@@ -288,5 +289,6 @@ module Labor
 
       result
     end
+      end
   end
 end

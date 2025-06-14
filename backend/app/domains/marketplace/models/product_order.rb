@@ -1,6 +1,7 @@
 # app/models/marketplace/product_order.rb
 module Marketplace
-  class ProductOrder < ApplicationRecord
+  module Models
+    class ProductOrder < ApplicationRecord
     self.table_name = "product_orders"
 
     belongs_to :product_listing, class_name: "Marketplace::ProductListing"
@@ -95,5 +96,6 @@ module Marketplace
         )
       end
     end
+      end
   end
 end

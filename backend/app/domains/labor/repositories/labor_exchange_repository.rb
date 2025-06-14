@@ -1,7 +1,6 @@
-module Repositories
-  module Labor
+module Labor
+  module Repositories
     class LaborExchangeRepository
-      include LaborExchangeRepositoryInterface
       
       def find(id)
         record = ::Labor::LaborExchange.includes(:household_a, :household_b).find_by(id: id)
@@ -420,5 +419,5 @@ module Repositories
         transaction_entity
       end
     end
-  end
+    end
 end

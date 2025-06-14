@@ -1,5 +1,6 @@
 module Farming
-  class PineappleCropService
+  module Services
+    class PineappleCropService
     def initialize(pineapple_crop, user)
       @pineapple_crop = pineapple_crop
       @user = user
@@ -320,5 +321,6 @@ module Farming
         end
       end
     end
+      end
   end
 end

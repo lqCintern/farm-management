@@ -1,4 +1,5 @@
 module SupplyChain
+  module Services
   class SupplierDashboardService
     def initialize(user)
       @user = user
@@ -32,6 +33,7 @@ module SupplyChain
                                     .count,
         reviews_avg: @user.average_rating
       }
+    end
     end
   end
 end

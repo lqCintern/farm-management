@@ -1,5 +1,6 @@
 module Labor
-  class WorkerProfile < ApplicationRecord
+  module Models
+    class WorkerProfile < ApplicationRecord
     self.table_name = "labor_worker_profiles"
 
     # Relationships
@@ -49,5 +50,6 @@ module Labor
 
       ratings_count > 0 ? (total_ratings.to_f / ratings_count).round(1) : nil
     end
+      end
   end
 end

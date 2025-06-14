@@ -1,5 +1,5 @@
-module Repositories
-  module Farming
+module Farming
+  module Repositories
     class FieldRepository
       def find_by_id(id, user_id = nil)
         query = ::Farming::Field
@@ -202,5 +202,5 @@ module Repositories
         )
       end
     end
-  end
+    end
 end

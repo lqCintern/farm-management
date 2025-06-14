@@ -1,5 +1,6 @@
 module Labor
-  class FarmHousehold < ApplicationRecord
+  module Models
+    class FarmHousehold < ApplicationRecord
     self.table_name = "labor_farm_households"
 
     # Relationships
@@ -57,5 +58,6 @@ module Labor
         -exchange.hours_balance
       end
     end
+      end
   end
 end

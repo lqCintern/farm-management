@@ -1,5 +1,5 @@
-module Entities
-  module SupplyChain
+module SupplyChain
+  module Entities
     class SupplyOrder
       attr_accessor :id, :user_id, :supply_listing_id, :quantity, :price, :total,
                     :status, :note, :rejection_reason, :delivery_province, :delivery_district,
@@ -64,5 +64,5 @@ module Entities
         status.to_s == 'rejected'
       end
     end
-  end
+    end
 end

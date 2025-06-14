@@ -1,8 +1,6 @@
-module Repositories
-  module SupplyChain
-    class SupplyOrderRepository
-      include SupplyOrderRepositoryInterface
-      
+module SupplyChain
+  module Repositories
+    class SupplyOrderRepository      
       def find(id)
         begin
           record = ::SupplyChain::SupplyOrder
@@ -435,5 +433,5 @@ module Repositories
         )
       end
     end
-  end
+    end
 end

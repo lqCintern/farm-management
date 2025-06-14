@@ -1,5 +1,5 @@
-module Entities
-  module Marketplace
+module Marketplace
+  module Entities
     class ProductListing
       attr_reader :id, :title, :description, :product_type, :quantity, :average_size,
                   :price_expectation, :status, :province, :district, :ward, :address,
@@ -124,5 +124,5 @@ module Entities
         }
       end
     end
-  end
+    end
 end

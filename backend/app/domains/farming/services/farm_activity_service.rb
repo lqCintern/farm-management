@@ -1,5 +1,6 @@
 module Farming
-  class FarmActivityService
+  module Services
+    class FarmActivityService
     def initialize(farm_activity, user)
       @farm_activity = farm_activity
       @user = user
@@ -416,5 +417,6 @@ module Farming
         material.update!(quantity: material.quantity + quantity) if material
       end
     end
+      end
   end
 end

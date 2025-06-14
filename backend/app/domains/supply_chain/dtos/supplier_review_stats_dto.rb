@@ -1,5 +1,5 @@
-module Dtos
-  module SupplyChain
+module SupplyChain
+  module Dtos
     class SupplierReviewStatsDto
       attr_reader :average_rating, :rating_distribution, :total_reviews
 
@@ -17,5 +17,5 @@ module Dtos
         }
       end
     end
-  end
+    end
 end

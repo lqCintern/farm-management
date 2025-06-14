@@ -1,4 +1,5 @@
 module SupplyChain
+  module Models
   class SupplyOrder < ApplicationRecord
     self.table_name = "supply_orders"
 
@@ -59,6 +60,7 @@ module SupplyChain
       end
 
       order_json
+    end
     end
   end
 end

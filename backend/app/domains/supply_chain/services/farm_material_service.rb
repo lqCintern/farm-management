@@ -1,4 +1,5 @@
 module SupplyChain
+  module Services
   class FarmMaterialService
     def update_from_order(order)
       user_id = order.buyer[:id]
@@ -42,6 +43,7 @@ module SupplyChain
     rescue => e
       Rails.logger.error("Error updating farm materials: #{e.message}")
       false
+    end
     end
   end
 end

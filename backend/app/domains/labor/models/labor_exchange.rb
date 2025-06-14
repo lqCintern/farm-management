@@ -1,5 +1,6 @@
 module Labor
-  class LaborExchange < ApplicationRecord
+  module Models
+    class LaborExchange < ApplicationRecord
     self.table_name = "labor_exchanges"
 
     # Relationships
@@ -103,5 +104,6 @@ module Labor
         errors.add(:base, "Không thể tạo giao dịch đổi công giữa cùng một hộ")
       end
     end
+      end
   end
 end

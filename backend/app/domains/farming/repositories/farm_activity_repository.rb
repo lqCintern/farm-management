@@ -1,5 +1,5 @@
-module Repositories
-  module Farming
+module Farming
+  module Repositories
     class FarmActivityRepository
       def find_by_id(id, user_id = nil)
         query = ::Farming::FarmActivity
@@ -481,5 +481,5 @@ module Repositories
         }
       end
     end
-  end
+    end
 end

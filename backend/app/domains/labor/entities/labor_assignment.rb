@@ -1,5 +1,5 @@
-module Entities
-  module Labor
+module Labor
+  module Entities
     class LaborAssignment
       attr_accessor :id, :labor_request_id, :worker_id, :home_household_id,
                     :work_date, :start_time, :end_time, :status, :notes,
@@ -46,5 +46,5 @@ module Entities
         @status == 'rejected'
       end
     end
-  end
+    end
 end

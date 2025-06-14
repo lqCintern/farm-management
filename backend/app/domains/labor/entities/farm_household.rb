@@ -1,5 +1,5 @@
-module Entities
-  module Labor
+module Labor
+  module Entities
     class FarmHousehold
       attr_accessor :id, :name, :description, :province, :district, :ward, :address, :owner_id
       
@@ -26,5 +26,5 @@ module Entities
         @upcoming_assignments = attrs[:upcoming_assignments] || 0
       end
     end
-  end
+    end
 end

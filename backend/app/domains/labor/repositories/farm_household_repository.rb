@@ -1,8 +1,6 @@
-module Repositories
-  module Labor
+module Labor
+  module Repositories
     class FarmHouseholdRepository
-      include FarmHouseholdRepositoryInterface
-      
       def find(id)
         # Tìm record trong database
         record = ::Labor::FarmHousehold.find_by(id: id)

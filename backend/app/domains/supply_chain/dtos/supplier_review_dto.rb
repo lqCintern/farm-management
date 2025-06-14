@@ -1,5 +1,5 @@
-module Dtos
-  module SupplyChain
+module SupplyChain
+  module Dtos
     class SupplierReviewDto
       attr_reader :id, :rating, :content, :created_at, 
                   :reviewer, :supplier, :supply_listing, :supply_order
@@ -59,5 +59,5 @@ module Dtos
         result
       end
     end
-  end
+    end
 end

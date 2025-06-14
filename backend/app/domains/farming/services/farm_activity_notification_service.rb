@@ -1,5 +1,6 @@
 module Farming
-  class FarmActivityNotificationService
+  module Services
+    class FarmActivityNotificationService
     def activity_reminder(activity, days_before = 7)
       # Thông báo nhắc nhở về hoạt động sắp diễn ra
       user = ::User.find_by(id: activity.user_id)
@@ -77,6 +78,6 @@ module Farming
     rescue
       activity.description || activity.activity_type.to_s.humanize
     end
+      end
   end
 end
-

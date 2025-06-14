@@ -1,4 +1,5 @@
 module SupplyChain
+  module Models
   class SupplyListing < ApplicationRecord
     self.table_name = "supply_listings"
 
@@ -86,6 +87,7 @@ module SupplyChain
     def set_default_quantities
       self.pending_quantity ||= 0
       self.sold_quantity ||= 0
+    end
     end
   end
 end

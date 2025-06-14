@@ -1,5 +1,6 @@
 module Marketplace
-  class ProductListingService
+  module Services
+    class ProductListingService
     def initialize(product_listing, user)
       @product_listing = product_listing
       @user = user
@@ -137,5 +138,6 @@ module Marketplace
         @product_listing.product_images.destroy_all
       end
     end
+      end
   end
 end

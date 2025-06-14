@@ -1,5 +1,6 @@
 module Farming
-  class FarmActivityStatsService
+  module Services
+    class FarmActivityStatsService
     def generate_stats(activities, period = "month", year = Date.today.year, month = Date.today.month, quarter = nil)
       @activities = activities
       @period = period.to_s
@@ -87,5 +88,6 @@ module Farming
         completion_rate: completion_rate
       }
     end
+      end
   end
 end

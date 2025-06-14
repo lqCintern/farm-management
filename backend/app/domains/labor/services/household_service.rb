@@ -1,6 +1,7 @@
 # app/services/labor/household_service.rb
 module Labor
-  class HouseholdService
+  module Services
+    class HouseholdService
     def self.create_household(owner_user, params)
       household = Labor::FarmHousehold.new(
         name: params[:name],
@@ -119,5 +120,6 @@ module Labor
         upcoming_assignments: upcoming_assignments
       }
     end
+      end
   end
 end

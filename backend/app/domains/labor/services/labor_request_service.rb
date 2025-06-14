@@ -1,5 +1,6 @@
 module Labor
-  class LaborRequestService
+  module Services
+    class LaborRequestService
     # Tạo yêu cầu đổi công thông thường (1-1)
     def self.create_request(requesting_household, params)
       result = { success: false, request: nil, errors: [] }
@@ -288,5 +289,6 @@ module Labor
 
       available_workers.map(&:user)
     end
+      end
   end
 end

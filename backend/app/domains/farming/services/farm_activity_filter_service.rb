@@ -1,5 +1,6 @@
 module Farming
-  class FarmActivityFilterService
+  module Services
+    class FarmActivityFilterService
     def initialize(activities, start_date, end_date, activity_type = nil, crop_animal_id = nil, status = nil)
       @activities = activities
       @start_date = start_date
@@ -35,5 +36,6 @@ module Farming
 
       result
     end
+      end
   end
 end

@@ -1,5 +1,6 @@
 module Marketplace
-  class ConversationService
+  module Services
+    class ConversationService
     def find_conversation(product_listing_id, trader_id)
       product_listing = ProductListing.find_by(id: product_listing_id)
       return nil unless product_listing
@@ -45,5 +46,6 @@ module Marketplace
         send_message(conversation.id, user.user_id, message, type)
       end
     end
+      end
   end
 end

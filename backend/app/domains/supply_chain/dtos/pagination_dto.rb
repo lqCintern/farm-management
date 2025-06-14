@@ -1,5 +1,5 @@
-module Dtos
-  module SupplyChain
+module SupplyChain
+  module Dtos
     class PaginationDto
       attr_reader :total_pages, :current_page, :total_count, :per_page
 

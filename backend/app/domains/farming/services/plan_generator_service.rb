@@ -1,5 +1,6 @@
 module Farming
-  class PlanGeneratorService
+  module Services
+    class PlanGeneratorService
     def generate_activities_for_crop(crop_entity)
       # Logic để tạo danh sách hoạt động dựa trên crop
       planting_date = crop_entity.planting_date
@@ -55,5 +56,6 @@ module Farming
         # Các hoạt động khác...
       ]
     end
+      end
   end
 end

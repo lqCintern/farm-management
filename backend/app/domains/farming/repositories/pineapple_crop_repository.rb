@@ -1,5 +1,5 @@
-module Repositories
-  module Farming
+module Farming
+  module Repositories
     class PineappleCropRepository
       def find(id)
         record = ::Farming::PineappleCrop.find_by(id: id)
@@ -352,5 +352,5 @@ module Repositories
         )
       end
     end
-  end
+    end
 end

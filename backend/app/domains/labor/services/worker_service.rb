@@ -1,6 +1,7 @@
 # app/services/labor/worker_service.rb
 module Labor
-  class WorkerService
+  module Services
+    class WorkerService
     def self.create_or_update_profile(user, params)
       profile = Labor::WorkerProfile.find_by(user_id: user.id)
 
@@ -133,5 +134,6 @@ module Labor
 
       { success: true, availability: availability }
     end
+      end
   end
 end
