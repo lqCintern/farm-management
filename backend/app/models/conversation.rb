@@ -24,12 +24,26 @@ class Conversation < ApplicationRecord
     sender_id == current_user_id ? receiver : sender
   end
 
+  # Phương thức này vẫn giữ nguyên để sử dụng cho các lệnh gọi trực tiếp
   def unread_count(user_id)
     messages.where.not(user_id: user_id).where(read: false).count
   end
 
-  def unread_count_for_current_user(current_user_id)
-    unread_count(current_user_id)
+  # Phương thức này được sửa đổi để hoạt động trong as_json
+  # Mặc định sẽ tìm user_id từ Thread.current hoặc trả về 0
+  def unread_count_for_current_user(current_user_id = nil)
+    # Nếu có tham số được truyền vào, ưu tiên sử dụng
+    user_id = current_user_id
+
+    # Nếu không có tham số, thử lấy từ Thread.current
+    if user_id.nil? && Thread.current[:current_user].present?
+      user_id = Thread.current[:current_user].user_id
+    end
+    
+    # Nếu vẫn không có user_id, trả về 0 thay vì lỗi
+    return 0 unless user_id
+
+    unread_count(user_id)
   end
 
   private

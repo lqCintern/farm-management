@@ -15,16 +15,16 @@ module Api
           # Thống kê giao dịch
           transaction_stats = if user.user_type == "trader"  # Sửa từ user.trader? thành user.user_type == "trader"
             {
-              total_purchases: ProductOrder.where(buyer_id: user.user_id).count,
-              completed_purchases: ProductOrder.where(buyer_id: user.user_id, status: "completed").count,
-              total_purchase_value: ProductOrder.joins(:product_listing)
+              total_purchases: ::Marketplace::ProductOrder.where(buyer_id: user.user_id).count,
+              completed_purchases: ::Marketplace::ProductOrder.where(buyer_id: user.user_id, status: "completed").count,
+              total_purchase_value: ::Marketplace::ProductOrder.joins(:product_listing)
                                      .where(buyer_id: user.user_id, status: "completed")
                                      .sum("product_listings.price_expectation * product_orders.quantity")
             }
           else
             # Với vai trò nông dân/nhà cung cấp
-            product_listings = ProductListing.where(user_id: user.user_id)
-            orders = ProductOrder.where(product_listing_id: product_listings.pluck(:id))
+            product_listings = ::Marketplace::ProductListing.where(user_id: user.user_id)
+            orders = ::Marketplace::ProductOrder.where(product_listing_id: product_listings.pluck(:id))
 
             {
               total_listings: product_listings.count,
@@ -68,12 +68,12 @@ module Api
 
         def calculate_completion_rate(user)
           if user.user_type == "trader"  # Sửa từ user.trader? thành user.user_type == "trader"
-            total_orders = ProductOrder.where(buyer_id: user.user_id).where.not(status: "pending").count
-            completed_orders = ProductOrder.where(buyer_id: user.user_id, status: "completed").count
+            total_orders = ::Marketplace::ProductOrder.where(buyer_id: user.user_id).where.not(status: "pending").count
+            completed_orders = ::Marketplace::ProductOrder.where(buyer_id: user.user_id, status: "completed").count
           else
-            product_listings = ProductListing.where(user_id: user.user_id)
-            total_orders = ProductOrder.where(product_listing_id: product_listings.pluck(:id)).where.not(status: "pending").count
-            completed_orders = ProductOrder.where(product_listing_id: product_listings.pluck(:id), status: "completed").count
+            product_listings = ::Marketplace::ProductListing.where(user_id: user.user_id)
+            total_orders = ::Marketplace::ProductOrder.where(product_listing_id: product_listings.pluck(:id)).where.not(status: "pending").count
+            completed_orders = ::Marketplace::ProductOrder.where(product_listing_id: product_listings.pluck(:id), status: "completed").count
           end
 
           return 0 if total_orders == 0
