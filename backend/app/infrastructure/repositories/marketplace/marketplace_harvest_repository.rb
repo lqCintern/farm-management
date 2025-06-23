@@ -2,18 +2,18 @@ module Repositories
   module Marketplace
     class MarketplaceHarvestRepository
       def find(id)
-        record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: id)
         map_to_entity(record) if record
       end
 
       def find_with_associations(id)
-        record = ::Marketplace::MarketplaceHarvest.includes(:product_listing, :trader)
+        record = ::Models::Marketplace::MarketplaceHarvest.includes(:product_listing, :trader)
                                                 .find_by(id: id)
         map_to_entity(record) if record
       end
 
       def list_for_farmer(farmer_id, status = nil, page = 1, items_per_page = 10)
-        query = ::Marketplace::MarketplaceHarvest.joins(:product_listing)
+        query = ::Models::Marketplace::MarketplaceHarvest.joins(:product_listing)
                                                 .where(product_listings: { user_id: farmer_id })
         query = query.where(status: status) if status.present?
 
@@ -27,7 +27,7 @@ module Repositories
       end
 
       def list_for_trader(trader_id, status = nil, page = 1, items_per_page = 10)
-        query = ::Marketplace::MarketplaceHarvest.where(trader_id: trader_id)
+        query = ::Models::Marketplace::MarketplaceHarvest.where(trader_id: trader_id)
         query = query.where(status: status) if status.present?
 
         pagy = Pagy.new(count: query.count, page: page, items: items_per_page)
@@ -40,14 +40,14 @@ module Repositories
       end
 
       def find_by_product_listing(product_listing_id)
-        record = ::Marketplace::MarketplaceHarvest.where(product_listing_id: product_listing_id)
+        record = ::Models::Marketplace::MarketplaceHarvest.where(product_listing_id: product_listing_id)
                                                 .order(created_at: :desc)
                                                 .first
         map_to_entity(record) if record
       end
 
       def update(harvest_entity)
-        record = ::Marketplace::MarketplaceHarvest.find_by(id: harvest_entity.id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: harvest_entity.id)
         return nil unless record
 
         result = record.update(
@@ -66,12 +66,12 @@ module Repositories
       end
 
       def delete(id)
-        record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: id)
         record&.destroy
       end
 
       def attach_payment_proof(id, image)
-        record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: id)
         return nil unless record && image
 
         record.payment_proof_image.attach(image)
@@ -80,7 +80,7 @@ module Repositories
       end
 
       def active_for_product(product_listing_id)
-        record = ::Marketplace::MarketplaceHarvest
+        record = ::Models::Marketplace::MarketplaceHarvest
           .where(product_listing_id: product_listing_id)
           .where.not(status: [ "completed", "cancelled" ])
           .order(created_at: :desc)
@@ -90,7 +90,7 @@ module Repositories
       end
 
       def add_payment_proof(id, payment_proof)
-        record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: id)
         return nil unless record
 
         record.payment_proof_url = payment_proof
@@ -119,8 +119,8 @@ module Repositories
           product_order_id: entity.product_order_id # Thêm từ phiên bản đầu
         }
 
-        record = ::Marketplace::MarketplaceHarvest.new(attributes)
-        
+        record = ::Models::Marketplace::MarketplaceHarvest.new(attributes)
+
         if record.save
           map_to_entity(record)
         else
@@ -131,7 +131,7 @@ module Repositories
       end
 
       def update(entity)
-        record = ::Marketplace::MarketplaceHarvest.find_by(id: entity.id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: entity.id)
         return nil unless record
 
         attributes = {
@@ -153,7 +153,7 @@ module Repositories
       end
 
       def delete(id)
-        record = ::Marketplace::MarketplaceHarvest.find_by(id: id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: id)
         record&.destroy
         record.destroyed? if record
       end

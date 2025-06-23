@@ -28,6 +28,7 @@ import {
 import supplyListingService, {
   SupplyListing,
 } from "@/services/supply_chain/supplyListingService";
+import { formatCurrency } from "@/utils/formatters";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -187,12 +188,12 @@ const SupplyMarketplace: React.FC = () => {
                 max={maxPrice}
                 value={priceRange}
                 onChange={(value) => setPriceRange(value as [number, number])}
-                tipFormatter={(value) => `${value?.toLocaleString("vi-VN")}đ`}
+                tipFormatter={(value) => (value ? formatCurrency(value) : "0đ")}
                 onAfterChange={() => setCurrentPage(1)}
               />
               <div className="flex justify-between">
-                <Text>{priceRange[0].toLocaleString("vi-VN")}đ</Text>
-                <Text>{priceRange[1].toLocaleString("vi-VN")}đ</Text>
+                <Text>{formatCurrency(priceRange[0])}</Text>
+                <Text>{formatCurrency(priceRange[1])}</Text>
               </div>
             </div>
           </Panel>
@@ -240,7 +241,7 @@ const SupplyMarketplace: React.FC = () => {
 
                     <div className="flex justify-between items-center mb-2">
                       <Text className="text-red-600 font-bold text-lg">
-                        {listing.price.toLocaleString("vi-VN")}đ
+                        {formatCurrency(listing.price).replace("₫", "")}
                       </Text>
                       <Text className="text-gray-500">/{listing.unit}</Text>
                     </div>

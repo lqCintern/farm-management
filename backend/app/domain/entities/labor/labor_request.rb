@@ -13,8 +13,8 @@ module Entities
         @id = attributes[:id]
         @title = attributes[:title]
         @description = attributes[:description]
-        @request_type = attributes[:request_type] || 'exchange'
-        @status = attributes[:status] || 'pending'
+        @request_type = attributes[:request_type] || "exchange"
+        @status = attributes[:status] || "pending"
         @requesting_household_id = attributes[:requesting_household_id]
         @providing_household_id = attributes[:providing_household_id]
         @requesting_household_name = attributes[:requesting_household_name]
@@ -40,23 +40,23 @@ module Entities
       end
 
       def pending?
-        status == 'pending'
+        status == "pending"
       end
 
       def accepted?
-        status == 'accepted'
+        status == "accepted"
       end
 
       def declined?
-        status == 'declined'
+        status == "declined"
       end
 
       def completed?
-        status == 'completed'
+        status == "completed"
       end
 
       def cancelled?
-        status == 'cancelled'
+        status == "cancelled"
       end
 
       def days_range
@@ -69,15 +69,15 @@ module Entities
         errors << "Hộ yêu cầu không được để trống" if requesting_household_id.nil?
         errors << "Ngày bắt đầu không được để trống" if start_date.nil?
         errors << "Ngày kết thúc không được để trống" if end_date.nil?
-        
+
         if start_date && end_date && end_date < start_date
           errors << "Ngày kết thúc phải sau ngày bắt đầu"
         end
-        
+
         if providing_household_id && providing_household_id == requesting_household_id
           errors << "Hộ cung cấp không thể giống với hộ yêu cầu"
         end
-        
+
         errors
       end
     end

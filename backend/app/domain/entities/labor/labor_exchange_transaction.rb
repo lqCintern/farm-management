@@ -17,7 +17,7 @@ module Entities
         @work_date = attributes[:work_date]
         @assignment_details = attributes[:assignment_details] || {}
       end
-      
+
       def validate
         errors = []
         errors << "Labor exchange ID is required" if labor_exchange_id.nil?

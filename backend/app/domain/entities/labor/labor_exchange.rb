@@ -16,7 +16,7 @@ module Entities
         @household_a_name = attributes[:household_a_name]
         @household_b_name = attributes[:household_b_name]
       end
-      
+
       def validate
         errors = []
         errors << "Household A ID is required" if household_a_id.nil?
@@ -24,7 +24,7 @@ module Entities
         errors << "Households must be different" if household_a_id == household_b_id
         errors
       end
-      
+
       # Get balance from perspective of specified household
       def balance_for(household_id)
         if household_id == household_a_id
@@ -35,7 +35,7 @@ module Entities
           raise ArgumentError, "Household ID #{household_id} is not part of this exchange"
         end
       end
-      
+
       # Get partner household ID
       def partner_household_id(household_id)
         if household_id == household_a_id
@@ -46,7 +46,7 @@ module Entities
           raise ArgumentError, "Household ID #{household_id} is not part of this exchange"
         end
       end
-      
+
       # Get partner household name
       def partner_household_name(household_id)
         if household_id == household_a_id

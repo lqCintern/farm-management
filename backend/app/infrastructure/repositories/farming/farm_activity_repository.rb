@@ -2,7 +2,7 @@ module Repositories
   module Farming
     class FarmActivityRepository
       def find_by_id(id, user_id = nil)
-        query = ::Farming::FarmActivity
+        query = ::Models::Farming::FarmActivity
         query = query.where(user_id: user_id) if user_id
         record = query.find_by(id: id)
 
@@ -11,7 +11,7 @@ module Repositories
       end
 
       def find_all(user_id, filters = {})
-        query = ::Farming::FarmActivity.where(user_id: user_id)
+        query = ::Models::Farming::FarmActivity.where(user_id: user_id)
 
         # Áp dụng filters
         query = apply_filters(query, filters)
@@ -30,7 +30,7 @@ module Repositories
         materials = attributes.delete(:materials)
 
         # Tạo record FarmActivity
-        record = ::Farming::FarmActivity.new(attributes)
+        record = ::Models::Farming::FarmActivity.new(attributes)
         record.user_id = user_id
         record.skip_materials_check = true if record.respond_to?(:skip_materials_check=)
 
@@ -56,7 +56,7 @@ module Repositories
       end
 
       def update(id, attributes, user_id)
-        record = ::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
+        record = ::Models::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
         return { success: false, error: "Không tìm thấy hoạt động" } unless record
 
         # Tách materials
@@ -91,7 +91,7 @@ module Repositories
       end
 
       def delete(id, user_id)
-        record = ::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
+        record = ::Models::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
         return { success: false, error: "Không tìm thấy hoạt động" } unless record
 
         # Lấy materials hiện tại để trả về kho
@@ -113,7 +113,7 @@ module Repositories
       end
 
       def complete(id, completion_params, user_id)
-        record = ::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
+        record = ::Models::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
         return { success: false, error: "Không tìm thấy hoạt động" } unless record
 
         begin
@@ -144,7 +144,7 @@ module Repositories
       end
 
       def find_by_field(crop_animal_id, user_id, page = 1, items_per_page = 10)
-        query = ::Farming::FarmActivity
+        query = ::Models::Farming::FarmActivity
                 .where(crop_animal_id: crop_animal_id, user_id: user_id)
                 .order(start_date: :desc)
 
@@ -152,13 +152,13 @@ module Repositories
       end
 
       def find_by_stage(crop_id, user_id, current_stage_only = false)
-        crop = ::Farming::PineappleCrop.find_by(id: crop_id)
+        crop = ::Models::Farming::PineappleCrop.find_by(id: crop_id)
         return [] unless crop
 
-        query = ::Farming::FarmActivity.where(crop_animal_id: crop_id, user_id: user_id)
+        query = ::Models::Farming::FarmActivity.where(crop_animal_id: crop_id, user_id: user_id)
 
         if current_stage_only.to_s == "true" && crop.current_stage.present?
-          stage_templates = ::Farming::PineappleActivityTemplate.where(stage: crop.current_stage)
+          stage_templates = ::Models::Farming::PineappleActivityTemplate.where(stage: crop.current_stage)
           stage_activity_types = stage_templates.pluck(:activity_type).uniq
           query = query.where(activity_type: stage_activity_types)
         end
@@ -171,7 +171,7 @@ module Repositories
         tomorrow = Date.tomorrow.beginning_of_day
         tomorrow_end = Date.tomorrow.end_of_day
 
-        activities = ::Farming::FarmActivity.includes(:user, :field)
+        activities = ::Models::Farming::FarmActivity.includes(:user, :field)
                      .where("start_date BETWEEN ? AND ?", tomorrow, tomorrow_end)
                      .where(status: [ :pending, :in_progress ])
 
@@ -182,7 +182,7 @@ module Repositories
         # Kiểm tra các hoạt động quá hạn
         yesterday = Date.yesterday.end_of_day
 
-        activities = ::Farming::FarmActivity.includes(:user, :field)
+        activities = ::Models::Farming::FarmActivity.includes(:user, :field)
                      .where("end_date < ?", yesterday)
                      .where.not(status: :completed)
 
@@ -190,11 +190,11 @@ module Repositories
       end
 
       def find_by_crop_animal_id(crop_animal_id, user_id)
-        records = ::Farming::FarmActivity
+        records = ::Models::Farming::FarmActivity
                  .where(user_id: user_id)
                  .where(crop_animal_id: crop_animal_id)
                  .order(start_date: :desc)
-        
+
         {
           records: records,
           entities: records.map { |record| map_to_entity(record) }
@@ -202,12 +202,12 @@ module Repositories
       end
 
       def find_by_activity_types(activity_types, crop_animal_id, user_id)
-        records = ::Farming::FarmActivity
+        records = ::Models::Farming::FarmActivity
                  .where(user_id: user_id)
                  .where(crop_animal_id: crop_animal_id)
                  .where(activity_type: activity_types)
                  .order(start_date: :asc)
-        
+
         {
           records: records,
           entities: records.map { |record| map_to_entity(record) }
@@ -254,7 +254,7 @@ module Repositories
 
           next if quantity <= 0
 
-          material = ::Farming::FarmMaterial.where(user_id: user_id).find_by(id: material_id)
+          material = ::Models::Farming::FarmMaterial.where(user_id: user_id).find_by(id: material_id)
 
           if material.nil?
             raise "Không tìm thấy vật tư với ID #{material_id}"
@@ -279,7 +279,7 @@ module Repositories
       end
 
       def validate_materials_requirement(record)
-        required_activities = ::Farming::FarmActivity::MATERIAL_REQUIRED_ACTIVITIES
+        required_activities = ::Models::Farming::FarmActivity::MATERIAL_REQUIRED_ACTIVITIES
 
         if required_activities.include?(record.activity_type.to_s) && record.activity_materials.reload.empty?
           raise "Hoạt động này cần có ít nhất một vật tư"
@@ -295,7 +295,7 @@ module Repositories
 
       def return_materials_to_inventory(materials_hash, user_id)
         materials_hash.each do |material_id, quantity|
-          material = ::Farming::FarmMaterial.where(user_id: user_id).find_by(id: material_id)
+          material = ::Models::Farming::FarmMaterial.where(user_id: user_id).find_by(id: material_id)
           material.update!(quantity: material.quantity + quantity) if material
         end
       end
@@ -309,7 +309,7 @@ module Repositories
 
           # Tìm liên kết activity_material
           activity_material = record.activity_materials.find_by(farm_material_id: material_id)
-          material = ::Farming::FarmMaterial.where(user_id: user_id).find_by(id: material_id)
+          material = ::Models::Farming::FarmMaterial.where(user_id: user_id).find_by(id: material_id)
 
           unless material
             raise "Không tìm thấy vật tư với ID #{material_id}"
@@ -358,7 +358,7 @@ module Repositories
           next_end_date = record.end_date + interval_days * (i + 1) if record.end_date
 
           # Tạo bản ghi con liên quan
-          child = ::Farming::FarmActivity.create!(
+          child = ::Models::Farming::FarmActivity.create!(
             user_id: record.user_id,
             crop_animal_id: record.crop_animal_id,
             activity_type: record.activity_type,
@@ -376,7 +376,7 @@ module Repositories
       def update_pineapple_crop_after_completion(record)
         return unless record.crop_animal_id.present?
 
-        pineapple_crop = ::Farming::PineappleCrop.find_by(id: record.crop_animal_id)
+        pineapple_crop = ::Models::Farming::PineappleCrop.find_by(id: record.crop_animal_id)
         return unless pineapple_crop
 
         # Cập nhật các mốc quan trọng dựa trên loại hoạt động
@@ -391,12 +391,12 @@ module Repositories
       def check_stage_completion(record)
         return nil unless record.crop_animal_id.present?
 
-        crop = ::Farming::PineappleCrop.find_by(id: record.crop_animal_id)
+        crop = ::Models::Farming::PineappleCrop.find_by(id: record.crop_animal_id)
         return nil unless crop
 
         # Kiểm tra nếu tất cả hoạt động của giai đoạn hiện tại đã hoàn thành
-        stage_templates = ::Farming::PineappleActivityTemplate.where(stage: crop.current_stage)
-        stage_activities = ::Farming::FarmActivity
+        stage_templates = ::Models::Farming::PineappleActivityTemplate.where(stage: crop.current_stage)
+        stage_activities = ::Models::Farming::FarmActivity
                            .where(crop_animal_id: crop.id, user_id: record.user_id)
                            .where(activity_type: stage_templates.pluck(:activity_type))
 

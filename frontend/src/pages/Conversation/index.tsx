@@ -26,15 +26,23 @@ import { getActiveHarvest } from "@/services/marketplace/harvestService";
 
 interface Conversation {
   id: number;
+  product_listing_id: number;
+  sender_id: number;
+  receiver_id: number;
+  created_at: string;
+  updated_at: string;
+  unread_count: number;
+  last_message_at: string | null;
   product_listing: {
     id: number;
     title: string;
-    user_id: number; // Add user_id property
-    product_images?: { image_url: string }[];
+    status: string;
+    product_images?: { 
+      image_url: string; // Đơn giản hóa chỉ giữ image_url
+    }[];
   };
-  sender: { user_id: number; fullname: string };
-  receiver: { user_id: number; fullname: string };
-  unread_count: number;
+  sender: { user_id: number; user_name: string; fullname: string };
+  receiver: { user_id: number; user_name: string; fullname: string };
   last_message?: {
     content: string;
     created_at: string;
@@ -98,11 +106,21 @@ const ConversationPage: React.FC = () => {
         setConversations(
           data.conversations.map((conv: any) => ({
             id: conv.id,
-            product_listing: conv.product_listing,
+            product_listing_id: conv.product_listing_id,
+            sender_id: conv.sender_id,
+            receiver_id: conv.receiver_id,
+            created_at: conv.created_at,
+            updated_at: conv.updated_at,
+            unread_count: conv.unread_count,
+            last_message_at: conv.last_message_at,
+            product_listing: {
+              ...conv.product_listing,
+              product_images: conv.product_listing.product_images?.map((img: any) => ({
+                image_url: img.image_url || "", // Ensure image_url is always a string
+              })),
+            },
             sender: conv.sender,
             receiver: conv.receiver,
-            unread_count: conv.unread_count,
-            last_message: conv.last_message,
           }))
         );
         setError(null);
@@ -137,14 +155,38 @@ const ConversationPage: React.FC = () => {
   // Xác định vai trò người dùng dựa vào conversation hiện tại
   useEffect(() => {
     if (selectedConversation) {
-      // Nếu người dùng hiện tại là người tạo sản phẩm -> farmer
-      if (selectedConversation.product_listing.user_id === currentUserId) {
-        setUserRole("farmer");
-      } else {
+      // Nếu người dùng hiện tại là người gửi tin nhắn đầu tiên -> trader
+      // Người nhận tin nhắn (chủ sản phẩm) -> farmer
+      if (selectedConversation.sender.user_id === currentUserId) {
         setUserRole("trader");
+      } else {
+        setUserRole("farmer");
       }
     }
   }, [selectedConversation, currentUserId]);
+
+  useEffect(() => {
+    // Lấy user_type từ localStorage
+    let userType = null;
+    try {
+      const userInfo = localStorage.getItem("userInfo");
+      if (userInfo) {
+        const parsed = JSON.parse(userInfo);
+        userType = parsed.user_type;
+      }
+    } catch (error) {
+      console.error("Error parsing user info:", error);
+    }
+    
+    // Xác định vai trò dựa trên user_type
+    if (userType === "farmer") {
+      setUserRole("farmer");
+    } else if (userType === "trader") {
+      setUserRole("trader");
+    } else {
+      setUserRole(null);
+    }
+  }, []);
 
   // Callback để xử lý tin nhắn mới từ Firebase listener
   const handleNewMessages = useCallback(
@@ -412,7 +454,7 @@ const ConversationPage: React.FC = () => {
 
                 {/* Menu chức năng dựa trên vai trò */}
                 <div className="flex space-x-2">
-                  {userRole === "trader" && (
+                  {userRole === "farmer" && (
                     <button 
                       className="text-blue-500 hover:text-blue-700 p-1 flex items-center"
                       onClick={handleScheduleButtonClick}
@@ -421,7 +463,7 @@ const ConversationPage: React.FC = () => {
                       <span className="text-sm">Lên lịch</span>
                     </button>
                   )}
-                  {userRole && (
+                  {userRole === "trader" && (
                     <button 
                       className="text-green-500 hover:text-green-700 p-1 flex items-center"
                       onClick={handlePaymentButtonClick}

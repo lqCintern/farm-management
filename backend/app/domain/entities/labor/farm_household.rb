@@ -2,7 +2,7 @@ module Entities
   module Labor
     class FarmHousehold
       attr_accessor :id, :name, :description, :province, :district, :ward, :address, :owner_id
-      
+
       def initialize(attrs = {})
         @id = attrs[:id]
         @name = attrs[:name]
@@ -17,7 +17,7 @@ module Entities
 
     class HouseholdSummary
       attr_accessor :household, :active_workers_count, :total_exchanges, :pending_requests, :upcoming_assignments
-      
+
       def initialize(attrs = {})
         @household = attrs[:household]
         @active_workers_count = attrs[:active_workers_count] || 0

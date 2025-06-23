@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import FieldMap from "@/components/Field/FieldMap";
 import fieldService from "@/services/farming/fieldService";
+import * as turf from "@turf/turf";
 
 const FieldForm: React.FC = () => {
   const { id } = useParams(); // Get field ID from URL if in edit mode
@@ -23,6 +24,9 @@ const FieldForm: React.FC = () => {
   const [area, setArea] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(isEditMode);
   const [error, setError] = useState<string>("");
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualCoords, setManualCoords] = useState<{ lat: string; lng: string }[]>([]);
+  const [manualInputError, setManualInputError] = useState("");
 
   const navigate = useNavigate();
 
@@ -39,7 +43,7 @@ const FieldForm: React.FC = () => {
           setDescription(field.description || "");
           setLocation(field.location || "");
           setCoordinates(field.coordinates || []);
-          setArea(field.area || 0);
+          setArea(Number(field.area) || 0);
         } catch (error) {
           console.error("Error fetching field data:", error);
           setError("Không thể tải dữ liệu cánh đồng. Vui lòng thử lại sau.");
@@ -58,6 +62,45 @@ const FieldForm: React.FC = () => {
   ) => {
     setCoordinates(polygonData);
     setArea(calculatedArea);
+  };
+
+  // Thêm/xóa/sửa điểm nhập tọa độ
+  const handleAddManualCoord = () => {
+    setManualCoords((prev) => [...prev, { lat: "", lng: "" }]);
+  };
+  const handleRemoveManualCoord = (idx: number) => {
+    setManualCoords((prev) => prev.filter((_, i) => i !== idx));
+  };
+  const handleChangeManualCoord = (idx: number, key: "lat" | "lng", value: string) => {
+    setManualCoords((prev) => prev.map((c, i) => i === idx ? { ...c, [key]: value } : c));
+  };
+  const handleManualInput = () => {
+    setManualInputError("");
+    const coords: { lat: number; lng: number }[] = [];
+    for (const { lat, lng } of manualCoords) {
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+      if (isNaN(latNum) || isNaN(lngNum)) {
+        setManualInputError("Tất cả vĩ độ và kinh độ phải là số hợp lệ.");
+        return;
+      }
+      coords.push({ lat: latNum, lng: lngNum });
+    }
+    if (coords.length < 3) {
+      setManualInputError("Cần ít nhất 3 điểm để tạo đa giác.");
+      return;
+    }
+    try {
+      const polygon = turf.polygon([
+        [...coords.map((c) => [c.lng, c.lat]), [coords[0].lng, coords[0].lat]],
+      ]);
+      const calculatedArea = turf.area(polygon);
+      setCoordinates(coords);
+      setArea(calculatedArea);
+      setManualInputError("");
+    } catch (e) {
+      setManualInputError("Không thể tính diện tích. Kiểm tra lại tọa độ.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -207,22 +250,75 @@ const FieldForm: React.FC = () => {
                         đồ
                       </p>
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nhập tọa độ thủ công
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        {manualCoords.map((coord, idx) => (
+                          <div key={idx} className="flex gap-2 items-center">
+                            <input
+                              type="number"
+                              step="any"
+                              className="w-28 px-2 py-1 border rounded"
+                              placeholder="Vĩ độ"
+                              value={coord.lat}
+                              onChange={e => handleChangeManualCoord(idx, "lat", e.target.value)}
+                            />
+                            <span className="text-gray-500">,</span>
+                            <input
+                              type="number"
+                              step="any"
+                              className="w-28 px-2 py-1 border rounded"
+                              placeholder="Kinh độ"
+                              value={coord.lng}
+                              onChange={e => handleChangeManualCoord(idx, "lng", e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="ml-1 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                              onClick={() => handleRemoveManualCoord(idx)}
+                              tabIndex={-1}
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="mt-2 px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 text-sm w-fit"
+                          onClick={handleAddManualCoord}
+                        >
+                          Thêm điểm
+                        </button>
+                        <button
+                          type="button"
+                          className="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm w-fit"
+                          onClick={handleManualInput}
+                          disabled={manualCoords.length < 3}
+                        >
+                          Vẽ đa giác
+                        </button>
+                        {manualInputError && (
+                          <div className="text-red-600 text-xs mt-1">{manualInputError}</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Right column - Map */}
                 <div className="lg:col-span-2 relative">
-                  <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-md px-3 py-2">
-                    <div className="flex items-center">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2 bg-white rounded-lg shadow-md px-3 py-2">
                       <FaMapMarkedAlt className="text-blue-500 mr-2" />
                       <span className="font-medium text-gray-700">
-                        {isEditMode
-                          ? "Chỉnh sửa khu vực"
-                          : "Vẽ khu vực cánh đồng"}
+                        {isEditMode ? "Chỉnh sửa khu vực" : "Vẽ khu vực cánh đồng"}
                       </span>
                     </div>
+                    <FieldMap onPolygonComplete={handlePolygonComplete} coordinates={coordinates} />
                   </div>
-                  <FieldMap onPolygonComplete={handlePolygonComplete} />
                 </div>
               </div>
 

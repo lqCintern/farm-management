@@ -27,6 +27,7 @@ import {
 import supplyListingService, {
   SupplyListing,
 } from "@/services/supply_chain/supplyListingService";
+import { formatCurrency } from "@/utils/formatters";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -150,10 +151,12 @@ const SupplyListingList: React.FC = () => {
       title: "Giá",
       dataIndex: "price",
       key: "price",
-      render: (price: number) =>
-        `${price.toLocaleString("vi-VN")}đ/${
-          listings.find((l) => l.price === price)?.unit || "đơn vị"
-        }`,
+      render: (price: number, record: SupplyListing) => {
+        const formattedPrice = formatCurrency(price);
+        const priceWithoutSymbol = formattedPrice.replace("₫", "");
+
+        return `${priceWithoutSymbol}/${record.unit || "đơn vị"}`;
+      },
     },
     {
       title: "Số lượng",

@@ -1,18 +1,25 @@
 .side-nav {
   overflow-y: auto;
   height: calc(100vh - 64px); /* Chiều cao của viewport trừ đi chiều cao của navbar */
+  background: linear-gradient(180deg, #b7c9a3 0%, #eafbe6 100%); /* Xanh rêu nhạt sang xanh lá nhạt */
+  box-shadow: 2px 0 8px rgba(0, 178, 7, 0.07);
 }
 
 /* Hiệu ứng hover cho menu items */
 .side-nav-item:hover {
-  background-color: rgba(0, 178, 7, 0.05);
+  background-color: #d9f5c4; /* Xanh lá nhạt */
+  color: #388e3c; /* Xanh lá cây đậm */
+  transition: background 0.2s, color 0.2s;
 }
 
 /* Hiệu ứng active cho menu items */
 .side-nav-item.active {
-  background-color: rgba(0, 178, 7, 0.1);
-  color: #00b207;
-  border-left: 3px solid #00b207;
+  background-color: #b6e388; /* Xanh lá tươi nổi bật */
+  color: #00b207; /* Xanh lá cây đậm, thương hiệu */
+  border-left: 4px solid #ffd700; /* Vàng dứa nổi bật */
+  box-shadow: 0 2px 8px rgba(0, 178, 7, 0.08);
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s, border 0.2s;
 }
 
 /* Animation cho submenu */

@@ -2,18 +2,18 @@ module Repositories
   module Marketplace
     class ProductOrderRepository
       def find(id)
-        record = ::Marketplace::ProductOrder.find_by(id: id)
+        record = ::Models::Marketplace::ProductOrder.find_by(id: id)
         map_to_entity(record) if record
       end
 
       def find_with_associations(id)
-        record = ::Marketplace::ProductOrder.includes(:product_listing, :buyer)
+        record = ::Models::Marketplace::ProductOrder.includes(:product_listing, :buyer)
                                           .find_by(id: id)
         map_to_entity(record) if record
       end
 
       def list_for_buyer(buyer_id, status = nil, page = 1, per_page = 10)
-        query = ::Marketplace::ProductOrder.where(buyer_id: buyer_id)
+        query = ::Models::Marketplace::ProductOrder.where(buyer_id: buyer_id)
         query = apply_status_filter(query, status)
 
         pagy = Pagy.new(count: query.count, page: page, items: per_page)
@@ -26,7 +26,7 @@ module Repositories
       end
 
       def list_for_seller(seller_id, status = nil, page = 1, per_page = 10)
-        query = ::Marketplace::ProductOrder.joins(:product_listing)
+        query = ::Models::Marketplace::ProductOrder.joins(:product_listing)
                                           .where(product_listings: { user_id: seller_id })
         query = apply_status_filter(query, status)
 
@@ -39,7 +39,7 @@ module Repositories
       end
 
       def create(entity)
-        record = ::Marketplace::ProductOrder.new(
+        record = ::Models::Marketplace::ProductOrder.new(
           product_listing_id: entity.product_listing_id,
           buyer_id: entity.buyer_id,
           quantity: entity.quantity,
@@ -56,7 +56,7 @@ module Repositories
       end
 
       def update(entity)
-        record = ::Marketplace::ProductOrder.find_by(id: entity.id)
+        record = ::Models::Marketplace::ProductOrder.find_by(id: entity.id)
         return nil unless record
 
         attributes = {
@@ -73,7 +73,7 @@ module Repositories
       end
 
       def change_status(id, new_status, rejection_reason = nil)
-        record = ::Marketplace::ProductOrder.find_by(id: id)
+        record = ::Models::Marketplace::ProductOrder.find_by(id: id)
         return nil unless record
 
         # Prepare update attributes
@@ -89,10 +89,10 @@ module Repositories
 
       def get_stats(user_id, is_seller = false)
         if is_seller
-          base_query = ::Marketplace::ProductOrder.joins(:product_listing)
+          base_query = ::Models::Marketplace::ProductOrder.joins(:product_listing)
                                                 .where(product_listings: { user_id: user_id })
         else
-          base_query = ::Marketplace::ProductOrder.where(buyer_id: user_id)
+          base_query = ::Models::Marketplace::ProductOrder.where(buyer_id: user_id)
         end
 
         {
@@ -112,7 +112,7 @@ module Repositories
       end
 
       def reject_other_orders(accepted_order_id, product_listing_id, reason = "Đơn hàng đã được bán cho người khác")
-        orders = ::Marketplace::ProductOrder
+        orders = ::Models::Marketplace::ProductOrder
           .where(product_listing_id: product_listing_id)
           .where.not(id: accepted_order_id)
           .where(status: :pending)

@@ -1,9 +1,9 @@
 module Entities
   module Labor
     class HouseholdWorker
-      attr_accessor :id, :household_id, :worker_id, :relationship, 
+      attr_accessor :id, :household_id, :worker_id, :relationship,
                     :is_active, :joined_date, :notes
-      
+
       def initialize(attrs = {})
         @id = attrs[:id]
         @household_id = attrs[:household_id]

@@ -55,16 +55,17 @@ const PineappleCropFormPage: React.FC = () => {
     const fetchFields = async () => {
       try {
         const response = await fieldService.getFields();
+        console.log('Fields response:', response); // Debug log
+        
         if (response && response.data) {
           setFields(
-            response.data
-              .filter((field: any) => typeof field.id === 'number' && typeof field.name === 'string' && typeof field.area === 'number')
-              .map((field: any) => ({
-                id: field.id as number,
-                name: field.name as string,
-                area: field.area as number
-              }))
+            response.data.map((field: any) => ({
+              id: field.id as number,
+              name: field.name as string,
+              area: typeof field.area === 'string' ? parseFloat(field.area) : field.area as number
+            }))
           );
+          console.log('Processed fields:', fields); // Debug log
         }
       } catch (error) {
         console.error('Error fetching fields:', error);

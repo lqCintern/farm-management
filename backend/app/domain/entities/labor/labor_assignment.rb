@@ -5,7 +5,7 @@ module Entities
                     :work_date, :start_time, :end_time, :status, :notes,
                     :hours_worked, :work_units, :worker_rating, :farmer_rating,
                     :exchange_processed, :created_at, :updated_at
-      
+
       def initialize(attrs = {})
         @id = attrs[:id]
         @labor_request_id = attrs[:labor_request_id]
@@ -24,26 +24,26 @@ module Entities
         @created_at = attrs[:created_at]
         @updated_at = attrs[:updated_at]
       end
-      
+
       # Convenience methods
       def assigned?
-        @status == 'assigned'
+        @status == "assigned"
       end
-      
+
       def worker_reported?
-        @status == 'worker_reported'
+        @status == "worker_reported"
       end
-      
+
       def completed?
-        @status == 'completed'
+        @status == "completed"
       end
-      
+
       def missed?
-        @status == 'missed'
+        @status == "missed"
       end
-      
+
       def rejected?
-        @status == 'rejected'
+        @status == "rejected"
       end
     end
   end

@@ -7,20 +7,20 @@ module Entities
                     :is_paid, :created_at, :updated_at, :purchase_date, :supply_id,
                     :supply_listing, :buyer, :supplier, :has_review
 
-      STATUSES = [:pending, :confirmed, :shipped, :delivered, :completed, :cancelled, :rejected]
-      PAYMENT_METHODS = [:cod, :bank_transfer, :ewallet]
-      
+      STATUSES = [ :pending, :confirmed, :shipped, :delivered, :completed, :cancelled, :rejected ]
+      PAYMENT_METHODS = [ :cod, :bank_transfer, :ewallet ]
+
       def initialize(attributes = {})
         attributes.each do |key, value|
           send("#{key}=", value) if respond_to?("#{key}=")
         end
-        
-        @status ||= 'pending'
+
+        @status ||= "pending"
         @is_paid ||= false
-        @payment_method ||= 'cod'
+        @payment_method ||= "cod"
         @purchase_date ||= Time.current
       end
-      
+
       def validate
         errors = []
         errors << "Số lượng phải lớn hơn 0" if quantity.nil? || quantity <= 0
@@ -31,37 +31,37 @@ module Entities
         errors << "Số điện thoại liên hệ không được để trống" if contact_phone.blank?
         errors
       end
-      
+
       def total_amount
         quantity * price if quantity && price
       end
-      
+
       def pending?
-        status.to_s == 'pending'
+        status.to_s == "pending"
       end
-      
+
       def confirmed?
-        status.to_s == 'confirmed'
+        status.to_s == "confirmed"
       end
-      
+
       def shipped?
-        status.to_s == 'shipped'
+        status.to_s == "shipped"
       end
-      
+
       def delivered?
-        status.to_s == 'delivered'
+        status.to_s == "delivered"
       end
-      
+
       def completed?
-        status.to_s == 'completed'
+        status.to_s == "completed"
       end
-      
+
       def cancelled?
-        status.to_s == 'cancelled'
+        status.to_s == "cancelled"
       end
-      
+
       def rejected?
-        status.to_s == 'rejected'
+        status.to_s == "rejected"
       end
     end
   end
