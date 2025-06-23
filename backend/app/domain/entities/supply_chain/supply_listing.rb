@@ -7,16 +7,16 @@ module Entities
                    :created_at, :updated_at, :user_id, :pending_quantity, :sold_quantity,
                    :images, :supplier, :similar_listings, :order_count
 
-      CATEGORIES = [:fertilizer, :pesticide, :seed, :equipment, :other].freeze
-      STATUSES = [:draft, :active, :inactive, :sold_out].freeze
+      CATEGORIES = [ :fertilizer, :pesticide, :seed, :equipment, :other ].freeze
+      STATUSES = [ :draft, :active, :inactive, :sold_out ].freeze
 
       def initialize(attributes = {})
         attributes.each do |key, value|
           send("#{key}=", value) if respond_to?("#{key}=")
         end
-        
+
         # Default values
-        @status ||= 'draft'
+        @status ||= "draft"
         @pending_quantity ||= 0
         @sold_quantity ||= 0
         @view_count ||= 0
@@ -37,11 +37,11 @@ module Entities
       def available_quantity
         quantity - pending_quantity
       end
-      
+
       def category_name
         I18n.t("supply_listing.categories.#{category}", default: category.to_s.humanize)
       end
-      
+
       def status_name
         I18n.t("supply_listing.statuses.#{status}", default: status.to_s.humanize)
       end

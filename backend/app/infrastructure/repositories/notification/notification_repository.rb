@@ -2,12 +2,12 @@ module Repositories
   module Notification
     class NotificationRepository
       def find(id)
-        record = ::Notifications::Notification.find_by(id: id)
+        record = ::Models::Notifications::Notification.find_by(id: id)
         map_to_entity(record) if record
       end
 
       def list_for_user(user_id, category = nil, status = nil, page = 1, per_page = 20)
-        query = ::Notifications::Notification.where(recipient_id: user_id).order(created_at: :desc)
+        query = ::Models::Notifications::Notification.where(recipient_id: user_id).order(created_at: :desc)
 
         # Apply filters
         query = query.where(category: category) if category.present?
@@ -27,7 +27,7 @@ module Repositories
       end
 
       def mark_as_read(id)
-        record = ::Notifications::Notification.find_by(id: id)
+        record = ::Models::Notifications::Notification.find_by(id: id)
         return nil unless record
 
         record.update(read_at: Time.current)
@@ -35,7 +35,7 @@ module Repositories
       end
 
       def mark_as_unread(id)
-        record = ::Notifications::Notification.find_by(id: id)
+        record = ::Models::Notifications::Notification.find_by(id: id)
         return nil unless record
 
         record.update(read_at: nil)
@@ -43,7 +43,7 @@ module Repositories
       end
 
       def mark_all_as_read(user_id, category = nil)
-        scope = ::Notifications::Notification.where(recipient_id: user_id, read_at: nil)
+        scope = ::Models::Notifications::Notification.where(recipient_id: user_id, read_at: nil)
         scope = scope.where(category: category) if category.present?
 
         count = scope.count
@@ -53,13 +53,13 @@ module Repositories
       end
 
       def delete(id)
-        record = ::Notifications::Notification.find_by(id: id)
+        record = ::Models::Notifications::Notification.find_by(id: id)
         record.destroy if record
         record&.destroyed? || false
       end
 
       def count_unread(user_id, category = nil)
-        query = ::Notifications::Notification.where(recipient_id: user_id, read_at: nil)
+        query = ::Models::Notifications::Notification.where(recipient_id: user_id, read_at: nil)
 
         if category.present?
           query = query.where(category: category)
@@ -77,7 +77,7 @@ module Repositories
       end
 
       def create(entity)
-        record = ::Notifications::Notification.new(
+        record = ::Models::Notifications::Notification.new(
           recipient_id: entity.recipient_id,
           sender_id: entity.sender_id,
           notifiable_type: entity.notifiable_type,

@@ -1,10 +1,18 @@
 // Định dạng tiền tệ
 export const formatCurrency = (price: number): string => {
+  // Làm tròn số và loại bỏ phần thập phân nếu là số nguyên
+  const roundedPrice = Math.round(price);
+
+  // Định dạng số với dấu phân cách hàng nghìn
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
     minimumFractionDigits: 0,
-  }).format(price);
+    maximumFractionDigits: 0,
+  })
+    .format(roundedPrice)
+    .replace("₫", "đ") // Thay ký hiệu tiền tệ mặc định bằng "đ"
+    .trim(); // Loại bỏ khoảng trắng thừa
 };
 
 // Định dạng ngày tháng

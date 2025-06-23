@@ -34,15 +34,34 @@ interface FieldMapProps {
     coordinates: { lat: number; lng: number }[],
     area: number
   ) => void;
+  coordinates?: { lat: number; lng: number }[];
 }
 
 // Component chính
-const FieldMap: React.FC<FieldMapProps> = ({ onPolygonComplete }) => {
+const FieldMap: React.FC<FieldMapProps> = ({ onPolygonComplete, coordinates }) => {
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
-  const [markers, setMarkers] = useState<{ lat: number; lng: number }[]>([]);
+  const [markers, setMarkers] = useState<{ lat: number; lng: number }[]>(coordinates || []);
   const [area, setArea] = useState<number>(0);
   const [labelOpacity, setLabelOpacity] = useState<number>(0.7);
   const mapRef = useRef(null);
+
+  // Khi prop coordinates thay đổi (từ nhập tay), cập nhật markers
+  useEffect(() => {
+    if (coordinates && coordinates.length >= 3) {
+      setMarkers(coordinates);
+      // Tính lại diện tích
+      try {
+        const polygon = turf.polygon([
+          [...coordinates.map((c) => [c.lng, c.lat]), [coordinates[0].lng, coordinates[0].lat]],
+        ]);
+        const calculatedArea = turf.area(polygon);
+        setArea(calculatedArea);
+        onPolygonComplete(coordinates, calculatedArea);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [coordinates]);
 
   // Function để bắt đầu vẽ
   const startDrawing = () => {

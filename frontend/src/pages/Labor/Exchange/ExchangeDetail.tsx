@@ -259,7 +259,7 @@ const ExchangeDetail = () => {
       toast.loading('Đang tính toán giờ công...');
       
       // Gọi API tính lại giờ công
-      await axios.post(`/api/v1/labor/exchanges/households/${householdId}/recalculate_hours`);
+      await axios.post(`/controllers/api/v1/labor/exchanges/households/${householdId}/recalculate_hours`);
       
       // Refresh data
       const response = await getExchangeDetails(parseInt(householdId!));

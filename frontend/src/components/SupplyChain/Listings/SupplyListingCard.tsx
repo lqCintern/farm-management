@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { SupplyListing } from '@/services/supply_chain/supplyListingService';
 import CategoryBadge from '../Common/CategoryBadge';
+import { formatCurrency } from '@/utils/formatters';
 
 interface SupplyListingCardProps {
   listing: SupplyListing;
@@ -40,7 +41,9 @@ const SupplyListingCard: React.FC<SupplyListingCardProps> = ({ listing, isFarmer
         <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{listing.name}</h3>
         
         <div className="flex items-baseline mt-1">
-          <span className="text-lg font-bold text-red-600">{listing.price.toLocaleString()} đ</span>
+          <span className="text-lg font-bold text-red-600">
+            {formatCurrency(listing.price).replace('₫', 'đ')}
+          </span>
           <span className="text-xs text-gray-600 ml-1">/{listing.unit}</span>
         </div>
         

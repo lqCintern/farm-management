@@ -3,22 +3,22 @@ module Entities
     class WorkerProfile
       attr_accessor :id, :user_id, :skills, :availability,
                     :daily_rate, :hourly_rate
-      
+
       def initialize(attrs = {})
         @id = attrs[:id]
         @user_id = attrs[:user_id]
         @skills = attrs[:skills]
-        @availability = attrs[:availability] || 'available'
+        @availability = attrs[:availability] || "available"
         @daily_rate = attrs[:daily_rate]
         @hourly_rate = attrs[:hourly_rate]
       end
     end
 
     class WorkerStatistics
-      attr_accessor :profile, :completed_assignments_count, 
+      attr_accessor :profile, :completed_assignments_count,
                     :total_hours_worked, :households_worked_for,
                     :average_rating
-      
+
       def initialize(attrs = {})
         @profile = attrs[:profile]
         @completed_assignments_count = attrs[:completed_assignments_count] || 0

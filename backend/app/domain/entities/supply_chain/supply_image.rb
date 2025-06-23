@@ -2,13 +2,13 @@ module Entities
   module SupplyChain
     class SupplyImage
       attr_accessor :id, :supply_listing_id, :image_url, :position, :created_at, :updated_at
-      
+
       def initialize(attributes = {})
         attributes.each do |key, value|
           send("#{key}=", value) if respond_to?("#{key}=")
         end
       end
-      
+
       def validate
         errors = []
         errors << "URL hình ảnh không được để trống" if image_url.blank?

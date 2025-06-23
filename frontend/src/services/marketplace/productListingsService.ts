@@ -120,7 +120,7 @@ export const updateProductListing = async (id: number, formData: FormData) => {
 };
 
 export const deleteProductListing = async (id: number) => {
-  const response = await axiosInstance.delete(`/api/v1/marketplace/product_listings/${id}`);
+  const response = await axiosInstance.delete(`/controllers/api/v1/marketplace/product_listings/${id}`);
   return response.data;
 };
 
@@ -129,7 +129,7 @@ export const toggleProductListingStatus = async (
   status: "activate" | "hide" | "draft"
 ) => {
   const response = await axiosInstance.put(
-    `/api/v1/marketplace/product_listings/${id}/toggle_status`,
+    `/controllers/api/v1/marketplace/product_listings/${id}/toggle_status`,
     { status }
   );
   return response.data;

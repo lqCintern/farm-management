@@ -8,10 +8,10 @@ class AuthenticateUser
 
     # Danh sách các đường dẫn không cần xác thực - cập nhật để khớp với routes
     public_paths = [
-      "/api/v1/users/login",
-      "/api/v1/users/register",
-      "/api/v1/users/auth/forgot_password",
-      "/api/v1/users/auth/reset_password"
+      "/controllers/api/v1/users/login",
+      "/controllers/api/v1/users/register",
+      "/controllers/api/v1/users/auth/forgot_password",
+      "/controllers/api/v1/users/auth/reset_password"
     ]
 
     # Logging để debug
@@ -32,7 +32,7 @@ class AuthenticateUser
     if token
       begin
         decoded_token = JWT.decode(token, Rails.application.credentials.secret_key_base, true, algorithm: "HS256")[0]
-        env["current_user"] = User.find_by(user_id: decoded_token["user_id"])
+        env["current_user"] = Models::User.find_by(user_id: decoded_token["user_id"])
         Rails.logger.info "Decoded Token: #{decoded_token}"
         Rails.logger.info "Current User: #{env['current_user']&.email}"
       rescue JWT::ExpiredSignature

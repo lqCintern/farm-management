@@ -2,12 +2,12 @@ module Repositories
   module Marketplace
     class ProductListingRepository
       def find(id)
-        record = ::Marketplace::ProductListing.find_by(id: id)
+        record = ::Models::Marketplace::ProductListing.find_by(id: id)
         map_to_entity(record) if record
       end
 
       def find_with_associations(id)
-        record = ::Marketplace::ProductListing.includes(:product_images, :user)
+        record = ::Models::Marketplace::ProductListing.includes(:product_images, :user)
                                              .find_by(id: id)
         return nil unless record
 
@@ -17,7 +17,7 @@ module Repositories
         # Lấy thông tin pineapple_crop nếu có
         pineapple_crop_data = nil
         if record.crop_animal_id.present?
-          pineapple_crop = ::Farming::PineappleCrop.find_by(id: record.crop_animal_id)
+          pineapple_crop = ::Models::Farming::PineappleCrop.find_by(id: record.crop_animal_id)
           pineapple_crop_data = pineapple_crop&.as_json(only: [ :id, :name, :variety, :planting_date, :field_id, :current_stage ])
         end
 
@@ -25,7 +25,7 @@ module Repositories
       end
 
       def list_published(params = {})
-        query = ::Marketplace::ProductListing.published
+        query = ::Models::Marketplace::ProductListing.published
 
         # Apply filters
         query = query.by_product_type(params[:product_type]) if params[:product_type].present?
@@ -52,7 +52,7 @@ module Repositories
       end
 
       def list_by_user(user_id, status = nil, page = 1, per_page = 10)
-        query = ::Marketplace::ProductListing.where(user_id: user_id)
+        query = ::Models::Marketplace::ProductListing.where(user_id: user_id)
 
         # Apply status filter
         case status
@@ -87,7 +87,7 @@ module Repositories
         # Start transaction
         ActiveRecord::Base.transaction do
           # Create product listing
-          record = ::Marketplace::ProductListing.create!(attributes)
+          record = ::Models::Marketplace::ProductListing.create!(attributes)
 
           # Add images if provided
           if images.present?
@@ -111,26 +111,26 @@ module Repositories
 
       def update(product_listing_entity, images = [], retained_image_ids = [])
         return nil unless product_listing_entity
-        
+
         # Map entity to ActiveRecord attributes
         attributes = map_entity_to_attributes(product_listing_entity)
-        
+
         # Start transaction
         ActiveRecord::Base.transaction do
           # Find record
-          record = ::Marketplace::ProductListing.find_by(id: product_listing_entity.id)
+          record = ::Models::Marketplace::ProductListing.find_by(id: product_listing_entity.id)
           return nil unless record
-          
+
           # Update attributes
           record.update!(attributes)
-          
+
           # Xử lý retained_image_ids - chuyển đổi thành mảng số nếu cần
           retained_ids = if retained_image_ids.is_a?(Array)
                           retained_image_ids.select(&:present?).map(&:to_i)
-                        else
+          else
                           []
-                        end
-            
+          end
+
           # Xóa ảnh không thuộc retained_image_ids
           if retained_ids.any?
             record.product_images.where.not(id: retained_ids).destroy_all
@@ -138,7 +138,7 @@ module Repositories
             # Nếu không có retained_image_ids nhưng có images mới, xóa tất cả images cũ
             record.product_images.destroy_all
           end
-          
+
           # Add new images
           if images.present?
             images.each_with_index do |image, index|
@@ -150,7 +150,7 @@ module Repositories
               end
             end
           end
-          
+
           # Return updated entity
           map_to_entity(record.reload)
         rescue ActiveRecord::RecordInvalid => e
@@ -160,12 +160,12 @@ module Repositories
       end
 
       def delete(id)
-        record = ::Marketplace::ProductListing.find_by(id: id)
+        record = ::Models::Marketplace::ProductListing.find_by(id: id)
         record&.destroy
       end
 
       def change_status(id, status)
-        record = ::Marketplace::ProductListing.find_by(id: id)
+        record = ::Models::Marketplace::ProductListing.find_by(id: id)
         return nil unless record
 
         if record.update(status: status)
@@ -176,19 +176,19 @@ module Repositories
       end
 
       def increment_view_count(id)
-        record = ::Marketplace::ProductListing.find_by(id: id)
+        record = ::Models::Marketplace::ProductListing.find_by(id: id)
         record&.increment!(:view_count)
         record ? map_to_entity(record) : nil
       end
 
       def increment_message_count(id)
-        record = ::Marketplace::ProductListing.find_by(id: id)
+        record = ::Models::Marketplace::ProductListing.find_by(id: id)
         record&.increment!(:message_count)
         record ? map_to_entity(record) : nil
       end
 
       def increment_order_count(id)
-        record = ::Marketplace::ProductListing.find_by(id: id)
+        record = ::Models::Marketplace::ProductListing.find_by(id: id)
         record&.increment!(:order_count)
         record ? map_to_entity(record) : nil
       end
