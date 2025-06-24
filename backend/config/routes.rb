@@ -29,7 +29,11 @@ Rails.application.routes.draw do
             end
           end
 
-          resources :farm_materials
+          resources :farm_materials do
+            collection do
+              get :statistics  # Thêm route mới cho thống kê vật tư
+            end
+          end
           resources :harvests do
             collection do
               get :by_crop

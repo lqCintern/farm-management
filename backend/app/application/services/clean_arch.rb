@@ -1001,6 +1001,13 @@ module Services
         )
       end
 
+      def farmer_complete_order_and_update_inventory
+        @farmer_complete_order_and_update_inventory ||= UseCases::SupplyChain::Farmer::CompleteOrderAndUpdateInventory.new(
+          supply_order_repository,
+          farming_farm_material_repository
+        )
+      end
+
       def farmer_update_order
         @farmer_update_order ||= UseCases::SupplyChain::SupplyOrders::UpdateFarmerOrder.new(
           supply_order_repository

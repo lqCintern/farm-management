@@ -36,10 +36,10 @@ module Services::Farming
 
     def activity_updated(activity)
       # Thông báo hoạt động đã được cập nhật
-      user = ::User.find_by(id: activity.user_id)
+      user = Models::User.find_by(id: activity.user_id)
       return unless user
 
-      ::Notification.create!(
+      Models::Notification.create!(
         user_id: activity.user_id,
         title: "Hoạt động đã được cập nhật",
         content: "Hoạt động #{activity_name(activity)} đã được cập nhật",

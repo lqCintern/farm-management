@@ -113,7 +113,7 @@ module Controllers::Api
 
         # PATCH/PUT /api/v1/supply_orders/:id/complete
         def complete
-          result = Services::CleanArch.farmer_complete_order.execute(
+          result = Services::CleanArch.farmer_complete_order_and_update_inventory.execute(
             params[:id],
             current_user.user_id
           )
@@ -137,8 +137,15 @@ module Controllers::Api
 
         def supply_order_params
           params.require(:supply_order).permit(
-            :quantity, :note, :delivery_province, :delivery_district,
-            :delivery_ward, :delivery_address, :contact_phone, :payment_method
+            :quantity, 
+            :note, 
+            :delivery_province, 
+            :delivery_district, 
+            :delivery_ward, 
+            :delivery_address,
+            :contact_phone, 
+            :payment_method,
+            :price
           )
         end
       end

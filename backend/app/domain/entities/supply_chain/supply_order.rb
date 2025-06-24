@@ -63,6 +63,15 @@ module Entities
       def rejected?
         status.to_s == "rejected"
       end
+
+      # Thêm setter để tự động chuyển đổi
+      def price=(value)
+        @price = value.is_a?(String) && value.present? ? value.to_f : value
+      end
+
+      def quantity=(value)
+        @quantity = value.is_a?(String) && value.present? ? value.to_f : value  
+      end
     end
   end
 end

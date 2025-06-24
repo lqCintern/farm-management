@@ -39,7 +39,7 @@ module Models::Labor
 
     def self.find_by_households(household_a_id, household_b_id)
       # Tìm exchange giữa hai hộ, bất kể thứ tự household_a và household_b
-      Labor::LaborExchange.where(
+      Models::Labor::LaborExchange.where(
         "(household_a_id = ? AND household_b_id = ?) OR (household_a_id = ? AND household_b_id = ?)",
         household_a_id, household_b_id,
         household_b_id, household_a_id

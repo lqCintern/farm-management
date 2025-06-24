@@ -123,7 +123,7 @@ module Repositories
         per_page = options[:per_page] || 20
 
         # Sử dụng Pagy thay vì per()
-        pagy = Pagy.new(count: ::Labor::LaborExchangeTransaction.where(labor_exchange_id: exchange_id).count,
+        pagy = Pagy.new(count: Models::Labor::LaborExchangeTransaction.where(labor_exchange_id: exchange_id).count,
                        page: page,
                        items: per_page)
 

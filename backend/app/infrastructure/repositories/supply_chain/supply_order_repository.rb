@@ -53,12 +53,23 @@ module Repositories
               }
             end
 
+            # Lấy giá từ frontend hoặc fallback sang giá từ database
+            price_to_use = entity.price.presence || supply_listing.price
+
+            # Kiểm tra giá hợp lệ
+            if price_to_use.nil? || price_to_use <= 0
+              return {
+                success: false,
+                errors: [ "Giá phải lớn hơn 0" ]
+              }
+            end
+
             # Tạo record đơn hàng
             record = ::Models::SupplyChain::SupplyOrder.new(
               user_id: entity.user_id,
               supply_listing_id: supply_listing.id,
               quantity: entity.quantity,
-              price: supply_listing.price,
+              price: price_to_use,  # Sử dụng giá đã xác định
               status: "pending",
               note: entity.note,
               delivery_province: entity.delivery_province,
@@ -73,14 +84,16 @@ module Repositories
             )
 
             if record.save
-              # Tăng số lượng đơn hàng và tạm giữ số lượng
-              supply_listing.increment!(:order_count) if supply_listing.respond_to?(:order_count)
-              supply_listing.increment!(:pending_quantity, entity.quantity)
+              # Lấy ActiveRecord model object thay vì sử dụng entity
+              listing_record = ::Models::SupplyChain::SupplyListing.find(supply_listing.id)
+              
+              # Sử dụng ActiveRecord object cho các phương thức update
+              listing_record.increment!(:order_count) if listing_record.respond_to?(:order_count)
+              listing_record.increment!(:pending_quantity, entity.quantity)
 
               { success: true, order: map_to_entity(record), message: "Đặt hàng thành công" }
             else
-              raise ActiveRecord::Rollback
-              { success: false, errors: record.errors.full_messages }
+              return { success: false, errors: record.errors.full_messages }
             end
           end
         rescue => e
@@ -312,7 +325,7 @@ module Repositories
       end
 
       def has_review(record)
-        ::SupplyChain::SupplierReview.exists?(supply_order_id: record.id)
+        Models::SupplyChain::SupplierReview.exists?(supply_order_id: record.id)
       end
 
       def confirm_order(record)
@@ -408,7 +421,7 @@ module Repositories
       end
 
       def log_order_status_change(order, old_status, new_status)
-        ::ActivityLog.create(
+        Models::ActivityLog.create(
           user_id: order.user_id,
           action_type: "order_status_change",
           target_type: "SupplyOrder",
@@ -423,7 +436,7 @@ module Repositories
       end
 
       def log_order_completion(order)
-        ::ActivityLog.create(
+        Models::ActivityLog.create(
           user_id: order.user_id,
           action_type: "complete_order",
           target_type: "SupplyOrder",

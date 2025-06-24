@@ -17,6 +17,7 @@ module UseCases::SupplyChain
           supply_listing_id: params[:supply_listing_id],
           quantity: params[:quantity],
           note: params[:note],
+          price: params[:price],
           delivery_province: params[:delivery_province],
           delivery_district: params[:delivery_district],
           delivery_ward: params[:delivery_ward],

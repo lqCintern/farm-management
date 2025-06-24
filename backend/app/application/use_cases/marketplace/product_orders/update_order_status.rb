@@ -4,9 +4,9 @@ module UseCases::Marketplace
       def initialize(repository, product_repository, transaction_service = nil, notification_service = nil, conversation_service = nil)
         @repository = repository
         @product_repository = product_repository
-        @transaction_service = transaction_service || ::Marketplace::TransactionService.new
+        @transaction_service = transaction_service || Services::Marketplace::TransactionService.new
         @notification_service = notification_service || Services::CleanArch.notification_service
-        @conversation_service = conversation_service || ::Marketplace::ConversationService.new
+        @conversation_service = conversation_service || Services::Marketplace::ConversationService.new
       end
 
       def execute(order_id, new_status, user_id, reason = nil)
@@ -120,7 +120,7 @@ module UseCases::Marketplace
       end
 
       def send_notification_message(order, user_id, message)
-        @conversation_service.send_order_notification(order, User.find_by(user_id: user_id), message)
+        @conversation_service.send_order_notification(order, Models::User.find_by(user_id: user_id), message)
       end
     end
   end
