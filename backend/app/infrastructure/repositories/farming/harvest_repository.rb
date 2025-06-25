@@ -110,9 +110,28 @@ module Repositories
           monthly: monthly_stats,
           by_crop: crop_stats,
           by_field: field_stats,
-          total_quantity: ::Farming::Harvest.where(user_id: user_id).sum(:quantity),
-          harvest_count: ::Farming::Harvest.where(user_id: user_id).count
+          total_quantity: Models::Farming::Harvest.where(user_id: user_id).sum(:quantity),
+          harvest_count: Models::Farming::Harvest.where(user_id: user_id).count
         }
+      end
+
+      def get_statistics_by_source(user_id, options = {})
+        # Thống kê lượng thu hoạch theo nguồn
+        by_source = {
+          total: Models::Farming::Harvest.where(user_id: user_id).sum(:quantity),
+          direct: Models::Farming::Harvest.where(user_id: user_id, is_marketplace_sale: false).sum(:quantity),
+          marketplace: Models::Farming::Harvest.where(user_id: user_id, is_marketplace_sale: true).sum(:quantity)
+        }
+        
+        # Thống kê doanh thu theo nguồn
+        revenue = {
+          total: Models::Farming::Harvest.where(user_id: user_id)
+                    .where.not(sale_price: nil).sum('quantity * sale_price'),
+          marketplace: Models::Farming::Harvest.where(user_id: user_id, is_marketplace_sale: true)
+                      .where.not(sale_price: nil).sum('quantity * sale_price')
+        }
+        
+        { success: true, by_source: by_source, revenue: revenue }
       end
 
       private

@@ -62,7 +62,7 @@ const AdjustQuantityModal: React.FC<AdjustQuantityModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} title="Điều chỉnh số lượng">
       <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg w-full">
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h3 className="text-lg font-medium text-gray-900">Điều chỉnh số lượng</h3>

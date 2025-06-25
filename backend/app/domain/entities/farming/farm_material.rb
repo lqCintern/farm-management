@@ -3,7 +3,7 @@ module Entities
     class FarmMaterial
       attr_accessor :id, :name, :material_id, :quantity, :unit, :category,
                     :user_id, :last_updated, :created_at, :updated_at,
-                    :activity_materials, :available_quantity
+                    :activity_materials, :available_quantity, :unit_cost, :total_cost
 
       def initialize(attributes = {})
         attributes.each do |key, value|

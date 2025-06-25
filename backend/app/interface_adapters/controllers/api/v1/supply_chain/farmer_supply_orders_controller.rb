@@ -121,14 +121,14 @@ module Controllers::Api
           if result[:success]
             render json: {
               status: "success",
-              message: result[:message],
+              message: "Xác nhận nhận hàng thành công",
               data: result[:data]
             }
           else
             render json: {
               status: "error",
-              message: "Không thể xác nhận nhận hàng",
-              errors: result[:errors]
+              message: result[:error] || "Không thể xác nhận nhận hàng",
+              errors: result[:errors] || (result[:error] ? [result[:error]] : nil)
             }, status: :unprocessable_entity
           end
         end

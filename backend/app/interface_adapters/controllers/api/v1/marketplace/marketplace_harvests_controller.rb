@@ -59,7 +59,7 @@ module Controllers::Api
 
         # PATCH/PUT /api/v1/marketplace/harvests/:id
         def update
-          result = Services::CleanArch.marketplace_update_harvest.execute(
+          result = Services::CleanArch.marketplace_update_harvest_status.execute(
             params[:id],
             marketplace_harvest_params.to_h,
             current_user.user_id
@@ -67,11 +67,16 @@ module Controllers::Api
 
           if result[:success]
             render json: {
-              message: result[:message],
-              harvest: harvest_response(result[:harvest])
+              status: "success",
+              message: result[:message] || "Cập nhật đơn thu hoạch thành công",
+              data: { harvest: marketplace_harvest_response(result[:harvest]) }
             }
           else
-            render json: { errors: [ result[:error] ] }, status: :unprocessable_entity
+            render json: {
+              status: "error",
+              message: "Không thể cập nhật đơn thu hoạch",
+              errors: result[:errors]
+            }, status: :unprocessable_entity
           end
         end
 

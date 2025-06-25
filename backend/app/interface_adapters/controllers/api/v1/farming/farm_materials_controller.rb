@@ -21,12 +21,19 @@ module Controllers::Api
         end
 
         def show
-          result = Services::CleanArch.farming_get_farm_material.execute(params[:id], current_user.user_id)
-
+          id = params[:id]
+          result = Services::CleanArch.farming_farm_material_statistics_service.get_material_details(id, current_user.user_id)
+          
           if result[:success]
-            render json: { material: ::Presenters::Farming::FarmMaterialPresenter.as_json(result[:farm_material]) }, status: :ok
+            render json: {
+              status: "success",
+              material: result[:material],
+              transactions: result[:transactions],
+              activities: result[:activities],
+              statistics: result[:statistics]
+            }
           else
-            render json: { error: result[:error] }, status: :not_found
+            render json: { status: "error", error: result[:error] }, status: :unprocessable_entity
           end
         end
 
@@ -77,20 +84,27 @@ module Controllers::Api
         end
 
         def statistics
-          # Lấy số lượng vật tư và thông tin thống kê khác
-          materials = Services::CleanArch.farming_farm_material_repository.find_by_user(current_user.user_id)
+          # Lấy thống kê vật tư với bộ lọc
+          result = Services::CleanArch.farming_farm_material_repository.get_statistics(
+            current_user.user_id,
+            {
+              start_date: params[:start_date],
+              end_date: params[:end_date],
+              field_id: params[:field_id],
+              crop_id: params[:crop_id]
+            }
+          )
           
-          statistics = {
-            total_items: materials.count,
-            low_stock_count: materials.count { |m| m.quantity > 0 && m.quantity <= 10 },
-            out_of_stock_count: materials.count { |m| m.quantity <= 0 },
-            categories: materials.map(&:category).compact.uniq.count
-          }
-          
-          render json: { 
-            status: "success", 
-            statistics: statistics 
-          }, status: :ok
+          if result[:success]
+            render json: { 
+              status: "success", 
+              statistics: result[:statistics],
+              details: result[:details],
+              monthly_data: result[:monthly_data]
+            }, status: :ok
+          else
+            render json: { status: "error", message: "Không thể lấy thống kê vật tư" }, status: :unprocessable_entity
+          end
         end
 
         private

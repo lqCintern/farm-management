@@ -7,10 +7,10 @@ export interface FarmMaterialInventory {
   quantity: number;
   unit: string;
   category: string;
+  unit_cost: number;
+  total_cost: number;
   last_updated: string;
-  purchase_price?: number;
-  expiration_date?: string;
-  location?: string;
+  user_id: number;
 }
 
 export interface InventoryResponse {
@@ -117,6 +117,17 @@ export const getInventoryStatistics = async (): Promise<any> => {
   }
 };
 
+// Thêm phương thức mới vào service
+export const getMaterialDetails = async (id: string | number) => {
+  try {
+    const response = await axiosInstance.get(`/farming/farm_materials/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching material details:', error);
+    throw error;
+  }
+};
+
 export default {
   getInventoryMaterials,
   getInventoryMaterialById,
@@ -124,5 +135,6 @@ export default {
   updateInventoryMaterial,
   removeInventoryMaterial,
   adjustInventoryQuantity,
-  getInventoryStatistics
+  getInventoryStatistics,
+  getMaterialDetails,
 };

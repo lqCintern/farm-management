@@ -33,6 +33,10 @@ module Repositories
         record ? map_to_entity(record) : nil
       end
 
+      def find_by_user(user_id)
+        ::Models::Farming::FarmMaterial.where(user_id: user_id)
+      end
+
       def create(attributes, user_id)
         # Đảm bảo last_updated được thiết lập
         attributes[:last_updated] ||= Time.current
@@ -81,51 +85,6 @@ module Repositories
         end
       end
 
-      # Method from Supply Chain module
-      def find_or_create_from_order(user_id, supply_listing, order_quantity)
-        begin
-          ActiveRecord::Base.transaction do
-            # Tìm hoặc tạo farm_material tương ứng
-            farm_material = ::Models::Farming::FarmMaterial.find_or_initialize_by(
-              user_id: user_id,
-              name: supply_listing[:name],
-              unit: supply_listing[:unit],
-              category: supply_listing[:category]
-            )
-            
-            if farm_material.new_record?
-              # Nếu là vật tư mới
-              farm_material.quantity = order_quantity
-              farm_material.material_id = supply_listing[:id] # Lưu id của supply_listing gốc
-              farm_material.last_updated = Time.current
-              
-              if farm_material.save
-                { 
-                  success: true, 
-                  farm_material: map_to_entity(farm_material), 
-                  message: "Đã thêm vào kho vật tư nông trại" 
-                }
-              else
-                raise ActiveRecord::Rollback
-                { success: false, errors: farm_material.errors.full_messages }
-              end
-            else
-              # Nếu đã có vật tư, cộng thêm số lượng
-              farm_material.increment!(:quantity, order_quantity)
-              farm_material.update(last_updated: Time.current)
-              
-              { 
-                success: true, 
-                farm_material: map_to_entity(farm_material), 
-                message: "Đã cập nhật kho vật tư nông trại" 
-              }
-            end
-          end
-        rescue => e
-          { success: false, errors: ["Lỗi khi cập nhật kho vật tư: #{e.message}"] }
-        end
-      end
-
       private
       
       def apply_filters(query, filters)
@@ -153,7 +112,9 @@ module Repositories
           created_at: record.created_at,
           updated_at: record.updated_at,
           available_quantity: record.available_quantity,
-          activity_materials: record.activity_materials.map { |am| map_activity_material(am) }
+          activity_materials: record.activity_materials.map { |am| map_activity_material(am) },
+          unit_cost: record.respond_to?(:unit_cost) ? record.unit_cost : 0,
+          total_cost: record.respond_to?(:total_cost) ? record.total_cost : 0
         )
       end
       

@@ -7,6 +7,7 @@ interface TabsProps {
   }>;
   activeTab: string;
   onChange: (tabId: string) => void;
+  className?: string;
 }
 
 const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange }) => {

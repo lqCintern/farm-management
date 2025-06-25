@@ -1,96 +1,67 @@
+module UseCases
+  module SupplyChain
+    module Farmer
+      class CompleteOrderAndUpdateInventory
+        def initialize(supply_order_repository, farm_material_inventory_service)
+          @supply_order_repository = supply_order_repository
+          @inventory_service = farm_material_inventory_service
+        end
 
-  module UseCases
-    module SupplyChain
-      module Farmer
-        class CompleteOrderAndUpdateInventory
-          def initialize(supply_order_repository, farm_material_repository)
-            @supply_order_repository = supply_order_repository
-            @farm_material_repository = farm_material_repository
-          end
+        def execute(order_id, farmer_id)
+          # Tìm đơn hàng và kiểm tra
+          result = @supply_order_repository.find(order_id)
+          return result unless result[:success]
+  
+          order = result[:order] || result[:data]
+          return { success: false, errors: ["Đơn hàng không tồn tại"] } unless order
+          return { success: false, errors: ["Chỉ đơn hàng đã giao mới có thể được hoàn thành"] } unless order.status == "delivered"
 
-          def execute(order_id, farmer_id)
-            # Bước 1: Hoàn thành đơn hàng
-            order_result = @supply_order_repository.complete_order(order_id, farmer_id)
-            
-            return order_result unless order_result[:success]
-            
-            # Bước 2: Nếu thành công, cập nhật vật tư trong kho
-            order = order_result[:order]
-            update_inventory_result = update_farm_inventory(order, farmer_id)
-            
-            if update_inventory_result[:success]
-              { 
+          # Đánh dấu đơn hàng đã hoàn thành
+          complete_result = @supply_order_repository.update(order_id, { status: "completed"})
+          return complete_result unless complete_result[:success]
+
+          # Quan trọng: Lấy đơn hàng đã cập nhật từ kết quả
+          updated_order = complete_result[:order] || complete_result[:data]
+  
+          # Cập nhật kho vật tư với đơn hàng đã cập nhật
+          begin
+            inventory_result = update_farm_inventory(updated_order, farmer_id)
+            if inventory_result && inventory_result[:success] == false
+              # Nếu có lỗi cập nhật kho, vẫn trả về thành công nhưng kèm warning
+              return { 
                 success: true, 
-                order: order, 
-                message: "Xác nhận nhận hàng thành công. Kho vật tư đã được cập nhật." 
-              }
-            else
-              # Vẫn hoàn thành đơn hàng, nhưng thông báo lỗi khi cập nhật kho
-              { 
-                success: true, 
-                order: order, 
-                message: "Xác nhận nhận hàng thành công nhưng có lỗi khi cập nhật kho vật tư.",
-                inventory_errors: update_inventory_result[:errors]
+                data: updated_order, 
+                warning: "Đơn hàng đã hoàn thành nhưng có lỗi khi cập nhật kho",
+                inventory_error: inventory_result[:errors] || inventory_result[:error]
               }
             end
-          end
-          
-          private
-          
-          def update_farm_inventory(order, farmer_id)
-            begin
-              supply = order.supply_listing
-              
-              # Tìm vật tư hiện có trong kho của nông dân
-              existing_material = @farm_material_repository.find_by_material_id(farmer_id, supply[:id])
-              
-              if existing_material
-                # Cập nhật nếu đã tồn tại
-                update_result = @farm_material_repository.update(
-                  existing_material.id,
-                  { 
-                    quantity: existing_material.quantity + order.quantity, 
-                    last_updated: Time.current 
-                  },
-                  farmer_id
-                )
-                
-                return { success: false, errors: update_result[:errors] } unless update_result[:success]
-              else
-                # Tạo mới nếu chưa tồn tại
-                create_result = @farm_material_repository.create(
-                  {
-                    name: supply[:name],
-                    material_id: supply[:id],
-                    quantity: order.quantity,
-                    unit: supply[:unit],
-                    category: convert_category(supply[:category]),
-                    last_updated: Time.current
-                  },
-                  farmer_id
-                )
-                
-                return { success: false, errors: create_result[:errors] } if create_result[:success] == false
-              end
-              
-              { success: true }
-            rescue => e
-              { success: false, errors: ["Lỗi khi cập nhật kho vật tư: #{e.message}"] }
-            end
-          end
-          
-          def convert_category(supply_category)
-            # Chuyển đổi category từ supply_listing sang farm_material
-            category_map = {
-              "fertilizer" => "fertilizer",
-              "pesticide" => "pesticide",
-              "seed" => "seed",
-              "tool" => "tool"
+          rescue => e
+            # Xử lý ngoại lệ nếu có
+            Rails.logger.error("Lỗi khi cập nhật kho: #{e.message}")
+            return { 
+              success: true, 
+              data: updated_order,
+              warning: "Đơn hàng đã hoàn thành nhưng có lỗi khi cập nhật kho: #{e.message}"
             }
-            
-            category_map[supply_category.to_s] || "other"
           end
+
+          # Trả về thành công với đơn hàng đã cập nhật
+          { success: true, data: updated_order }
+        end
+
+        private
+
+        def update_farm_inventory(order, farmer_id)
+          Rails.logger.info("Bắt đầu cập nhật kho từ đơn hàng #{order.id}")
+          Rails.logger.info("Supply listing: #{order.supply_listing.inspect}")
+          Rails.logger.info("Giá: #{order.price}")
+          
+          result = @inventory_service.update_from_supply_order(order.id, order, farmer_id)
+          
+          Rails.logger.info("Kết quả cập nhật kho: #{result.inspect}")
+          result
         end
       end
     end
   end
+end
