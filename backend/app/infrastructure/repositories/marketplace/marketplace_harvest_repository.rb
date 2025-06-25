@@ -158,6 +158,24 @@ module Repositories
         record.destroyed? if record
       end
 
+      # Thêm phương thức này vào repository
+      def update_status(id, status, user_id)
+        record = ::Models::Marketplace::MarketplaceHarvest.find_by(id: id)
+        return { success: false, errors: ["Không tìm thấy đơn thu hoạch"] } unless record
+        
+        # Kiểm tra quyền
+        product_listing = record.product_listing
+        unless record.trader_id == user_id || product_listing&.user_id == user_id
+          return { success: false, errors: ["Bạn không có quyền cập nhật đơn thu hoạch này"] }
+        end
+        
+        if record.update(status: status)
+          { success: true, harvest: map_to_entity(record) }
+        else
+          { success: false, errors: record.errors.full_messages }
+        end
+      end
+
       private
 
       def map_to_entity(record)

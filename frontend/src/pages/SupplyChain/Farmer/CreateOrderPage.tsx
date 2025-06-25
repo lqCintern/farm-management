@@ -123,6 +123,7 @@ const CreateOrderPage: React.FC = () => {
         supply_order: {
           quantity: orderForm.quantity,
           note: orderForm.note,
+          price: listing.price,
           delivery_province: selectedField.province || '',
           delivery_district: selectedField.district || '',
           delivery_ward: selectedField.ward || '',

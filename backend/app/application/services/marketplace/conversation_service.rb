@@ -1,16 +1,16 @@
 module Services::Marketplace
   class ConversationService
     def find_conversation(product_listing_id, trader_id)
-      product_listing = ProductListing.find_by(id: product_listing_id)
+      product_listing = Models::Marketplace::ProductListing.find_by(id: product_listing_id)
       return nil unless product_listing
 
       farmer_id = product_listing.user_id
 
-      Conversation.find_by(
+      Models::Conversation.find_by(
         product_listing_id: product_listing_id,
         sender_id: trader_id,
         receiver_id: farmer_id
-      ) || Conversation.find_by(
+      ) || Models::Conversation.find_by(
         product_listing_id: product_listing_id,
         sender_id: farmer_id,
         receiver_id: trader_id
@@ -18,7 +18,7 @@ module Services::Marketplace
     end
 
     def send_message(conversation_id, user_id, content, type = "text", additional_data = {})
-      FirebaseMessageService.save_message(conversation_id, {
+      Services::Firebase::FirebaseMessageService.save_message(conversation_id, {
         user_id: user_id,
         content: content,
         type: type,

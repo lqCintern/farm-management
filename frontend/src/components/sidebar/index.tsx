@@ -172,6 +172,7 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
         { title: 'Trò chuyện', path: '/chat' },
         { title: 'Theo dõi cánh đồng', path: '/fields' },
         { title: 'Các mùa vụ', path: '/pineapple' },
+        { title: 'Thống kê', path: '/farmer/statistics' },
       ],
       category: 'general'
     },
@@ -188,8 +189,9 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
       title: 'Vật tư nông nghiệp',
       icon: <ToolOutlined />,
       children: [
-        { title: 'Danh sách vật tư', path: '/farmer/listings' },
-        { title: 'Đơn hàng của tôi', path: '/farmer/orders' },
+        { title: 'Tìm mua vật tư', path: '/farmer/listings' },
+        { title: 'Đơn hàng vật tư', path: '/farmer/orders' },
+        { title: 'Kho', path: '/farmer/inventory' },
       ],
       category: 'supply'
     },

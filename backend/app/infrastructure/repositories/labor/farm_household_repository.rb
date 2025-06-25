@@ -14,7 +14,7 @@ module Repositories
       end
 
       def all
-        ::Labor::FarmHousehold.all.map { |record| map_to_entity(record) }
+        Models::Labor::FarmHousehold.all.map { |record| map_to_entity(record) }
       end
 
       def create(household_entity)

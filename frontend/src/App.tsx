@@ -74,7 +74,9 @@ import SupplierEditListingPage from './pages/SupplyChain/Supplier/EditListingPag
 import SupplierOrdersReceivedPage from './pages/SupplyChain/Supplier/OrdersReceivedPage';
 import SupplierOrderDetailPage from './pages/SupplyChain/Supplier/OrderDetailPage';
 import WeatherDashboardPage from './pages/climate/WeatherDashboardPage';
-
+import InventoryPage from './pages/Farming/InventoryPage';
+import HarvestStatisticsPage from './pages/Farming/HarvestStatisticsPage';
+import MaterialDetailPage from './pages/Farming/MaterialDetailPage';
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path={routes.index} element={<MainLayout />}>
@@ -153,6 +155,9 @@ const router = createBrowserRouter(
       <Route path="/farmer/orders/create/:id" element={<CreateOrderPage />} />
       <Route path="/farmer/orders" element={<FarmerMyOrdersPage />} />
       <Route path="/farmer/orders/:id" element={<FarmerOrderDetailPage />} />
+      <Route path="/farmer/inventory" element={<InventoryPage />} />
+      <Route path="/farmer/statistics" element={<HarvestStatisticsPage />} />
+      <Route path="/farmer/inventory/:id" element={<MaterialDetailPage />} />
 
       {/* Supplier Routes */}
       <Route path="/supplier/dashboard" element={<SupplierDashboardPage />} />

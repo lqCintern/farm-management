@@ -147,6 +147,13 @@ module Services
         )
       end
 
+      def self.marketplace_update_harvest_status
+        UseCases::Marketplace::MarketplaceHarvests::UpdateMarketplaceHarvestStatus.new(
+          Repositories::Marketplace::MarketplaceHarvestRepository.new,
+          Repositories::Farming::HarvestRepository.new
+        )
+      end
+
       # Notification repository
       def notification_repository
         @notification_repository ||= Repositories::Notification::NotificationRepository.new
@@ -397,6 +404,12 @@ module Services
 
       def farming_delete_farm_material
         @farming_delete_farm_material ||= UseCases::Farming::FarmMaterials::DeleteFarmMaterial.new(
+          farming_farm_material_repository
+        )
+      end
+
+      def self.farming_get_farm_material_details
+        UseCases::Farming::FarmMaterials::GetFarmMaterialDetails.new(
           farming_farm_material_repository
         )
       end
@@ -1001,6 +1014,13 @@ module Services
         )
       end
 
+      def farmer_complete_order_and_update_inventory
+        @farmer_complete_order_and_update_inventory ||= UseCases::SupplyChain::Farmer::CompleteOrderAndUpdateInventory.new(
+          supply_order_repository,
+          farming_farm_material_repository
+        )
+      end
+
       def farmer_update_order
         @farmer_update_order ||= UseCases::SupplyChain::SupplyOrders::UpdateFarmerOrder.new(
           supply_order_repository
@@ -1055,6 +1075,43 @@ module Services
       def user_repository
         @user_repository ||= Repositories::Users::UserRepository.new
       end
+    end
+
+    # Repositories
+    def self.farming_farm_material_repository
+      @farming_farm_material_repository ||= Repositories::Farming::FarmMaterialRepository.new
+    end
+    
+    def self.farming_farm_material_transaction_repository
+      @farming_farm_material_transaction_repository ||= Repositories::Farming::FarmMaterialTransactionRepository.new
+    end
+    
+    def self.farming_farm_activity_material_repository
+      @farming_farm_activity_material_repository ||= Repositories::Farming::FarmActivityMaterialRepository.new
+    end
+    
+    # Services
+    def self.farming_farm_material_inventory_service
+      @farming_farm_material_inventory_service ||= Services::Farming::FarmMaterialInventoryService.new(
+        farming_farm_material_repository,
+        farming_farm_material_transaction_repository
+      )
+    end
+    
+    def self.farming_farm_material_statistics_service
+      @farming_farm_material_statistics_service ||= Services::Farming::FarmMaterialStatisticsService.new(
+        farming_farm_material_repository,
+        farming_farm_material_transaction_repository,
+        farming_farm_activity_material_repository
+      )
+    end
+    
+    # Use Cases
+    def self.farmer_complete_order_and_update_inventory
+      UseCases::SupplyChain::Farmer::CompleteOrderAndUpdateInventory.new(
+        supply_order_repository,
+        farming_farm_material_inventory_service
+      )
     end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -70,9 +70,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
     t.bigint "receiver_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "unread_count", default: 0
+    t.datetime "last_message_at"
     t.index ["product_listing_id", "sender_id", "receiver_id"], name: "idx_unique_conversations", unique: true
     t.index ["product_listing_id"], name: "index_conversations_on_product_listing_id"
     t.index ["receiver_id"], name: "index_conversations_on_receiver_id"
+    t.index ["sender_id", "receiver_id", "product_listing_id"], name: "index_conversations_on_participants_and_listing", unique: true
     t.index ["sender_id"], name: "index_conversations_on_sender_id"
   end
 
@@ -96,6 +99,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
     t.index ["parent_activity_id"], name: "index_farm_activities_on_parent_activity_id"
   end
 
+  create_table "farm_material_transactions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "farm_material_id", null: false
+    t.bigint "user_id", null: false
+    t.decimal "quantity", precision: 10, scale: 2, null: false
+    t.decimal "unit_price", precision: 10, scale: 2, null: false
+    t.decimal "total_price", precision: 10, scale: 2, null: false
+    t.string "transaction_type", null: false
+    t.string "source_type"
+    t.bigint "source_id"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["farm_material_id"], name: "index_farm_material_transactions_on_farm_material_id"
+    t.index ["source_type", "source_id"], name: "index_farm_material_transactions_on_source"
+    t.index ["transaction_type"], name: "index_farm_material_transactions_on_transaction_type"
+    t.index ["user_id"], name: "index_farm_material_transactions_on_user_id"
+  end
+
   create_table "farm_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.integer "user_id", null: false
@@ -106,6 +127,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
     t.datetime "updated_at", null: false
     t.string "unit"
     t.integer "category", default: 4
+    t.decimal "unit_cost", precision: 10, scale: 2, default: "0.0"
+    t.decimal "total_cost", precision: 10, scale: 2, default: "0.0"
   end
 
   create_table "fields", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -130,8 +153,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
     t.json "coordinates"
     t.bigint "field_id"
     t.bigint "farm_activity_id"
+    t.bigint "marketplace_harvest_id"
+    t.boolean "is_marketplace_sale", default: false
+    t.decimal "sale_price", precision: 10, scale: 2
     t.index ["farm_activity_id"], name: "index_harvests_on_farm_activity_id"
     t.index ["field_id"], name: "index_harvests_on_field_id"
+    t.index ["is_marketplace_sale"], name: "index_harvests_on_is_marketplace_sale"
+    t.index ["marketplace_harvest_id"], name: "index_harvests_on_marketplace_harvest_id"
   end
 
   create_table "labor_assignments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -280,6 +308,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
     t.boolean "read", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "image_url"
+    t.string "message_type", default: "text"
+    t.json "payment_info"
+    t.json "metadata"
+    t.datetime "read_at"
     t.index ["conversation_id", "created_at"], name: "index_messages_on_conversation_id_and_created_at"
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
     t.index ["user_id", "read"], name: "index_messages_on_user_id_and_read"
@@ -582,6 +615,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_10_191239) do
   add_foreign_key "conversations", "users", column: "sender_id", primary_key: "user_id"
   add_foreign_key "farm_activities", "farm_activities", column: "parent_activity_id"
   add_foreign_key "farm_activities", "fields"
+  add_foreign_key "farm_material_transactions", "farm_materials"
   add_foreign_key "fields", "users", primary_key: "user_id"
   add_foreign_key "harvests", "farm_activities"
   add_foreign_key "harvests", "fields"

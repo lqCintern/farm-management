@@ -2,15 +2,14 @@ module Services::Farming
   class FarmActivityNotificationService
     def activity_reminder(activity, days_before = 7)
       # Thông báo nhắc nhở về hoạt động sắp diễn ra
-      user = ::User.find_by(id: activity.user_id)
+      user = Models::User.find_by(user_id: activity.user_id)
       return unless user
 
-      ::Notification.create!(
-        user_id: activity.user_id,
+      Models::Notifications::Notification.create!(
+        recipient_id: activity.user_id,  # Thay user_id bằng recipient_id
         title: "Nhắc nhở lịch chăm sóc",
-        content: "Hoạt động #{activity_name(activity)} sẽ bắt đầu trong #{days_before} ngày",
-        category: "farm_activity",
-        status: "unread",
+        message: "Hoạt động #{activity_name(activity)} sẽ bắt đầu trong #{days_before} ngày",  # Thay content bằng message
+        category: "farm",
         event_type: "activity_reminder",
         notifiable_type: "Farming::FarmActivity",
         notifiable_id: activity.id
@@ -19,14 +18,14 @@ module Services::Farming
 
     def activity_completed(activity)
       # Thông báo hoạt động đã hoàn thành
-      user = ::User.find_by(id: activity.user_id)
+      user = Models::User.find_by(user_id: activity.user_id)
       return unless user
 
-      ::Notification.create!(
-        user_id: activity.user_id,
+      Models::Notifications::Notification.create!(
+        recipient_id: activity.user_id,  # Thay user_id bằng recipient_id
         title: "Hoạt động đã hoàn thành",
-        content: "Hoạt động #{activity_name(activity)} đã được hoàn thành",
-        category: "farm_activity",
+        message: "Hoạt động #{activity_name(activity)} đã được hoàn thành",  # Thay content bằng message
+        category: "farm",
         status: "unread",
         event_type: "activity_completed",
         notifiable_type: "Farming::FarmActivity",
@@ -36,14 +35,14 @@ module Services::Farming
 
     def activity_updated(activity)
       # Thông báo hoạt động đã được cập nhật
-      user = ::User.find_by(id: activity.user_id)
+      user = Models::User.find_by(user_id: activity.user_id)
       return unless user
 
-      ::Notification.create!(
-        user_id: activity.user_id,
+      Models::Notifications::Notification.create!(
+        recipient_id: activity.user_id,  # Thay user_id bằng recipient_id
         title: "Hoạt động đã được cập nhật",
-        content: "Hoạt động #{activity_name(activity)} đã được cập nhật",
-        category: "farm_activity",
+        message: "Hoạt động #{activity_name(activity)} đã được cập nhật",  # Thay content bằng message
+        category: "farm",
         status: "unread",
         event_type: "activity_updated",
         notifiable_type: "Farming::FarmActivity",
@@ -53,16 +52,16 @@ module Services::Farming
 
     def activity_overdue(activity)
       # Thông báo hoạt động quá hạn
-      user = ::User.find_by(id: activity.user_id)
+      user = Models::User.find_by(user_id: activity.user_id)
       return unless user
 
       days_overdue = activity.status_details[:overdue_days]
 
-      ::Notification.create!(
-        user_id: activity.user_id,
+      Models::Notifications::Notification.create!(
+        recipient_id: activity.user_id,  # Thay user_id bằng recipient_id
         title: "Hoạt động quá hạn",
-        content: "Hoạt động #{activity_name(activity)} đã quá hạn #{days_overdue} ngày",
-        category: "farm_activity",
+        message: "Hoạt động #{activity_name(activity)} đã quá hạn #{days_overdue} ngày",  # Thay content bằng message
+        category: "farm",
         status: "unread",
         event_type: "activity_overdue",
         notifiable_type: "Farming::FarmActivity",

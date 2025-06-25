@@ -105,7 +105,7 @@ module Repositories
       end
 
       def order_exists?(product_listing_id, buyer_id)
-        ::Marketplace::ProductOrder.exists?(
+        Models::Marketplace::ProductOrder.exists?(
           product_listing_id: product_listing_id,
           buyer_id: buyer_id
         )

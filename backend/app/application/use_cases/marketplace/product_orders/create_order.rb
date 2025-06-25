@@ -5,12 +5,12 @@ module UseCases::Marketplace
         @repository = repository
         @product_repository = product_repository
         @notification_service = notification_service || Services::CleanArch.notification_service
-        @conversation_service = conversation_service || ::Marketplace::ConversationService.new
+        @conversation_service = conversation_service || Services::Marketplace::ConversationService.new
       end
 
       def execute(attributes, user_id)
         # Kiểm tra role
-        user = User.find_by(user_id: user_id)
+        user = Models::User.find_by(user_id: user_id)
         unless user&.trader?
           return { success: false, error: "Chỉ thương lái mới có thể đặt mua sản phẩm" }
         end
@@ -65,7 +65,7 @@ module UseCases::Marketplace
       private
 
       def create_or_find_conversation(product, user_id)
-        ::Conversation.find_or_create_by(
+        Models::Conversation.find_or_create_by(
           product_listing_id: product.id,
           sender_id: user_id,
           receiver_id: product.user_id

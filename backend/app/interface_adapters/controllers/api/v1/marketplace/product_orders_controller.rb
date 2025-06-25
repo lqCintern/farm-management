@@ -9,7 +9,7 @@ module Controllers::Api
 
         # GET /api/v1/marketplace/product_orders
         def index
-          filter_params = ::Models::Marketplace::ProductOrderFormatter.format_filter_params(
+          filter_params = Formatters::Marketplace::ProductOrderFormatter.format_filter_params(
             user_id: current_user.user_id,
             user_type: current_user.user_type,
             status: params[:status],
@@ -19,7 +19,7 @@ module Controllers::Api
 
           result = Services::CleanArch.marketplace_list_orders.execute(**filter_params)
 
-          render json: ::Marketplace::ProductOrderPresenter.format_index_response(result),
+          render json: Presenters::Marketplace::ProductOrderPresenter.format_index_response(result),
                  status: :ok
         end
 
@@ -30,7 +30,7 @@ module Controllers::Api
             current_user.user_id
           )
 
-          response_data = ::Models::Marketplace::ProductOrderPresenter.format_show_response(result)
+          response_data = ::Presenters::Marketplace::ProductOrderPresenter.format_show_response(result)
 
           if result[:success]
             render json: response_data, status: :ok
@@ -75,7 +75,7 @@ module Controllers::Api
         # PUT/PATCH /api/v1/marketplace/product_orders/:id
         def update
           if params[:status].present?
-            status_params = ::Models::Marketplace::ProductOrderFormatter.format_status_params(
+            status_params = Formatters::Marketplace::ProductOrderFormatter.format_status_params(
               params[:id],
               params[:status],
               current_user.user_id,
@@ -90,7 +90,7 @@ module Controllers::Api
             )
 
             # Presenter định dạng response
-            response_data = ::Models::Marketplace::ProductOrderPresenter.format_status_update_response(result)
+            response_data = ::Presenters::Marketplace::ProductOrderPresenter.format_status_update_response(result)
 
             if result[:success]
               render json: response_data, status: :ok
@@ -98,7 +98,7 @@ module Controllers::Api
               render json: response_data, status: :unprocessable_entity
             end
           else
-            update_params = ::Models::Marketplace::ProductOrderFormatter.format_update_params(
+            update_params = Formatters::Marketplace::ProductOrderFormatter.format_update_params(
               product_order_update_params.to_h
             )
 
@@ -108,7 +108,7 @@ module Controllers::Api
               current_user.user_id
             )
 
-            response_data = ::Models::Marketplace::ProductOrderPresenter.format_update_response(result)
+            response_data = ::Presenters::Marketplace::ProductOrderPresenter.format_update_response(result)
 
             if result[:success]
               render json: response_data, status: :ok
