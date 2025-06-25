@@ -67,7 +67,7 @@ module Controllers::Api
           if result[:success]
             # Gửi thông báo cho các providing households
             result[:child_requests].each do |child_request|
-              if child_request[:providing_household_id].present?
+              if child_request.providing_household_id.present?
                 notification_dto = Services::CleanArch.prepare_labor_notification.execute(child_request)
                 Services::CleanArch.notification_service.new_labor_request(notification_dto)
               end
@@ -151,19 +151,34 @@ module Controllers::Api
 
         # Chấp nhận yêu cầu
         def accept
+          request_result = Services::CleanArch.labor_get_request.execute(params[:id])
+          return render_error_response(request_result[:errors], :not_found) unless request_result[:success]
+          
+          request = request_result[:request]
+          
+          # Kiểm tra nếu public và chưa được chỉ định cho household hiện tại
+          if request[:is_public] && request[:providing_household_id] != current_household.id
+            return render_error_response("Đây là yêu cầu công khai, vui lòng sử dụng tính năng tham gia", :unprocessable_entity)
+          end
+          
+          # Kiểm tra quyền - household phải là providing_household
+          unless request[:providing_household_id] == current_household.id
+            return render_error_response("Bạn không có quyền chấp nhận yêu cầu này", :unprocessable_entity)
+          end
+          
           result = Services::CleanArch.labor_process_request.execute(
             params[:id],
             :accept,
             current_user.id
           )
-
+          
           if result[:success]
             # Thông báo cho người tạo yêu cầu
             Services::CleanArch.notification_service.labor_request_response(
               result[:request],
               "accepted"
             )
-
+            
             render_success_response({
               request: result[:request],
               group_status: result[:group_status]

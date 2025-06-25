@@ -6,6 +6,7 @@ import {
   adjustExchangeBalance,
   recalculateExchangeBalance 
 } from '@/services/labor/exchangeService';
+import { getCurrentHousehold } from '@/services/labor/householdService';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import ConfirmModal from '@/components/common/ConfirmModal';
@@ -51,6 +52,7 @@ interface Transaction {
   };
   direction_info?: { // Add direction_info property
     requesting_household_id: number;
+    requesting_household_name: string;
     providing_household_id: number;
     providing_household_name: string;
   };
@@ -77,6 +79,7 @@ interface ExchangeDetail {
   direction: 'positive' | 'negative' | 'neutral';
   detailed_history?: DetailedRequest[];
   transactions?: Transaction[]; // Added transactions property
+  partner_name: string;
 }
 
 const ExchangeDetail = () => {
@@ -96,6 +99,7 @@ const ExchangeDetail = () => {
     new_balance: number;
     difference: number;
   } | null>(null);
+  const [currentHousehold, setCurrentHousehold] = useState<{ id: number; name: string } | null>(null);
   
   useEffect(() => {
     const fetchDetail = async () => {
@@ -103,6 +107,10 @@ const ExchangeDetail = () => {
       
       try {
         setLoading(true);
+        // Lấy household hiện tại
+        const householdRes: any = await getCurrentHousehold();
+        setCurrentHousehold(householdRes.data || householdRes);
+        // Lấy chi tiết exchange
         const response = await getExchangeDetails(parseInt(householdId));
         
         // Kiểm tra cấu trúc response và chuyển đổi nếu cần
@@ -113,6 +121,7 @@ const ExchangeDetail = () => {
             // Tạo cấu trúc compatible cho component từ dữ liệu transactions
             const partnerInfo: Transaction['direction_info'] = (response as { data: { transactions: Transaction[] } }).data.transactions[0]?.direction_info || {
               requesting_household_id: 0,
+              requesting_household_name: "Unknown",
               providing_household_id: 0,
               providing_household_name: "Unknown",
             };
@@ -128,7 +137,8 @@ const ExchangeDetail = () => {
               },
               balance: 0, // Sẽ tính toán từ transactions
               direction: 'neutral',
-              transactions: (response as { data: { transactions: Transaction[] } }).data.transactions
+              transactions: (response as { data: { transactions: Transaction[] } }).data.transactions,
+              partner_name: (response as { data: { partner_name: string } }).data.partner_name || "Hộ không xác định"
             };
             
             // Tính tổng balance từ transactions
@@ -345,6 +355,16 @@ const ExchangeDetail = () => {
     );
   };
 
+  // Sửa lại tên đối tác: luôn lấy partner_name từ response
+  const getPartnerName = () => {
+    if (!exchangeDetail) return '';
+    // Nếu partner_name là household hiện tại thì ghi rõ "Nhà mình", còn lại thì lấy partner_name
+    if (currentHousehold && exchangeDetail.partner_name === currentHousehold.name) {
+      return 'Nhà mình';
+    }
+    return exchangeDetail.partner_name;
+  };
+
   return (
     <div className="container mx-auto p-4">
       {loading ? (
@@ -359,7 +379,7 @@ const ExchangeDetail = () => {
         <>
           <div className="mb-6 flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold">Chi tiết đổi công với {exchangeDetail.exchange.household_b_name}</h1>
+              <h1 className="text-2xl font-bold">Chi tiết đổi công với {getPartnerName()}</h1>
               <p className="text-gray-500">Quản lý số dư và giao dịch đổi công</p>
             </div>
             <div>
@@ -414,39 +434,39 @@ const ExchangeDetail = () => {
                 <div className="mt-6 md:mt-0">
                   <h3 className="text-lg font-medium mb-4">Thao tác</h3>
                   
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Button 
                       buttonType="primary" 
-                      className="w-full"
                       onClick={() => setShowAdjustModal(true)}
+                      title="Điều chỉnh số dư giờ công"
                     >
                       Điều chỉnh số dư
                     </Button>
                     
                     <Button 
-                      buttonType="secondary" 
-                      className="w-full"
+                      buttonType="secondary"
                       onClick={handleRecalculate}
                       disabled={processingAction}
+                      title="Tính lại số dư từ lịch sử giao dịch"
                     >
                       Tính lại số dư
                     </Button>
                     
                     <Button 
-                      buttonType="danger" 
-                      className="w-full"
+                      buttonType="danger"
                       onClick={() => setShowResetConfirm(true)}
                       disabled={exchangeDetail.balance === 0}
+                      title="Xóa toàn bộ số dư hiện tại"
                     >
                       Xóa số dư
                     </Button>
 
                     <Button 
-                      buttonType="primary" 
-                      className="w-full"
+                      buttonType="primary"
                       onClick={recalculateHoursWorked}
+                      title="Tính lại giờ công từ thời gian làm việc đã ghi nhận"
                     >
-                      Tính lại giờ công từ giờ làm việc
+                      Tính lại giờ công
                     </Button>
                   </div>
                 </div>
@@ -522,20 +542,31 @@ const ExchangeDetail = () => {
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold mb-3">Chi tiết yêu cầu đổi công</h3>
-                  
                   {exchangeDetail && exchangeDetail.transactions && exchangeDetail.transactions.length > 0 ? (
                     <div className="border rounded-lg p-4">
                       <h4 className="font-medium mb-3">
                         {exchangeDetail.transactions[0].assignment_details?.request_title || 'Giao dịch đổi công'}
                       </h4>
-                      
                       <div className="text-sm mb-3">
-                        <span className="font-medium">Yêu cầu:</span> {exchangeDetail.transactions[0].direction_info
-                          ? `Nhà mình`
-                          : 'Không xác định'} → 
-                        <span className="font-medium">Cung cấp:</span> {exchangeDetail.transactions[0].direction_info?.providing_household_name || 'Không xác định'}
+                        <span className="font-medium">Yêu cầu:</span> {
+                          (() => {
+                            const tx = exchangeDetail.transactions[0];
+                            if (!tx.direction_info || !currentHousehold) return 'Không xác định';
+                            return tx.direction_info.requesting_household_id === currentHousehold.id
+                              ? 'Nhà mình'
+                              : tx.direction_info.requesting_household_name;
+                          })()
+                        } → 
+                        <span className="font-medium">Cung cấp:</span> {
+                          (() => {
+                            const tx = exchangeDetail.transactions[0];
+                            if (!tx.direction_info || !currentHousehold) return 'Không xác định';
+                            return tx.direction_info.providing_household_id === currentHousehold.id
+                              ? 'Nhà mình'
+                              : tx.direction_info.providing_household_name;
+                          })()
+                        }
                       </div>
-                      
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>

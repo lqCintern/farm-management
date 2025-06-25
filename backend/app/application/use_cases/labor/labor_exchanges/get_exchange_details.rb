@@ -6,34 +6,34 @@ module UseCases::Labor
       end
 
       def execute(exchange_id, household_id)
-        # Tìm hoặc tạo mới exchange
-        exchange_result = @repository.find_by_households(@household_a_id, @household_b_id)
+        # Tìm exchange theo id
+        exchange_result = @exchange_repository.find(exchange_id)
         return { success: false, errors: exchange_result[:errors] } unless exchange_result[:success]
 
         exchange = exchange_result[:exchange]
-        balance = exchange.balance_for(@household_a_id)
+        balance = exchange.balance_for(household_id)
 
         # Xác định hướng số dư
         direction = if balance > 0
-                      "positive"  # Household A được nợ công
-        elsif balance < 0
-                      "negative"  # Household A nợ công
-        else
-                      "neutral"   # Cân bằng
-        end
+                      "positive"
+                    elsif balance < 0
+                      "negative"
+                    else
+                      "neutral"
+                    end
 
         # Lấy thông tin household partner
-        partner_id = exchange.partner_household_id(@household_a_id)
-        partner_name = exchange.partner_household_name(@household_a_id)
+        partner_id = exchange.partner_household_id(household_id)
+        partner_name = exchange.partner_household_name(household_id)
 
         # Lấy lịch sử giao dịch gần đây
-        transactions_result = @repository.get_transactions(exchange.id, { page: 1, per_page: 5 })
+        transactions_result = @exchange_repository.get_transactions(exchange.id, { page: 1, per_page: 5 })
 
         # Tạo danh sách transactions với thông tin phong phú
         enriched_transactions = transactions_result[:transactions].map do |tx|
           # Xác định vai trò của current household trong giao dịch này
-          is_requester = tx.direction_info&.dig(:requesting_household_id) == @household_a_id
-          is_provider = tx.direction_info&.dig(:providing_household_id) == @household_a_id
+          is_requester = tx.direction_info&.dig(:requesting_household_id) == household_id
+          is_provider = tx.direction_info&.dig(:providing_household_id) == household_id
 
           # Tạo mô tả dễ đọc
           readable_description = if tx.labor_assignment_id.present?
@@ -75,7 +75,7 @@ module UseCases::Labor
             direction: direction,
             partner_name: partner_name,
             transactions: enriched_transactions,
-            detailed_history: get_detailed_history(@household_a_id, partner_id)
+            detailed_history: []
           }
         }
       end

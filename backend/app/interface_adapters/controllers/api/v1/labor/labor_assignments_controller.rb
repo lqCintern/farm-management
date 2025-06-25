@@ -31,24 +31,50 @@ module Controllers::Api
             end
           end
 
-          # Chuyển worker_ids thành worker_id
-          if assignment_params[:worker_ids].present? && assignment_params[:worker_ids].is_a?(Array)
-            assignment_params[:worker_id] = assignment_params[:worker_ids].first
-          end
-
           # Đảm bảo có home_household_id
           assignment_params[:home_household_id] ||= current_household.id
 
-          result = Services::CleanArch.labor_create_assignment.execute(
-            @labor_request,
-            assignment_params,
-            current_household
-          )
-
-          if result[:success]
-            render_success_response(result[:assignment], :created)
+          # Xử lý worker_ids array
+          if assignment_params[:worker_ids].present? && assignment_params[:worker_ids].is_a?(Array)
+            results = []
+            errors = []
+            
+            assignment_params[:worker_ids].each do |worker_id|
+              single_params = assignment_params.dup
+              single_params[:worker_id] = worker_id
+              single_params.delete(:worker_ids)
+              
+              result = Services::CleanArch.labor_create_assignment.execute(
+                @labor_request,
+                single_params,
+                current_household
+              )
+              
+              if result[:success]
+                results << result[:assignment]
+              else
+                errors += result[:errors]
+              end
+            end
+            
+            if results.any?
+              render_success_response(results, :created)
+            else
+              render_error_response(errors, :unprocessable_entity)
+            end
           else
-            render_error_response(result[:errors], :unprocessable_entity)
+            # Single assignment - giữ nguyên logic cũ
+            result = Services::CleanArch.labor_create_assignment.execute(
+              @labor_request,
+              assignment_params,
+              current_household
+            )
+
+            if result[:success]
+              render_success_response(result[:assignment], :created)
+            else
+              render_error_response(result[:errors], :unprocessable_entity)
+            end
           end
         end
 

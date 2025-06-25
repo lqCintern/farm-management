@@ -216,9 +216,14 @@ const PineappleCropFormPage: React.FC = () => {
       if (isEditMode) {
         await pineappleCropService.updatePineappleCrop(Number(id), cropData);
       } else {
-        const response = await pineappleCropService.createPineappleCrop(cropData) as { data: { id: number } };
-        const newCropId = response.data.id;
-        
+        const response = await pineappleCropService.createPineappleCrop(cropData) as { pineapple_crop?: { id: number } };
+        console.log('createPineappleCrop response:', response);
+        const newCropId = response?.pineapple_crop?.id;
+        if (!newCropId) {
+          setError('Không thể tạo vụ trồng dứa. Dữ liệu trả về không hợp lệ.');
+          setIsSubmitting(false);
+          return;
+        }
         if (editedActivities.length > 0) {
           await pineappleCropService.confirmPlan(newCropId, editedActivities);
         }

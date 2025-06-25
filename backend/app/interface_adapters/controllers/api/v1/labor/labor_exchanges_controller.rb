@@ -79,12 +79,20 @@ module Controllers::Api
         def recalculate
           household_b_id = params[:household_id].to_i
 
+          # Add debugging
+          Rails.logger.info "Starting recalculate for household_a_id: #{current_household.id}, household_b_id: #{household_b_id}"
+
           result = Services::CleanArch.labor_recalculate_balance.execute(
             current_household.id,
             household_b_id
           )
 
-          if result[:success]
+          # Add debugging to see what result contains
+          Rails.logger.info "Recalculate result: #{result.inspect}"
+          Rails.logger.info "Result class: #{result.class}"
+          Rails.logger.info "Result keys: #{result.keys if result.is_a?(Hash)}"
+
+          if result && result.is_a?(Hash) && result[:success]
             render_success_response({
               exchange: result[:exchange],
               old_balance: result[:old_balance],
@@ -92,7 +100,8 @@ module Controllers::Api
               difference: result[:diff]
             })
           else
-            render_error_response(result[:errors], :unprocessable_entity)
+            errors = result.is_a?(Hash) ? result[:errors] : ["Unknown error occurred"]
+            render_error_response(errors, :unprocessable_entity)
           end
         end
 
@@ -101,16 +110,35 @@ module Controllers::Api
           summaries = Services::CleanArch.labor_list_household_exchanges.execute(current_household.id)
           results = []
 
+          Rails.logger.info "Recalculate all - summaries: #{summaries.inspect}"
+
           summaries.each do |summary|
+            Rails.logger.info "Processing summary: #{summary.inspect}"
+            Rails.logger.info "Summary class: #{summary.class}"
+            
+            # Skip if summary is not a hash
+            next unless summary.is_a?(Hash)
+            
+            # Đảm bảo truy cập key an toàn với cả symbol và string
+            partner_id = summary[:partner_household_id] || summary["partner_household_id"]
+            partner_name = summary[:partner_household_name] || summary["partner_household_name"]
+
+            Rails.logger.info "Partner ID: #{partner_id}, Partner Name: #{partner_name}"
+
+            # Skip if partner_id is nil
+            next unless partner_id
+
             result = Services::CleanArch.labor_recalculate_balance.execute(
               current_household.id,
-              summary[:partner_household_id]
+              partner_id
             )
 
-            if result[:success]
+            Rails.logger.info "Recalculate result for partner #{partner_id}: #{result.inspect}"
+
+            if result && result.is_a?(Hash) && result[:success]
               results << {
-                household_id: summary[:partner_household_id],
-                household_name: summary[:partner_household_name],
+                household_id: partner_id,
+                household_name: partner_name,
                 old_balance: result[:old_balance],
                 new_balance: result[:new_balance],
                 difference: result[:diff]
@@ -135,17 +163,46 @@ module Controllers::Api
         def show_by_household
           household_b_id = params[:household_id].to_i
 
-          # Sử dụng use case get_exchange_details + find_by_households
-          result = Services::CleanArch.labor_get_transaction_history.execute(
+          # Tìm exchange giữa hai hộ
+          exchange_result = Services::CleanArch.labor_exchange_repository.find_by_households(
             current_household.id,
-            household_b_id,
-            { include_details: true }
+            household_b_id
           )
 
-          if result[:success]
-            render_success_response(result)
+          if exchange_result[:success]
+            exchange = exchange_result[:exchange]
+            
+            # Tính balance từ góc nhìn của current household
+            balance = exchange.balance_for(current_household.id)
+            
+            # Lấy transactions
+            transactions_result = Services::CleanArch.labor_get_transaction_history.execute(
+              current_household.id,
+              household_b_id,
+              { include_details: true }
+            )
+
+            if transactions_result[:success]
+              # Safely access data with fallbacks
+              transactions_data = transactions_result[:data] || {}
+              transactions = transactions_data[:transactions] || []
+              total = transactions_data[:total] || 0
+              pagination = transactions_data[:pagination] || {}
+              
+              result = Services::CleanArch.labor_get_exchange_details.execute(
+                exchange.id,
+                current_household.id
+              )
+              if result[:success]
+                render_success_response(result[:data])
+              else
+                render_error_response(result[:errors], :unprocessable_entity)
+              end
+            else
+              render_error_response(transactions_result[:errors], :unprocessable_entity)
+            end
           else
-            render_error_response(result[:errors], :unprocessable_entity)
+            render_error_response(exchange_result[:errors], :not_found)
           end
         end
 

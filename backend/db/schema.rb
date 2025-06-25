@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_25_171511) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -80,7 +80,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
   end
 
   create_table "farm_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.integer "crop_animal_id"
+    t.bigint "crop_animal_id"
     t.integer "activity_type", null: false
     t.string "description"
     t.integer "frequency"
@@ -95,6 +95,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
     t.bigint "parent_activity_id"
     t.bigint "field_id"
     t.json "coordinates"
+    t.index ["crop_animal_id"], name: "fk_rails_6aad277a0b"
     t.index ["field_id"], name: "index_farm_activities_on_field_id"
     t.index ["parent_activity_id"], name: "index_farm_activities_on_parent_activity_id"
   end
@@ -145,7 +146,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
 
   create_table "harvests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.integer "crop_id", null: false
+    t.bigint "crop_id", null: false
     t.decimal "quantity", precision: 10, scale: 2, null: false
     t.timestamp "harvest_date", null: false
     t.datetime "created_at", null: false
@@ -156,6 +157,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
     t.bigint "marketplace_harvest_id"
     t.boolean "is_marketplace_sale", default: false
     t.decimal "sale_price", precision: 10, scale: 2
+    t.index ["crop_id"], name: "fk_rails_ff578d0966"
     t.index ["farm_activity_id"], name: "index_harvests_on_farm_activity_id"
     t.index ["field_id"], name: "index_harvests_on_field_id"
     t.index ["is_marketplace_sale"], name: "index_harvests_on_is_marketplace_sale"
@@ -468,12 +470,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
 
   create_table "sales", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.integer "crop_id", null: false
+    t.bigint "crop_id"
     t.decimal "quantity", precision: 10, scale: 2, null: false
     t.decimal "price", precision: 10, scale: 2, null: false
     t.timestamp "sale_date", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["crop_id"], name: "fk_rails_aeb51deac7"
   end
 
   create_table "supplier_reviews", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -553,6 +556,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
     t.index ["user_id"], name: "index_supply_orders_on_user_id"
   end
 
+  create_table "template_activity_materials", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "pineapple_activity_template_id", null: false
+    t.bigint "farm_material_id", null: false
+    t.float "quantity", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["farm_material_id"], name: "index_template_activity_materials_on_farm_material_id"
+    t.index ["pineapple_activity_template_id"], name: "idx_on_pineapple_activity_template_id_35279f3ab7"
+  end
+
   create_table "transactions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "transaction_type"
@@ -615,10 +628,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
   add_foreign_key "conversations", "users", column: "sender_id", primary_key: "user_id"
   add_foreign_key "farm_activities", "farm_activities", column: "parent_activity_id"
   add_foreign_key "farm_activities", "fields"
+  add_foreign_key "farm_activities", "pineapple_crops", column: "crop_animal_id", on_delete: :cascade
   add_foreign_key "farm_material_transactions", "farm_materials"
   add_foreign_key "fields", "users", primary_key: "user_id"
   add_foreign_key "harvests", "farm_activities"
   add_foreign_key "harvests", "fields"
+  add_foreign_key "harvests", "pineapple_crops", column: "crop_id", on_delete: :cascade
   add_foreign_key "labor_assignments", "labor_farm_households", column: "home_household_id"
   add_foreign_key "labor_assignments", "labor_requests"
   add_foreign_key "labor_assignments", "users", column: "worker_id", primary_key: "user_id"
@@ -648,12 +663,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_200440) do
   add_foreign_key "product_listings", "users", primary_key: "user_id"
   add_foreign_key "product_orders", "product_listings"
   add_foreign_key "product_orders", "users", column: "buyer_id", primary_key: "user_id"
+  add_foreign_key "sales", "pineapple_crops", column: "crop_id", on_delete: :nullify
   add_foreign_key "supplier_reviews", "supply_listings"
   add_foreign_key "supplier_reviews", "supply_orders"
   add_foreign_key "supplier_reviews", "users", column: "reviewer_id", primary_key: "user_id"
   add_foreign_key "supplier_reviews", "users", column: "supplier_id", primary_key: "user_id"
   add_foreign_key "supply_images", "supply_listings"
   add_foreign_key "supply_orders", "supply_listings"
+  add_foreign_key "template_activity_materials", "farm_materials"
+  add_foreign_key "template_activity_materials", "pineapple_activity_templates"
   add_foreign_key "weather_forecasts", "fields"
   add_foreign_key "weather_settings", "users", primary_key: "user_id"
 end

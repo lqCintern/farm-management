@@ -212,18 +212,38 @@ module Repositories
 
       def preview_plan(attributes)
         begin
-          service = ::Models::Farming::PlanGeneratorService.new  # Service mới, không phụ thuộc vào record
+          service = ::Services::Farming::PlanGeneratorService.new
           activities_data = service.preview_activities_for_params(attributes)
 
           activities_entities = activities_data.map do |act|
+            # Tìm template tương ứng để lấy thông tin vật tư
+            template = ::Models::Farming::PineappleActivityTemplate.find_by(
+              activity_type: act[:activity_type],
+              stage: act[:stage]
+            )
+            
+            # Lấy thông tin vật tư nếu có template
+            materials = []
+            if template
+              materials = template.template_activity_materials.includes(:farm_material).map do |tam|
+                {
+                  id: tam.farm_material.id,
+                  name: tam.farm_material.name,
+                  quantity: tam.quantity,
+                  unit: tam.farm_material.unit
+                }
+              end
+            end
+            
             Entities::Farming::FarmActivity.new(
-              activity_type: act[:activity_type],  # Truy cập hash thay vì thuộc tính
+              activity_type: act[:activity_type],
               description: act[:description],
               start_date: act[:start_date],
               end_date: act[:end_date],
               frequency: act[:frequency] || 0,
               status: act[:status] || :pending,
-              field_id: act[:field_id] || attributes[:field_id]
+              field_id: act[:field_id] || attributes[:field_id],
+              materials: materials
             )
           end
 
@@ -278,7 +298,7 @@ module Repositories
           record.farm_activities.where.not(status: :completed).destroy_all
 
           # Tạo lại kế hoạch sử dụng PlanGeneratorService mới
-          service = ::Models::Farming::PlanGeneratorService.new
+          service = ::Services::Farming::PlanGeneratorService.new
           activities = service.generate_activities_for_crop(map_to_entity(record))
 
           # Gọi generate_plan với đủ tham số

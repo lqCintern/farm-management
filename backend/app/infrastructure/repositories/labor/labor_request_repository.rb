@@ -102,25 +102,33 @@ module Repositories
 
       # Cách repository nên nhận entity trong phiên bản chuẩn hóa
       def create(request_entity)
-        record = ::Models::Labor::LaborRequest.new(
-          title: request_entity.title,
-          description: request_entity.description,
-          request_type: request_entity.request_type,
-          status: request_entity.status || "pending",
-          requesting_household_id: request_entity.requesting_household_id,
-          providing_household_id: request_entity.providing_household_id,
-          start_date: request_entity.start_date,
-          end_date: request_entity.end_date,
-          start_time: request_entity.start_time,
-          end_time: request_entity.end_time,
-          workers_needed: request_entity.workers_needed,
-          is_public: request_entity.is_public || false,
-          parent_request_id: request_entity.parent_request_id,
-          request_group_id: request_entity.request_group_id,
-          max_acceptors: request_entity.max_acceptors,
-          farm_activity_id: request_entity.farm_activity_id,
-          rate: request_entity.rate
-        )
+        # Kiểm tra và xử lý nếu là hash
+        attributes = if request_entity.is_a?(Hash) || request_entity.is_a?(ActiveSupport::HashWithIndifferentAccess)
+                       request_entity # Nếu là hash, sử dụng trực tiếp
+                     else
+                       # Nếu là entity, trích xuất thuộc tính
+                       {
+                         title: request_entity.title,
+                         description: request_entity.description,
+                         request_type: request_entity.request_type,
+                         status: request_entity.status || "pending",
+                         requesting_household_id: request_entity.requesting_household_id,
+                         providing_household_id: request_entity.providing_household_id,
+                         start_date: request_entity.start_date,
+                         end_date: request_entity.end_date,
+                         start_time: request_entity.start_time,
+                         end_time: request_entity.end_time,
+                         workers_needed: request_entity.workers_needed,
+                         is_public: request_entity.is_public || false,
+                         parent_request_id: request_entity.parent_request_id,
+                         request_group_id: request_entity.request_group_id,
+                         max_acceptors: request_entity.max_acceptors,
+                         farm_activity_id: request_entity.farm_activity_id,
+                         rate: request_entity.rate
+                       }
+                     end
+
+        record = ::Models::Labor::LaborRequest.new(attributes)
 
         if record.save
           { success: true, request: map_to_entity(record) }
@@ -189,7 +197,6 @@ module Repositories
           errors: []
         }
 
-        # Tạo transaction để đảm bảo tính nhất quán
         ActiveRecord::Base.transaction do
           # Tạo group ID
           group_id = SecureRandom.uuid
@@ -215,7 +222,8 @@ module Repositories
           provider_ids.each do |provider_id|
             child_params = parent_params.dup
             child_params[:providing_household_id] = provider_id
-            child_params[:parent_request_id] = parent_result[:request][:id]
+            child_params[:parent_request_id] = parent_result[:request].id
+            child_params[:is_public] = false  # QUAN TRỌNG: Child requests không bao giờ được là public
 
             child_result = create(child_params)
 
@@ -226,7 +234,12 @@ module Repositories
             end
           end
 
-          # If we have errors but also created some child requests, we still consider it a success
+          # Nếu có lỗi nghiêm trọng trong quá trình tạo child requests, rollback
+          if result[:errors].any? && result[:child_requests].empty?
+            raise ActiveRecord::Rollback
+          end
+
+          # Nếu có ít nhất một child request được tạo thành công, coi như thành công
           result[:success] = result[:parent_request].present?
         end
 

@@ -284,7 +284,7 @@ module Services
       end
 
       def farming_plan_generator_service
-        @farming_plan_generator_service ||= UseCases::Farming::PlanGeneratorService.new
+        @farming_plan_generator_service ||= Services::Farming::PlanGeneratorService.new
       end
 
       # Thêm service phân trang nếu chưa có

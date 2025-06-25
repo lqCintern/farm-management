@@ -3,7 +3,7 @@ module Entities
     class PineappleActivityTemplate
       attr_accessor :id, :name, :description, :activity_type, :stage,
                     :day_offset, :duration_days, :season_specific, :is_required,
-                    :user_id, :created_at, :updated_at
+                    :user_id, :created_at, :updated_at, :materials
 
       def initialize(attributes = {})
         attributes.each do |key, value|

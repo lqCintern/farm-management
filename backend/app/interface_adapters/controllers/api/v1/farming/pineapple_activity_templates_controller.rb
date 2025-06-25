@@ -90,12 +90,40 @@ module Controllers::Api
           end
         end
 
+        # Thêm phương thức mới vào controller
+        def validate_materials
+          template = ::Models::Farming::PineappleActivityTemplate.find_by(id: params[:template_id])
+          return render json: { error: "Không tìm thấy mẫu hoạt động" }, status: :not_found unless template
+          
+          # Kiểm tra các vật tư cần thiết
+          material_status = []
+          template.template_activity_materials.includes(:farm_material).each do |template_material|
+            farm_material = ::Models::Farming::FarmMaterial.where(user_id: current_user.user_id)
+                         .find_by(id: template_material.farm_material_id)
+            
+            status = {
+              material_id: template_material.farm_material_id,
+              name: template_material.farm_material.name,
+              required_quantity: template_material.quantity,
+              unit: template_material.farm_material.unit,
+              available: farm_material&.available_quantity || 0,
+              sufficient: farm_material && farm_material.available_quantity >= template_material.quantity
+            }
+            
+            material_status << status
+          end
+          
+          render json: { data: material_status }, status: :ok
+        end
+
         private
 
+        # Cập nhật phương thức template_params để cho phép vật tư
         def template_params
           params.require(:template).permit(
             :name, :description, :activity_type, :stage,
-            :day_offset, :duration_days, :season_specific, :is_required
+            :day_offset, :duration_days, :season_specific, :is_required,
+            materials: {}
           )
         end
       end

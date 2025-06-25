@@ -11,7 +11,8 @@ import Checkbox from '@/components/common/Checkbox';
 import { formatDate } from '@/utils/formatters';
 
 interface Worker {
-  id: number;
+  id: number; // household_worker.id
+  worker_id: number; // user_id
   name: string;
   relationship: string;
   skills: string[];
@@ -78,18 +79,18 @@ const LaborAssignment = () => {
     fetchData();
   }, [requestId]);
 
-  const toggleWorkerSelection = (workerId: number) => {
+  const toggleWorkerSelection = (workerUserId: number) => {
     setWorkers(workers.map(worker => 
-      worker.id === workerId 
+      worker.worker_id === workerUserId 
         ? { ...worker, selected: !worker.selected }
         : worker
     ));
     
     setSelectedWorkers(prev => {
-      if (prev.includes(workerId)) {
-        return prev.filter(id => id !== workerId);
+      if (prev.includes(workerUserId)) {
+        return prev.filter(id => id !== workerUserId);
       } else {
-        return [...prev, workerId];
+        return [...prev, workerUserId];
       }
     });
   };
@@ -211,17 +212,17 @@ const LaborAssignment = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {workers.map(worker => (
                   <div 
-                    key={worker.id}
+                    key={worker.worker_id}
                     className={`border p-4 rounded-lg cursor-pointer transition-all ${
                       worker.selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
                     }`}
-                    onClick={() => toggleWorkerSelection(worker.id)}
+                    onClick={() => toggleWorkerSelection(worker.worker_id)}
                   >
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium">{worker.name}</h3>
                       <Checkbox 
                         checked={worker.selected} 
-                        onChange={() => toggleWorkerSelection(worker.id)}
+                        onChange={() => toggleWorkerSelection(worker.worker_id)}
                       />
                     </div>
                     <p className="text-sm text-gray-500">Quan hệ: {worker.relationship}</p>

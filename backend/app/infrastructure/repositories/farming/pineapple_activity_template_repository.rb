@@ -41,13 +41,27 @@ module Repositories
       end
 
       def create(attributes, user_id)
+        materials = attributes.delete(:materials)
+        
         record = ::Models::Farming::PineappleActivityTemplate.new(attributes)
         record.user_id = user_id
 
-        if record.save
-          map_to_entity(record)
-        else
-          { success: false, errors: record.errors.full_messages }
+        ActiveRecord::Base.transaction do
+          if record.save
+            # Xử lý materials nếu có
+            if materials.present?
+              materials.each do |material_id, quantity|
+                record.template_activity_materials.create!(
+                  farm_material_id: material_id.to_i,
+                  quantity: quantity.to_f
+                )
+              end
+            end
+            
+            map_to_entity(record)
+          else
+            { success: false, errors: record.errors.full_messages }
+          end
         end
       end
 
@@ -95,32 +109,86 @@ module Repositories
         start_date = reference_date + template.day_offset.days
         end_date = start_date + template.duration_days.days
 
-        # Tạo activity mới
-        activity = ::Models::Farming::FarmActivity.new(
-          user_id: crop.user_id,
-          crop_animal_id: crop.id,
-          field_id: crop.field_id,
-          activity_type: template.activity_type,
-          description: template.name,
-          status: "pending",
-          start_date: start_date,
-          end_date: end_date,
-          frequency: "once"
-        )
+        # Kiểm tra các vật tư cần thiết
+        materials_data = {}
+        material_errors = []
+        
+        template.template_activity_materials.includes(:farm_material).each do |template_material|
+          farm_material = ::Models::Farming::FarmMaterial.where(user_id: user_id)
+                       .find_by(id: template_material.farm_material_id)
+          
+          unless farm_material
+            material_errors << "Không tìm thấy vật tư #{template_material.farm_material.name}"
+            next
+          end
+          
+          if farm_material.available_quantity < template_material.quantity
+            material_errors << "Không đủ #{farm_material.name} (cần: #{template_material.quantity}, còn: #{farm_material.available_quantity} #{farm_material.unit})"
+            next
+          end
+          
+          materials_data[farm_material.id] = template_material.quantity
+        end
+        
+        # Nếu thiếu vật tư, báo lỗi
+        if material_errors.any?
+          return { success: false, errors: material_errors }
+        end
 
-        if activity.save
+        ActiveRecord::Base.transaction do
+          # Tạo activity mới
+          activity = ::Models::Farming::FarmActivity.new(
+            user_id: crop.user_id,
+            crop_animal_id: crop.id,
+            field_id: crop.field_id,
+            activity_type: template.activity_type,
+            description: template.name,
+            status: "pending",
+            start_date: start_date,
+            end_date: end_date,
+            frequency: "once"
+          )
+          
+          # Tạm thời bỏ qua validate để có thể xử lý vật tư sau
+          activity.skip_materials_check = true
+          activity.save!
+          
+          # Xử lý vật tư
+          materials_data.each do |material_id, quantity|
+            farm_material = ::Models::Farming::FarmMaterial.find(material_id)
+            
+            # Tạo liên kết vật tư
+            activity.activity_materials.create!(
+              farm_material_id: material_id,
+              planned_quantity: quantity
+            )
+            
+            # Trừ số lượng vật tư trong kho
+            farm_material.update!(quantity: farm_material.quantity - quantity)
+          end
+          
+          # Trả về hoạt động đã tạo
           {
             success: true,
             farm_activity: Repositories::Farming::FarmActivityRepository.new.send(:map_to_entity, activity)
           }
-        else
-          { success: false, errors: activity.errors.full_messages }
+        rescue => e
+          { success: false, errors: [e.message] }
         end
       end
 
       private
 
       def map_to_entity(record)
+        materials = record.template_activity_materials.includes(:farm_material).map do |tam|
+          {
+            id: tam.farm_material.id,
+            name: tam.farm_material.name,
+            quantity: tam.quantity,
+            unit: tam.farm_material.unit
+          }
+        end
+        
         Entities::Farming::PineappleActivityTemplate.new(
           id: record.id,
           name: record.name,
@@ -133,7 +201,8 @@ module Repositories
           is_required: record.is_required,
           user_id: record.user_id,
           created_at: record.created_at,
-          updated_at: record.updated_at
+          updated_at: record.updated_at,
+          materials: materials
         )
       end
     end

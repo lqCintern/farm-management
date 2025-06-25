@@ -122,7 +122,6 @@ module Repositories
         page = options[:page] || 1
         per_page = options[:per_page] || 20
 
-        # Sử dụng Pagy thay vì per()
         pagy = Pagy.new(count: Models::Labor::LaborExchangeTransaction.where(labor_exchange_id: exchange_id).count,
                        page: page,
                        items: per_page)
@@ -132,16 +131,24 @@ module Repositories
           .includes(labor_assignment: [ :worker, :labor_request ])
           .order(created_at: :desc)
           .offset(pagy.offset)
-          .limit(pagy.limit)  # Thay đổi: sử dụng limit thay vì items
+          .limit(pagy.limit)
+
+        Rails.logger.info "[DEBUG] Transaction IDs from DB: #{transactions.map(&:id)}"
+        entities = transactions.map do |t|
+          entity = map_transaction_to_entity(t)
+          Rails.logger.info "[DEBUG] Mapped entity for transaction id=#{t.id}: #{entity.as_json rescue entity.inspect}"
+          entity
+        end
+        Rails.logger.info "[DEBUG] Transaction entities after map: #{entities.inspect}"
 
         {
           success: true,
-          transactions: transactions.map { |t| map_transaction_to_entity(t) },
+          transactions: entities,
           total: pagy.count,
           pagination: {
             current_page: pagy.page,
-            per_page: pagy.limit,  # Thay đổi: sử dụng limit thay vì items
-            total_pages: pagy.last  # Thay đổi: sử dụng last thay vì pages
+            per_page: pagy.limit,
+            total_pages: pagy.last
           }
         }
       end
@@ -307,7 +314,7 @@ module Repositories
             worker_name = assignment.worker&.fullname || "Worker"
             description = "Recalculated: Work by #{worker_name} on #{assignment.work_date}"
 
-            ::Labor::LaborExchangeTransaction.create!(
+            ::Models::Labor::LaborExchangeTransaction.create!(
               labor_exchange_id: exchange.id,
               labor_assignment_id: assignment.id,
               hours: hours,
@@ -327,6 +334,7 @@ module Repositories
           result[:diff] = result[:new_balance] - result[:old_balance]
           result[:success] = true
           result[:exchange] = map_to_entity(exchange)
+          return result   # <-- BẮT BUỘC PHẢI CÓ DÒNG NÀY
         end
       rescue => e
         result[:errors] << "Lỗi khi tính toán lại số dư: #{e.message}"
@@ -366,18 +374,17 @@ module Repositories
       end
 
       def map_transaction_to_entity(transaction)
+        Rails.logger.info "[DEBUG] Mapping transaction id=#{transaction.id}"
         exchange = transaction.labor_exchange
         assignment_data = nil
         direction_info = {}
 
-        # Xác định thông tin người lao động và yêu cầu nếu có
         if transaction.labor_assignment_id.present?
           assignment = transaction.labor_assignment
           worker = assignment&.worker
           request = assignment&.labor_request
 
           if assignment && request
-            # Xác định hướng giao dịch và vai trò
             requesting_household = request.requesting_household
             providing_household = request.providing_household
 
@@ -389,7 +396,6 @@ module Repositories
               exchange_direction: requesting_household&.id == exchange.household_a_id ? "a_requested" : "b_requested"
             }
 
-            # Chi tiết assignment
             assignment_data = {
               worker_name: worker&.user_name || "Người lao động không xác định",
               work_date: assignment.work_date.to_s,
@@ -399,7 +405,6 @@ module Repositories
           end
         end
 
-        # Tạo entity transaction với đầy đủ thông tin
         transaction_entity = Entities::Labor::LaborExchangeTransaction.new(
           id: transaction.id,
           labor_exchange_id: transaction.labor_exchange_id,
@@ -413,11 +418,14 @@ module Repositories
           assignment_details: assignment_data
         )
 
-        # Thêm thông tin direction vào object để frontend sử dụng
         transaction_entity.instance_variable_set(:@direction_info, direction_info)
         def transaction_entity.direction_info; @direction_info; end
 
+        Rails.logger.info "[DEBUG] Done mapping transaction id=#{transaction.id}"
         transaction_entity
+      rescue => e
+        Rails.logger.error "[ERROR] map_transaction_to_entity failed for id=#{transaction.id}: #{e.message}"
+        nil
       end
     end
   end

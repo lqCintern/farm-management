@@ -25,6 +25,22 @@ module Entities
         errors << "Description is required" if description.nil? || description.empty?
         errors
       end
+
+      def as_json(*_args)
+        {
+          id: id,
+          labor_exchange_id: labor_exchange_id,
+          labor_assignment_id: labor_assignment_id,
+          hours: hours,
+          description: description,
+          created_at: created_at,
+          updated_at: updated_at,
+          worker_name: worker_name,
+          work_date: work_date,
+          assignment_details: assignment_details,
+          direction_info: defined?(@direction_info) ? @direction_info : nil
+        }
+      end
     end
   end
 end

@@ -79,7 +79,7 @@ module Models::Labor
       return if worker_id.blank? || work_date.blank?
 
       # Kiểm tra xem worker có đang được phân công vào ngày đó không
-      existing = Labor::LaborAssignment.where(worker_id: worker_id, work_date: work_date)
+      existing = Models::Labor::LaborAssignment.where(worker_id: worker_id, work_date: work_date)
                                       .where.not(id: id) # Loại trừ assignment hiện tại
 
       if existing.exists?
@@ -88,7 +88,7 @@ module Models::Labor
     end
 
     def update_worker_availability
-      worker_profile = Labor::WorkerProfile.find_by(user_id: worker_id)
+      worker_profile = Models::Labor::WorkerProfile.find_by(user_id: worker_id)
       worker_profile&.mark_as_busy! if work_date == Date.today
     end
 
@@ -102,7 +102,7 @@ module Models::Labor
       return unless [ "exchange", "mixed" ].include?(labor_request.request_type)
 
       # Tìm hoặc tạo labor_exchange giữa hai hộ
-      exchange = Labor::LaborExchange.find_or_create_between(
+      exchange = Models::Labor::LaborExchange.find_or_create_between(
         home_household_id,
         requesting_household.id
       )

@@ -15,7 +15,8 @@ function formatDate(dateStr: string): string {
 }
 
 interface Worker {
-  id: number;
+  id: number; // household_worker.id
+  worker_id: number; // user_id
   name: string;
   skills: string[];
   availability: string;
@@ -81,11 +82,11 @@ const CreateAssignment = () => {
     fetchData();
   }, [requestId]);
 
-  const toggleWorkerSelection = (workerId: number) => {
-    if (selectedWorkers.includes(workerId)) {
-      setSelectedWorkers(selectedWorkers.filter(id => id !== workerId));
+  const toggleWorkerSelection = (workerUserId: number) => {
+    if (selectedWorkers.includes(workerUserId)) {
+      setSelectedWorkers(selectedWorkers.filter(id => id !== workerUserId));
     } else {
-      setSelectedWorkers([...selectedWorkers, workerId]);
+      setSelectedWorkers([...selectedWorkers, workerUserId]);
     }
   };
 
@@ -315,14 +316,14 @@ const CreateAssignment = () => {
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {workers.map((worker) => (
-                    <div 
-                      key={worker.id} 
+                    <div
+                      key={worker.worker_id}
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedWorkers.includes(worker.id) 
+                        selectedWorkers.includes(worker.worker_id) 
                           ? 'bg-blue-50 border-blue-300' 
                           : 'border-gray-200 hover:bg-gray-50'
                       }`}
-                      onClick={() => toggleWorkerSelection(worker.id)}
+                      onClick={() => toggleWorkerSelection(worker.worker_id)}
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -340,21 +341,21 @@ const CreateAssignment = () => {
                             </div>
                           )}
                         </div>
-                        <input 
-                          type="checkbox" 
-                          checked={selectedWorkers.includes(worker.id)}
-                          onChange={() => toggleWorkerSelection(worker.id)}
+                        <input
+                          type="checkbox"
+                          checked={selectedWorkers.includes(worker.worker_id)}
+                          onChange={() => toggleWorkerSelection(worker.worker_id)}
                           className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                       </div>
                       
-                      {!isBatchMode && selectedWorkers.includes(worker.id) && (
+                      {!isBatchMode && selectedWorkers.includes(worker.worker_id) && (
                         <button 
                           type="button"
                           className="text-sm text-blue-600 hover:text-blue-800 mt-2"
                           onClick={(e) => {
                             e.stopPropagation();
-                            checkForConflicts(worker.id);
+                            checkForConflicts(worker.worker_id);
                           }}
                         >
                           Kiểm tra xung đột lịch

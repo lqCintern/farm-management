@@ -37,6 +37,9 @@ module Models::Farming
     scope :for_season, ->(season) { where("season_specific IS NULL OR season_specific = ?", season) }
     scope :required_only, -> { where(is_required: true) }
 
+    has_many :template_activity_materials, dependent: :destroy, class_name: "Farming::TemplateActivityMaterial"
+    has_many :farm_materials, through: :template_activity_materials, class_name: "Farming::FarmMaterial"
+
     # Tạo mẫu hoạt động dựa trên template
     def create_activity_from_template(pineapple_crop, reference_date)
       # Tính ngày bắt đầu và kết thúc dựa trên ngày tham chiếu

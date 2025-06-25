@@ -97,6 +97,7 @@ export default function PineappleCrops() {
   // Statistics
   const [stats, setStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchCrops();
@@ -164,24 +165,37 @@ export default function PineappleCrops() {
     setPagination({ ...pagination, current: 1 });
   };
 
-  const handleDelete = (id: number) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa vụ dứa',
-      content: 'Bạn có chắc muốn xóa vụ dứa này? Tất cả hoạt động liên quan cũng sẽ bị xóa.',
-      okText: 'Xóa',
-      okType: 'danger',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          await deletePineappleCrop(id);
-          message.success('Đã xóa vụ dứa thành công');
-          fetchCrops();
-          fetchStatistics();
-        } catch (error) {
-          message.error('Không thể xóa vụ dứa');
-        }
+  const handleDelete = async (id: number) => {
+    // Prevent multiple delete requests
+    if (deletingId === id) return;
+    
+    setDeletingId(id);
+    
+    try {
+      const response = await deletePineappleCrop(id);
+      console.log('Delete response:', response);
+      
+      message.success('Đã xóa vụ dứa thành công');
+      
+      // Refresh data
+      fetchCrops();
+      fetchStatistics();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      
+      // Show more specific error message
+      if (error.response?.data?.error) {
+        message.error(`Lỗi: ${error.response.data.error}`);
+      } else if (error.message) {
+        message.error(`Không thể xóa vụ dứa: ${error.message}`);
+      } else {
+        message.error('Không thể xóa vụ dứa. Vui lòng thử lại sau.');
       }
-    });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleAdvanceStage = async (id: number) => {
@@ -284,10 +298,16 @@ export default function PineappleCrops() {
           <Tooltip title="Xóa">
             <Button 
               icon={<DeleteOutlined />} 
-              onClick={() => handleDelete(record.id)}
+              onClick={() => {
+                if (window.confirm('Bạn có chắc muốn xóa vụ dứa này?')) {
+                  handleDelete(record.id);
+                }
+              }}
               type="text"
               danger
               size="small"
+              loading={deletingId === record.id}
+              disabled={deletingId === record.id}
             />
           </Tooltip>
           <Dropdown 
@@ -309,7 +329,21 @@ export default function PineappleCrops() {
                   key: 'advance',
                   label: 'Chuyển giai đoạn tiếp theo',
                   onClick: () => handleAdvanceStage(record.id)
-                }] : [])
+                }] : []),
+                {
+                  type: 'divider'
+                },
+                {
+                  key: 'delete',
+                  icon: <DeleteOutlined />,
+                  label: 'Xóa vụ dứa',
+                  danger: true,
+                  onClick: () => {
+                    if (window.confirm('Bạn có chắc muốn xóa vụ dứa này? Tất cả hoạt động liên quan cũng sẽ bị xóa.')) {
+                      handleDelete(record.id);
+                    }
+                  }
+                }
               ]
             }} 
             placement="bottomRight"

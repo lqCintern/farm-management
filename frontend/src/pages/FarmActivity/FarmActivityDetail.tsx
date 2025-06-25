@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getFarmActivityById, updateFarmActivity } from "@/services/farming/farmService";
+import { getFarmActivityById, updateFarmActivity, completeFarmActivity } from "@/services/farming/farmService";
 import { FarmActivity } from "@/types/labor/types";
 import { RequestStatus } from '@/types/labor/laborRequest.types';
 import Card from "@/components/common/Card";
@@ -90,8 +90,8 @@ const FarmActivityDetail = () => {
     
     try {
       setCompletingActivity(true);
-      await updateFarmActivity(activity.id, { 
-        status: "completed",
+      // Sử dụng completeFarmActivity thay vì updateFarmActivity
+      await completeFarmActivity(activity.id, {
         actual_notes: notes,
         actual_materials: actualMaterialsData
       });

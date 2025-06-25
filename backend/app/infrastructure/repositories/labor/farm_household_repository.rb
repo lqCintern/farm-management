@@ -107,6 +107,12 @@ module Repositories
         end
       end
 
+      def find_by_owner(owner_id)
+        record = ::Models::Labor::FarmHousehold.find_by(owner_id: owner_id)
+        return nil unless record
+        map_to_entity(record)
+      end
+
       private
 
       def map_to_entity(record)

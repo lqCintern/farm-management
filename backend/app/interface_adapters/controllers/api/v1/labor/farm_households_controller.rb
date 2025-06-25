@@ -51,6 +51,16 @@ module Controllers::Api
           end
         end
 
+        # GET /controllers/api/v1/labor/households/current
+        def current
+          household = Services::CleanArch.labor_farm_household_repository.find_by_owner(current_user.id)
+          if household
+            render_success_response(household)
+          else
+            render_error_response("Không tìm thấy hộ sản xuất của bạn", :not_found)
+          end
+        end
+
         private
 
         def set_household_id

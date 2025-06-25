@@ -5,7 +5,8 @@ module Models::Farming
     belongs_to :field, class_name: "Farming::Field", optional: true
     has_many :farm_activities, class_name: "Farming::FarmActivity", foreign_key: :crop_animal_id, dependent: :destroy
     has_many :harvests, class_name: "Farming::Harvest", foreign_key: :crop_id, dependent: :destroy
-    has_many :product_listings, dependent: :nullify
+    has_many :product_listings, class_name: "Marketplace::ProductListing", foreign_key: :crop_animal_id, dependent: :nullify
+    has_many :sales, class_name: "Marketplace::Sale", foreign_key: :crop_id, dependent: :nullify
 
     # Validations
     validates :name, :status, presence: true

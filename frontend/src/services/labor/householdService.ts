@@ -2,7 +2,7 @@ import axiosInstance from "@/utils/axiosConfig";
 
 // Lấy thông tin về hộ hiện tại
 export const getCurrentHousehold = async () => {
-  const response = await axiosInstance.get("/labor/households/current");
+  const response = await axiosInstance.get("/labor/farm_households/current");
   return response.data;
 };
 

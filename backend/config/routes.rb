@@ -169,6 +169,9 @@ Rails.application.routes.draw do
                 patch :update_status
               end
             end
+            collection do
+              get :current, to: "farm_households#current"
+            end
           end
 
           resources :worker_profiles do

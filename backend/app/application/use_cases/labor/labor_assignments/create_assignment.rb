@@ -34,8 +34,12 @@ module UseCases::Labor
 
         # Nếu là household nhận request, chỉ cho phép phân công workers thuộc household của mình
         if labor_request.providing_household_id == current_household.id
-          worker_household = ::Models::Labor::HouseholdWorker.find_by(worker_id: params[:worker_id])&.household_id
-          unless worker_household == current_household.id
+          worker_household = ::Models::Labor::HouseholdWorker.find_by(
+            worker_id: params[:worker_id],
+            household_id: current_household.id,
+            is_active: true
+          )
+          unless worker_household
             result[:errors] << "Bạn chỉ có thể phân công người lao động thuộc hộ của mình"
             return result
           end
@@ -45,6 +49,14 @@ module UseCases::Labor
         unless labor_request.start_date <= assignment_entity.work_date && labor_request.end_date >= assignment_entity.work_date
           result[:errors] << "Ngày làm việc phải nằm trong khoảng thời gian của yêu cầu"
           return result
+        end
+
+        # Validate time range
+        if assignment_entity.start_time && assignment_entity.end_time
+          if assignment_entity.end_time <= assignment_entity.start_time
+            result[:errors] << "Thời gian kết thúc phải sau thời gian bắt đầu"
+            return result
+          end
         end
 
         # Check availability
@@ -83,15 +95,27 @@ module UseCases::Labor
 
       def parse_time(time_param, work_date, default_time)
         if time_param.present?
-          # Nếu start_time từ frontend là chuỗi giờ:phút
-          if time_param.is_a?(String) && time_param.match(/^\d{1,2}:\d{2}(:\d{2})?$/)
+          # Nếu start_time từ frontend là chuỗi giờ:phút (HH:MM)
+          if time_param.is_a?(String) && time_param.match(/^\d{1,2}:\d{2}$/)
+            hours, minutes = time_param.split(":").map(&:to_i)
+            work_date.to_time.change(hour: hours, min: minutes, sec: 0)
+          # Nếu là chuỗi giờ:phút:giây (HH:MM:SS)
+          elsif time_param.is_a?(String) && time_param.match(/^\d{1,2}:\d{2}:\d{2}$/)
             hours, minutes, seconds = time_param.split(":").map(&:to_i)
-            seconds ||= 0
             work_date.to_time.change(hour: hours, min: minutes, sec: seconds)
-          else
-            # Nếu là datetime, chỉ lấy giờ phút và kết hợp với work_date
+          # Nếu là datetime string (ISO format)
+          elsif time_param.is_a?(String) && time_param.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
             time = Time.parse(time_param.to_s)
             work_date.to_time.change(hour: time.hour, min: time.min, sec: time.sec)
+          else
+            # Fallback: cố gắng parse và lấy giờ phút
+            begin
+              time = Time.parse(time_param.to_s)
+              work_date.to_time.change(hour: time.hour, min: time.min, sec: time.sec)
+            rescue
+              # Nếu không parse được, sử dụng default_time
+              work_date.to_time.change(hour: default_time.hour, min: default_time.min, sec: default_time.sec)
+            end
           end
         else
           # Sử dụng default_time (từ labor_request)

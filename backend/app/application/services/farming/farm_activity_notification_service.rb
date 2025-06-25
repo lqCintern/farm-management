@@ -43,7 +43,6 @@ module Services::Farming
         title: "Hoạt động đã được cập nhật",
         message: "Hoạt động #{activity_name(activity)} đã được cập nhật",  # Thay content bằng message
         category: "farm",
-        status: "unread",
         event_type: "activity_updated",
         notifiable_type: "Farming::FarmActivity",
         notifiable_id: activity.id

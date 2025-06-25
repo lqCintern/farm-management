@@ -28,16 +28,19 @@ module Entities
       # Get balance from perspective of specified household
       def balance_for(household_id)
         if household_id == household_a_id
-          hours_balance
-        elsif household_id == household_b_id
           -hours_balance
+        elsif household_id == household_b_id
+          hours_balance
         else
-          raise ArgumentError, "Household ID #{household_id} is not part of this exchange"
+          raise ArgumentError, "Household ID \\#{household_id} is not part of this exchange"
         end
       end
 
       # Get partner household ID
       def partner_household_id(household_id)
+        # Ensure household_id is integer
+        household_id = household_id.to_i if household_id.is_a?(Symbol) || household_id.is_a?(String)
+        
         if household_id == household_a_id
           household_b_id
         elsif household_id == household_b_id
@@ -49,6 +52,9 @@ module Entities
 
       # Get partner household name
       def partner_household_name(household_id)
+        # Ensure household_id is integer
+        household_id = household_id.to_i if household_id.is_a?(Symbol) || household_id.is_a?(String)
+        
         if household_id == household_a_id
           household_b_name
         elsif household_id == household_b_id

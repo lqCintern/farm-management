@@ -8,7 +8,7 @@ export const getExchangeSummary = async () => {
 
 // Lấy chi tiết trao đổi công với một hộ cụ thể
 export const getExchangeDetails = async (householdId: number) => {
-  // Sửa đường dẫn từ /labor/exchanges/${exchangeId} thành /labor/exchanges/households/${householdId}
+  // Sử dụng endpoint show_by_household để lấy chi tiết
   const response = await axiosInstance.get(`/labor/exchanges/households/${householdId}`);
   return response.data;
 };
