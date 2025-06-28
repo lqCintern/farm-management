@@ -50,6 +50,10 @@ const PineappleCropFormPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
+  // Additional state for activity detail
+  const [selectedActivity, setSelectedActivity] = useState<FarmActivity | null>(null);
+  const [showActivityDetail, setShowActivityDetail] = useState<boolean>(false);
+
   // Fetch field list on component mount
   useEffect(() => {
     const fetchFields = async () => {
@@ -142,8 +146,20 @@ const PineappleCropFormPage: React.FC = () => {
       };
       
       const response = await pineappleCropService.previewPlan(cropData);
-      setPreviewActivities(response.preview_activities);
-      setEditedActivities(response.preview_activities);
+      // Map lại để đảm bảo mỗi activity có trường stage
+      const previewWithStage = response.preview_activities.map((act: any) => ({
+        ...act,
+        stage: act.stage
+      }));
+      
+      // Debug: Kiểm tra stage từ preview
+      console.log('Preview activities with stage:', previewWithStage);
+      previewWithStage.forEach((act: any, index: number) => {
+        console.log(`Activity ${index}: stage = ${act.stage}, activity_type = ${act.activity_type}`);
+      });
+      
+      setPreviewActivities(previewWithStage);
+      setEditedActivities(previewWithStage);
       setShowPreview(true);
     } catch (error) {
       console.error('Error generating preview:', error);
@@ -225,7 +241,19 @@ const PineappleCropFormPage: React.FC = () => {
           return;
         }
         if (editedActivities.length > 0) {
-          await pineappleCropService.confirmPlan(newCropId, editedActivities);
+          // Đảm bảo luôn truyền stage khi xác nhận kế hoạch
+          const activitiesWithStage = editedActivities.map((act) => ({
+            ...act,
+            stage: act.stage
+          }));
+          
+          // Debug: Kiểm tra stage trước khi confirm plan
+          console.log('Confirm plan activities with stage:', activitiesWithStage);
+          activitiesWithStage.forEach((act: any, index: number) => {
+            console.log(`Confirm Activity ${index}: stage = ${act.stage}, activity_type = ${act.activity_type}`);
+          });
+          
+          await pineappleCropService.confirmPlan(newCropId, activitiesWithStage);
         }
       }
       
@@ -235,6 +263,25 @@ const PineappleCropFormPage: React.FC = () => {
       setError(`Không thể ${isEditMode ? 'cập nhật' : 'tạo'} vụ trồng dứa. Vui lòng thử lại.`);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const getActivityTypeLabel = (activityType: string | number) => {
+    // Convert to string if it's a number
+    const typeStr = String(activityType);
+    
+    // Implement the logic to map activity type to a readable label
+    switch (typeStr) {
+      case 'preparation':
+        return 'Chuẩn bị';
+      case 'planting':
+        return 'Trồng';
+      case 'harvesting':
+        return 'Thu hoạch';
+      case 'maintenance':
+        return 'Bảo trì';
+      default:
+        return typeStr;
     }
   };
 
@@ -512,6 +559,9 @@ const PineappleCropFormPage: React.FC = () => {
                             Hoạt động
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Vật tư
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Bắt đầu
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -526,14 +576,52 @@ const PineappleCropFormPage: React.FC = () => {
                         {editedActivities.map((activity, index) => (
                           <tr key={index} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <input
-                                type="text"
-                                value={activity.description}
-                                onChange={(e) =>
-                                  handleEditActivity(index, { description: e.target.value })
-                                }
-                                className="w-full px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              />
+                              <div>
+                                <input
+                                  type="text"
+                                  value={activity.description}
+                                  onChange={(e) =>
+                                    handleEditActivity(index, { description: e.target.value })
+                                  }
+                                  className="w-full px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 mb-1"
+                                />
+                                <div className="text-xs text-gray-500">
+                                  Loại: {getActivityTypeLabel(activity.activity_type)}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              {activity.materials && activity.materials.length > 0 ? (
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">
+                                    {activity.materials.length} vật tư
+                                  </div>
+                                  <div className="space-y-1">
+                                    {activity.materials.slice(0, 2).map((material: any, matIndex: number) => (
+                                      <div key={matIndex} className="text-xs bg-blue-50 px-2 py-1 rounded">
+                                        <div className="font-medium">{material.name}: {material.quantity} {material.unit}</div>
+                                        {material.base_quantity_per_ha && (
+                                          <div className="text-gray-600">
+                                            Chuẩn: {material.base_quantity_per_ha} {material.unit}/ha
+                                          </div>
+                                        )}
+                                        {material.field_area_ha && (
+                                          <div className="text-gray-600">
+                                            Diện tích: {material.field_area_ha.toFixed(4)} ha
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                    {activity.materials.length > 2 && (
+                                      <div className="text-xs text-blue-600 cursor-pointer hover:underline">
+                                        +{activity.materials.length - 2} vật tư khác
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">Không có vật tư</span>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                               <input
@@ -556,16 +644,28 @@ const PineappleCropFormPage: React.FC = () => {
                               />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button
-                                onClick={() => {
-                                  const newActivities = [...editedActivities];
-                                  newActivities.splice(index, 1);
-                                  setEditedActivities(newActivities);
-                                }}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                Xóa
-                              </button>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => {
+                                    // Hiển thị modal chi tiết activity
+                                    setSelectedActivity(activity);
+                                    setShowActivityDetail(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-900 text-xs"
+                                >
+                                  Chi tiết
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const newActivities = [...editedActivities];
+                                    newActivities.splice(index, 1);
+                                    setEditedActivities(newActivities);
+                                  }}
+                                  className="text-red-600 hover:text-red-900 text-xs"
+                                >
+                                  Xóa
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -614,6 +714,169 @@ const PineappleCropFormPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Activity Detail Modal */}
+      {showActivityDetail && selectedActivity && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Chi tiết hoạt động</h3>
+              <button
+                onClick={() => setShowActivityDetail(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                <input
+                  type="text"
+                  value={selectedActivity.description}
+                  onChange={(e) => {
+                    const updatedActivity = { ...selectedActivity, description: e.target.value };
+                    setSelectedActivity(updatedActivity);
+                    // Update in the main list
+                    const index = editedActivities.findIndex(act => 
+                      act.activity_type === selectedActivity.activity_type && 
+                      act.start_date === selectedActivity.start_date
+                    );
+                    if (index !== -1) {
+                      const newActivities = [...editedActivities];
+                      newActivities[index] = updatedActivity;
+                      setEditedActivities(newActivities);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
+                  <input
+                    type="date"
+                    value={selectedActivity.start_date}
+                    onChange={(e) => {
+                      const updatedActivity = { ...selectedActivity, start_date: e.target.value };
+                      setSelectedActivity(updatedActivity);
+                      // Update in the main list
+                      const index = editedActivities.findIndex(act => 
+                        act.activity_type === selectedActivity.activity_type && 
+                        act.start_date === selectedActivity.start_date
+                      );
+                      if (index !== -1) {
+                        const newActivities = [...editedActivities];
+                        newActivities[index] = updatedActivity;
+                        setEditedActivities(newActivities);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
+                  <input
+                    type="date"
+                    value={selectedActivity.end_date}
+                    onChange={(e) => {
+                      const updatedActivity = { ...selectedActivity, end_date: e.target.value };
+                      setSelectedActivity(updatedActivity);
+                      // Update in the main list
+                      const index = editedActivities.findIndex(act => 
+                        act.activity_type === selectedActivity.activity_type && 
+                        act.start_date === selectedActivity.start_date
+                      );
+                      if (index !== -1) {
+                        const newActivities = [...editedActivities];
+                        newActivities[index] = updatedActivity;
+                        setEditedActivities(newActivities);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Loại hoạt động</label>
+                <div className="px-3 py-2 bg-gray-50 rounded border">
+                  {getActivityTypeLabel(selectedActivity.activity_type)}
+                </div>
+              </div>
+
+              {selectedActivity.materials && selectedActivity.materials.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vật tư cần thiết ({selectedActivity.materials.length} loại)
+                  </label>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Tên vật tư</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Số lượng</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Đơn vị</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Từ template</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {selectedActivity.materials.map((material: any, index: number) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 text-sm">{material.name}</td>
+                            <td className="px-4 py-2 text-sm font-medium">
+                              {material.quantity}
+                              {material.base_quantity_per_ha && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  <div>Chuẩn: {material.base_quantity_per_ha} {material.unit}/ha</div>
+                                  {material.field_area_ha && (
+                                    <div>Diện tích: {material.field_area_ha.toFixed(4)} ha</div>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-2 text-sm">{material.unit}</td>
+                            <td className="px-4 py-2 text-sm text-gray-500">
+                              {material.template_name || 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {selectedActivity.materials.some((m: any) => m.field_area_ha) && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="text-sm text-blue-800">
+                          <div className="font-medium mb-1">Tính toán theo diện tích thực tế</div>
+                          <div>Số lượng vật tư đã được tính toán dựa trên diện tích {Array.isArray(selectedActivity.materials) && selectedActivity.materials.length > 0 ? selectedActivity.materials[0]?.field_area_ha?.toFixed(4) : '0'} ha của cánh đồng.</div>
+                          <div className="text-xs mt-1">Template định nghĩa số lượng cho 1 ha, hệ thống tự động nhân với diện tích thực tế và làm tròn lên.</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => setShowActivityDetail(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -216,10 +216,20 @@ module Repositories
           
           # Thêm user_id vào attributes nếu có
           crop_params = attributes.dup
+          user_id = nil
+          field_area_ha = nil
+          
           if attributes[:user_id].blank? && attributes[:field_id].present?
-            # Tìm user_id từ field
+            # Tìm user_id và diện tích từ field
             field = ::Models::Farming::Field.find_by(id: attributes[:field_id])
             crop_params[:user_id] = field&.user_id
+            user_id = field&.user_id
+            # Tính diện tích theo ha (m² / 10000)
+            field_area_ha = field&.area ? (field.area.to_f / 10000) : nil
+          else
+            user_id = attributes[:user_id]
+            # Nếu có field_area trong attributes, sử dụng nó
+            field_area_ha = attributes[:field_area] ? (attributes[:field_area].to_f / 10000) : nil
           end
           
           activities_data = service.preview_activities_for_params(crop_params)
@@ -231,21 +241,8 @@ module Repositories
               stage: act[:stage]
             )
             
-            # Lấy thông tin vật tư từ tất cả templates
-            materials = []
-            templates.each do |template|
-              template_materials = template.template_activity_materials.includes(:farm_material).map do |tam|
-                {
-                  id: tam.farm_material.id,
-                  name: tam.farm_material.name,
-                  quantity: tam.quantity,
-                  unit: tam.farm_material.unit,
-                  template_id: template.id,
-                  template_name: template.name
-                }
-              end
-              materials.concat(template_materials)
-            end
+            # Lấy thông tin vật tư từ tất cả templates, tính theo diện tích thực tế
+            materials = calculate_materials_by_area(templates, user_id, field_area_ha)
             
             Entities::Farming::FarmActivity.new(
               activity_type: act[:activity_type],
@@ -255,6 +252,7 @@ module Repositories
               frequency: act[:frequency] || 0,
               status: act[:status] || :pending,
               field_id: act[:field_id] || attributes[:field_id],
+              stage: act[:stage],
               materials: materials
             )
           end
@@ -265,12 +263,54 @@ module Repositories
         end
       end
 
+      # Tính toán vật tư theo diện tích thực tế
+      def calculate_materials_by_area(templates, user_id, field_area_ha)
+        return [] unless user_id && field_area_ha && field_area_ha > 0
+        
+        calculated_materials = {}
+        
+        templates.each do |template|
+          template.template_activity_materials.includes(:farm_material).each do |tam|
+            # Chỉ lấy materials thuộc về user hiện tại
+            next unless tam.farm_material.user_id == user_id
+            
+            material_id = tam.farm_material.id
+            base_quantity = tam.quantity # Số lượng cho 1 ha
+            
+            # Tính số lượng thực tế theo diện tích và làm tròn lên
+            actual_quantity = (base_quantity * field_area_ha).ceil
+            
+            if calculated_materials[material_id]
+              # Nếu đã có vật tư này, cộng dồn số lượng
+              calculated_materials[material_id][:quantity] += actual_quantity
+            else
+              calculated_materials[material_id] = {
+                id: tam.farm_material.id,
+                name: tam.farm_material.name,
+                quantity: actual_quantity,
+                unit: tam.farm_material.unit,
+                template_id: template.id,
+                template_name: template.name,
+                base_quantity_per_ha: base_quantity,
+                field_area_ha: field_area_ha
+              }
+            end
+          end
+        end
+        
+        calculated_materials.values
+      end
+
       def save_activities_plan(id, activities, user_id)
         record = ::Models::Farming::PineappleCrop.find_by(id: id)
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
 
         created_activities = []
         template_repo = ::Repositories::Farming::PineappleActivityTemplateRepository.new
+
+        # Lấy diện tích cánh đồng
+        field = ::Models::Farming::Field.find_by(id: record.field_id)
+        field_area_ha = field&.area ? (field.area.to_f / 10000) : nil
 
         begin
           ActiveRecord::Base.transaction do
@@ -303,33 +343,28 @@ module Repositories
                 activity.skip_similar_check = true if activity.respond_to?(:skip_similar_check=)
                 # Bỏ qua kiểm tra vật tư cho hoạt động không yêu cầu
                 activity.skip_materials_check = true if activity.respond_to?(:skip_materials_check=)
+                # Bỏ qua kiểm tra quy trình trồng dứa
+                activity.skip_process_validation = true if activity.respond_to?(:skip_process_validation=)
 
-                activity.save!
-
-                # Merge vật tư từ tất cả templates (giống logic preview)
-                materials_data = {}
-                templates.each do |template|
-                  template.template_activity_materials.includes(:farm_material).each do |tam|
-                    farm_material = ::Models::Farming::FarmMaterial.where(user_id: user_id)
-                                 .find_by(id: tam.farm_material_id)
-                    
-                    if farm_material
-                      # Nếu vật tư đã có, cộng dồn số lượng
-                      if materials_data[farm_material.id]
-                        materials_data[farm_material.id] += tam.quantity
-                      else
-                        materials_data[farm_material.id] = tam.quantity
-                      end
-                    end
-                  end
+                begin
+                  activity.save!
+                rescue => e
+                  puts "[DEBUG] Activity save failed: #{activity.errors.full_messages.join(", ")}, Exception: #{e.message}"
+                  raise e
                 end
 
-                # Tạo activity_materials cho tất cả vật tư đã merge
-                materials_data.each do |material_id, quantity|
-                  activity.activity_materials.create!(
-                    farm_material_id: material_id,
-                    planned_quantity: quantity
+                # Tính toán vật tư theo diện tích thực tế
+                calculated_materials = calculate_materials_by_area(templates, user_id, field_area_ha)
+
+                # Tạo activity_materials cho tất cả vật tư đã tính toán
+                calculated_materials.each do |material_data|
+                  activity_material = activity.activity_materials.build(
+                    farm_material_id: material_data[:id],
+                    planned_quantity: material_data[:quantity]
                   )
+                  # Bỏ qua reserve khi confirm plan
+                  activity_material.skip_reserve = true
+                  activity_material.save!
                 end
 
                 created_activities << map_activity_to_entity(activity)
@@ -347,8 +382,15 @@ module Repositories
                 activity.skip_similar_check = true if activity.respond_to?(:skip_similar_check=)
                 # Bỏ qua kiểm tra vật tư cho hoạt động không yêu cầu
                 activity.skip_materials_check = true if activity.respond_to?(:skip_materials_check=)
+                # Bỏ qua kiểm tra quy trình trồng dứa
+                activity.skip_process_validation = true if activity.respond_to?(:skip_process_validation=)
 
-                activity.save!
+                begin
+                  activity.save!
+                rescue => e
+                  puts "[DEBUG] Activity save failed: #{activity.errors.full_messages.join(", ")}, Exception: #{e.message}"
+                  raise e
+                end
                 created_activities << map_activity_to_entity(activity)
               end
             end

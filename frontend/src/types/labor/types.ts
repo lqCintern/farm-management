@@ -19,8 +19,10 @@ export interface FarmActivity {
   status?: number | string;
   field_id: number;
   crop_animal_id?: number;
-  materials?: Record<string, any>;
-    labor_requests?: {
+  stage?: number | string;
+  materials?: Record<string, any> | any[];
+  actual_materials?: any[];
+  labor_requests?: {
     id: number;
     title: string;
     status: string;
@@ -28,7 +30,7 @@ export interface FarmActivity {
     end_date: string;
   }[];
   actual_notes?: string;
-    status_details?: {
+  status_details?: {
     starting_soon?: boolean;
   };
   actual_completion_date?: string;

@@ -18,6 +18,9 @@ module Models::Farming
     def reserve_material
       return unless farm_material && planned_quantity
       
+      # Bỏ qua reserve nếu có flag skip_reserve
+      return if @skip_reserve
+      
       # Chỉ reserve nếu activity chưa hoàn thành
       return if farm_activity&.status == "completed"
       
@@ -25,6 +28,11 @@ module Models::Farming
         errors.add(:base, "Không đủ vật tư #{farm_material.name} trong kho")
         throw(:abort)
       end
+    end
+
+    # Setter để bỏ qua reserve
+    def skip_reserve=(value)
+      @skip_reserve = value
     end
 
     # Xử lý thay đổi số lượng
@@ -72,13 +80,21 @@ module Models::Farming
     def recalculate_reserved_after_completion
       return unless farm_material && actual_quantity.present?
       
-      # Release toàn bộ planned quantity
-      farm_material.release_reserved_quantity(planned_quantity)
+      # Commit actual_quantity (trừ kho thật)
+      farm_material.commit_quantity(actual_quantity)
       
-      # Trả lại phần dư vào quantity nếu dùng ít hơn planned
+      # Release phần dư nếu actual < planned
       if actual_quantity < planned_quantity
         difference = planned_quantity - actual_quantity
-        farm_material.return_quantity(difference)
+        farm_material.release_reserved_quantity(difference)
+      elsif actual_quantity > planned_quantity
+        # Nếu actual > planned, cần commit thêm phần chênh lệch
+        # (đã được xử lý ở trên với commit_quantity(actual_quantity))
+        # Chỉ cần release planned_quantity đã reserve
+        farm_material.release_reserved_quantity(planned_quantity)
+      else
+        # actual = planned, chỉ cần release planned_quantity
+        farm_material.release_reserved_quantity(planned_quantity)
       end
     end
 

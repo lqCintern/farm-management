@@ -5,7 +5,7 @@ module Entities
                     :status, :start_date, :end_date, :created_at, :updated_at,
                     :user_id, :actual_completion_date, :actual_notes, :parent_activity_id,
                     :field_id, :coordinates, :status_details, :requires_materials,
-                    :materials, :actual_materials, :child_activities
+                    :materials, :actual_materials, :child_activities, :stage
 
       def initialize(attributes = {})
         attributes.each do |key, value|

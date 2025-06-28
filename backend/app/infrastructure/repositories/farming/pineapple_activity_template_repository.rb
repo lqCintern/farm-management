@@ -104,12 +104,16 @@ module Repositories
         crop = ::Models::Farming::PineappleCrop.where(user_id: user_id).find_by(id: crop_id)
         return { success: false, error: "Không tìm thấy vụ dứa" } unless crop
 
+        # Lấy diện tích cánh đồng
+        field = ::Models::Farming::Field.find_by(id: crop.field_id)
+        field_area_ha = field&.area ? (field.area.to_f / 10000) : nil
+
         # Tính ngày bắt đầu dựa trên ngày bắt đầu giai đoạn hiện tại của cây trồng
         reference_date = crop.current_stage_start_date || crop.planting_date
         start_date = reference_date + template.day_offset.days
         end_date = start_date + template.duration_days.days
 
-        # Kiểm tra các vật tư cần thiết
+        # Tính toán vật tư theo diện tích thực tế
         materials_data = {}
         material_errors = []
         
@@ -122,12 +126,20 @@ module Repositories
             next
           end
           
-          if farm_material.available_quantity < template_material.quantity
-            material_errors << "Không đủ #{farm_material.name} (cần: #{template_material.quantity}, còn: #{farm_material.available_quantity} #{farm_material.unit})"
+          # Tính số lượng thực tế theo diện tích và làm tròn lên
+          base_quantity = template_material.quantity # Số lượng cho 1 ha
+          actual_quantity = field_area_ha ? (base_quantity * field_area_ha).ceil : base_quantity
+          
+          if farm_material.available_quantity < actual_quantity
+            material_errors << "Không đủ #{farm_material.name} (cần: #{actual_quantity} #{farm_material.unit} cho #{field_area_ha&.round(4)} ha, còn: #{farm_material.available_quantity} #{farm_material.unit})"
             next
           end
           
-          materials_data[farm_material.id] = template_material.quantity
+          materials_data[farm_material.id] = {
+            quantity: actual_quantity,
+            base_quantity_per_ha: base_quantity,
+            field_area_ha: field_area_ha
+          }
         end
         
         # Nếu thiếu vật tư, báo lỗi
@@ -154,20 +166,31 @@ module Repositories
           activity.save!
           
           # Xử lý vật tư
-          materials_data.each do |material_id, quantity|
+          materials_data.each do |material_id, material_info|
             farm_material = ::Models::Farming::FarmMaterial.find(material_id)
             
             # Tạo liên kết vật tư (sẽ tự động reserve thông qua callback)
             activity.activity_materials.create!(
               farm_material_id: material_id,
-              planned_quantity: quantity
+              planned_quantity: material_info[:quantity]
             )
           end
           
-          # Trả về hoạt động đã tạo
+          # Trả về hoạt động đã tạo với thông tin diện tích
           {
             success: true,
-            farm_activity: Repositories::Farming::FarmActivityRepository.new.send(:map_to_entity, activity)
+            farm_activity: Repositories::Farming::FarmActivityRepository.new.send(:map_to_entity, activity),
+            field_area_ha: field_area_ha,
+            materials_calculated: materials_data.map { |material_id, info| 
+              material = ::Models::Farming::FarmMaterial.find(material_id)
+              {
+                name: material.name,
+                base_quantity_per_ha: info[:base_quantity_per_ha],
+                actual_quantity: info[:quantity],
+                unit: material.unit,
+                field_area_ha: info[:field_area_ha]
+              }
+            }
           }
         rescue => e
           { success: false, errors: [e.message] }

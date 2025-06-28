@@ -159,23 +159,32 @@ const FarmActivityDetail = () => {
   // Cập nhật phần xử lý materials để hỗ trợ cả định dạng array và object
   const getMaterialsForDisplay = () => {
     if (!activity || !activity.materials) return [];
-    
-    // Xử lý nếu materials là array (format mới)
+
+    // Map actual_materials theo id
+    const actualMap: Record<string, number> = {};
+    if (Array.isArray(activity.actual_materials)) {
+      activity.actual_materials.forEach((mat: any) => {
+        actualMap[mat.id] = mat.quantity;
+      });
+    }
+
     if (Array.isArray(activity.materials)) {
       return activity.materials.map(material => ({
         id: material.id,
         name: material.name,
         unit: material.unit,
-        planned_quantity: material.quantity || material.planned_quantity || 0
+        planned_quantity: material.quantity || material.planned_quantity || 0,
+        actual_quantity: actualMap[material.id] ?? (material.actual_quantity || material.quantity || 0)
       }));
     }
-    
-    // Xử lý nếu materials là object (format cũ)
+
+    // Nếu materials là object (format cũ)
     return Object.entries(activity.materials).map(([id, matData]: [string, any]) => ({
       id,
       name: matData.name,
       unit: matData.unit,
-      planned_quantity: matData.planned_quantity || matData.quantity || 0
+      planned_quantity: matData.planned_quantity || matData.quantity || 0,
+      actual_quantity: actualMap[id] ?? (matData.actual_quantity || matData.planned_quantity || matData.quantity || 0)
     }));
   };
 
@@ -414,7 +423,7 @@ const FarmActivityDetail = () => {
                             <td className="py-3 px-4 text-right">{material.planned_quantity}</td>
                             {activity.status === "completed" && (
                               <td className="py-3 px-4 text-right">
-                                {"actual_quantity" in material ? material.actual_quantity : material.planned_quantity}
+                                {material.actual_quantity}
                               </td>
                             )}
                           </tr>

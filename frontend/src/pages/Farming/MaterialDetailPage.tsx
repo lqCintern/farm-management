@@ -322,7 +322,7 @@ const MaterialDetailPage: React.FC = () => {
               <div className="border rounded-lg divide-y">
                 {activities.slice(0, 5).map((activity) => (
                   <div key={activity.id} className="p-3 hover:bg-gray-50">
-                    <Link to={`/farming/activities/${activity.activity_id}`} className="block">
+                    <Link to={`/farm-activities/${activity.activity_id}`} className="block">
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-medium">{activity.activity_name}</div>
@@ -485,7 +485,7 @@ const MaterialDetailPage: React.FC = () => {
                           </div>
                           <div className="text-center mt-2">
                             <Link 
-                              to={`/farming/activities/${activity.activity_id}`}
+                              to={`/farm-activities/${activity.activity_id}`}
                               className="text-blue-600 hover:underline font-medium"
                             >
                               Xem chi tiết hoạt động

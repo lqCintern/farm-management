@@ -29,6 +29,21 @@
 
 en:
   hello: "Hello world"
+  activity_types:
+    soil_preparation: "Soil Preparation"
+    seedling_preparation: "Seedling Preparation"
+    planting: "Planting"
+    leaf_tying: "Leaf Tying"
+    fertilizing: "Fertilizing"
+    pesticide: "Pesticide"
+    sun_protection: "Sun Protection"
+    fruit_development: "Fruit Development"
+    harvesting: "Harvesting"
+    sprout_collection: "Sprout Collection"
+    field_cleaning: "Field Cleaning"
+    watering: "Watering"
+    weeding: "Weeding"
+    other: "Other"
   supply_listing:
     categories:
       fertilizer: "Fertilizer"

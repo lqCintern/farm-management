@@ -117,6 +117,12 @@ export default function PineappleActivityTemplates() {
     try {
       setCropsLoading(true);
       const response = await getPineappleCrops();
+      console.log("Crops API response:", response);
+      console.log("Crops items:", response.items);
+      if (response.items && response.items.length > 0) {
+        console.log("First crop:", response.items[0]);
+        console.log("First crop field_area:", response.items[0].field_area);
+      }
       setCrops(response.items || []);
     } catch (error) {
       message.error("Không thể tải danh sách vụ dứa");
@@ -515,21 +521,94 @@ const columns = [
           }
         }}
         okButtonProps={{ loading: cropsLoading }}
+        width={600}
       >
-        <div>
-          <p className="mb-2">Chọn vụ dứa để áp dụng mẫu hoạt động này:</p>
-          <Select
-            placeholder="Chọn vụ dứa"
-            style={{ width: '100%' }}
-            onChange={setSelectedCropId}
-            loading={cropsLoading}
-          >
-            {crops.map(crop => (
-              <Option key={crop.id} value={crop.id}>
-                {crop.name || `Vụ dứa #${crop.id}`}
-              </Option>
-            ))}
-          </Select>
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 font-medium">Chọn vụ dứa để áp dụng mẫu hoạt động này:</p>
+            <Select
+              placeholder="Chọn vụ dứa"
+              style={{ width: '100%' }}
+              onChange={setSelectedCropId}
+              loading={cropsLoading}
+            >
+              {crops.map(crop => (
+                <Option key={crop.id} value={crop.id}>
+                  {crop.name || `Vụ dứa #${crop.id}`}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Hiển thị thông tin crop được chọn */}
+          {selectedCropId && (
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="font-medium mb-2">Thông tin vụ dứa:</div>
+              {(() => {
+                const selectedCrop = crops.find(c => c.id === selectedCropId);
+                if (!selectedCrop) return null;
+                
+                const fieldAreaHa = selectedCrop.field_area ? (selectedCrop.field_area / 10000) : 0;
+                
+                return (
+                  <div className="space-y-2 text-sm">
+                    <div><span className="font-medium">Tên:</span> {selectedCrop.name || `Vụ dứa #${selectedCrop.id}`}</div>
+                    <div><span className="font-medium">Giống:</span> {selectedCrop.variety || 'Không xác định'}</div>
+                    <div><span className="font-medium">Diện tích:</span> {selectedCrop.field_area?.toLocaleString()} m² ({fieldAreaHa.toFixed(4)} ha)</div>
+                    <div><span className="font-medium">Giai đoạn hiện tại:</span> {selectedCrop.current_stage || 'Không xác định'}</div>
+                    <div><span className="font-medium">Trạng thái:</span> {selectedCrop.status || 'Không xác định'}</div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Hiển thị thông tin template được chọn */}
+          {selectedTemplateId && (
+            <div className="border rounded-lg p-4 bg-blue-50">
+              <div className="font-medium mb-2">Thông tin mẫu hoạt động:</div>
+              {(() => {
+                const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+                if (!selectedTemplate) return null;
+                
+                return (
+                  <div className="space-y-2 text-sm">
+                    <div><span className="font-medium">Tên:</span> {selectedTemplate.name}</div>
+                    <div><span className="font-medium">Giai đoạn:</span> {getStageLabel(Number(selectedTemplate.stage))}</div>
+                    <div><span className="font-medium">Loại hoạt động:</span> {getActivityTypeLabel(selectedTemplate.activity_type)}</div>
+                    <div><span className="font-medium">Thời gian:</span> {selectedTemplate.duration_days} ngày</div>
+                    {(selectedTemplate as any).materials && (selectedTemplate as any).materials.length > 0 && (
+                      <div>
+                        <span className="font-medium">Vật tư:</span>
+                        <div className="mt-1 space-y-1">
+                          {(selectedTemplate as any).materials.map((material: any, index: number) => (
+                            <div key={index} className="text-xs bg-white px-2 py-1 rounded border">
+                              {material.name}: {material.quantity} {material.unit}/ha
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Thông báo về tính toán vật tư */}
+          {selectedCropId && selectedTemplateId && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-green-800">
+                  <div className="font-medium mb-1">Tính toán vật tư theo diện tích</div>
+                  <div>Số lượng vật tư sẽ được tính toán dựa trên diện tích thực tế của cánh đồng và làm tròn lên.</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </Card>

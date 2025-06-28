@@ -61,7 +61,8 @@ module Formatters
             start_date: act[:start_date],
             end_date: act[:end_date],
             frequency: act[:frequency] || 0,
-            field_id: act[:field_id]
+            field_id: act[:field_id],
+            stage: act[:stage]
           }
         end
       end
