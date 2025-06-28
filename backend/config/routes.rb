@@ -46,6 +46,15 @@ Rails.application.routes.draw do
             collection do
               post :apply_to_crop
             end
+            
+            resources :template_activity_materials, path: "materials", only: [:index, :show, :create, :update, :destroy] do
+              collection do
+                post :batch_create
+                get :statistics
+                get :feasibility
+                get :inventory_comparison
+              end
+            end
           end
 
           resources :pineapple_crops do
@@ -56,6 +65,7 @@ Rails.application.routes.draw do
               post :record_harvest
               post :clean_activities
               post :confirm_plan
+              get :activities
             end
             collection do
               get :statistics
@@ -87,6 +97,8 @@ Rails.application.routes.draw do
           resources :marketplace_harvests, path: "harvests" do
             collection do
               get :active_by_product
+              get :my_harvests
+              get :by_product
             end
 
             member do

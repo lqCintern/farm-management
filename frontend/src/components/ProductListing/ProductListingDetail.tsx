@@ -46,7 +46,6 @@ import { getUserProfile } from '@/services/users/authService';
 
 const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;
-const { TabPane } = Tabs;
 
 export default function ProductListingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -124,12 +123,28 @@ export default function ProductListingDetail() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
+        // Lấy user ID từ localStorage
+        const userInfo = localStorage.getItem("userInfo");
+        let userId: number | null = null;
+        
+        if (userInfo) {
+          try {
+            const parsed = JSON.parse(userInfo);
+            userId = parsed.user_id || null;
+            console.log("User ID from localStorage:", userId);
+          } catch (e) {
+            console.error("Error parsing userInfo from localStorage:", e);
+          }
+        }
+        
+        // Lấy user type từ API
         const profile = await getUserProfile();
         const userType = (profile as { user_type: string }).user_type;
-        const userId = (profile as { user_id: number }).user_id;
         
         setUserRole(userType);
         setCurrentUserId(userId);
+        
+        console.log("User info fetched:", { userType, userId });
         
         // Kiểm tra quyền sở hữu nếu listing đã được tải
         if (listing && userId === listing.user_id) {
@@ -146,9 +161,16 @@ export default function ProductListingDetail() {
   // Cập nhật isOwner mỗi khi listing thay đổi
   useEffect(() => {
     if (listing && currentUserId) {
-      setIsOwner(currentUserId === listing.user_id);
+      const ownerStatus = currentUserId === listing.user_id;
+      console.log("Checking ownership:", { currentUserId, listingUserId: listing.user_id, isOwner: ownerStatus });
+      setIsOwner(ownerStatus);
     }
   }, [listing, currentUserId]);
+
+  // Log user info when it changes
+  useEffect(() => {
+    console.log("User info updated:", { userRole, currentUserId, isOwner });
+  }, [userRole, currentUserId, isOwner]);
 
   const handleEdit = () => {
     navigate(`/products/${id}/edit`);
@@ -218,6 +240,9 @@ export default function ProductListingDetail() {
   };
 
   const handleStartConversation = async () => {
+    console.log("handleStartConversation called!");
+    console.log("Current user info:", { userRole, isOwner, listing });
+    
     if (!listing?.user_id) {
       message.error("Không thể nhắn tin do thiếu thông tin người bán");
       return;
@@ -225,6 +250,7 @@ export default function ProductListingDetail() {
 
     try {
       setChatLoading(true);
+      console.log("Starting conversation with:", { productId: id, sellerId: listing.user_id });
 
       // Sử dụng service để tạo/tìm cuộc hội thoại
       const result = await createOrFindConversation(
@@ -233,11 +259,15 @@ export default function ProductListingDetail() {
         "Xin chào, tôi quan tâm đến sản phẩm của bạn!" // Tin nhắn mặc định
       );
 
+      console.log("Conversation result:", result);
+
       // Nếu thành công, chuyển đến trang chat
       if (result.conversation_id) {
         message.success("Đã bắt đầu cuộc trò chuyện");
+        console.log("Navigating to /chat with conversation_id:", result.conversation_id);
         navigate(`/chat`); // Điều chỉnh đường dẫn theo ứng dụng của bạn
       } else {
+        console.error("No conversation_id in result:", result);
         throw new Error("Không nhận được ID cuộc trò chuyện");
       }
     } catch (error) {
@@ -265,7 +295,10 @@ export default function ProductListingDetail() {
             <Button
               icon={<MessageOutlined />}
               size="large"
-              onClick={handleStartConversation}
+              onClick={() => {
+                console.log("Chat button clicked!");
+                handleStartConversation();
+              }}
               loading={chatLoading}
               block
             >
@@ -399,10 +432,10 @@ export default function ProductListingDetail() {
     <div className="container mx-auto p-4">
       {/* Mobile navigation tabs - chỉ hiển thị trên mobile */}
       <div className="md:hidden mb-4">
-        <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane tab="Thông tin" key="1" />
-          <TabPane tab="Chi tiết" key="2" />
-        </Tabs>
+        <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
+          { key: "1", label: "Thông tin" },
+          { key: "2", label: "Chi tiết" }
+        ]} />
       </div>
 
       {/* Main content */}
@@ -607,8 +640,11 @@ export default function ProductListingDetail() {
         
         {/* Right column - tách riêng theo role và action */}
         <div className="lg:col-span-1">
-          {/* Phần dành cho người mua */}
-          {!isOwner && (
+          {/* Phần dành cho người mua - tạm thời bỏ điều kiện userRole để test */}
+          {(() => {
+            console.log("Rendering buyer section:", { isOwner, userRole });
+            return !isOwner; // Tạm thời bỏ điều kiện userRole === "trader"
+          })() && (
             <Card className="mb-6 shadow-sm">
               <div className="flex flex-col gap-4">
                 {/* Thông tin người bán - rút gọn */}
@@ -639,7 +675,10 @@ export default function ProductListingDetail() {
                 <Button
                   icon={<MessageOutlined />}
                   size="large"
-                  onClick={handleStartConversation}
+                  onClick={() => {
+                    console.log("Chat button clicked!");
+                    handleStartConversation();
+                  }}
                   loading={chatLoading}
                   block
                 >

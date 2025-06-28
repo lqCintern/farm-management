@@ -74,3 +74,9 @@ export const getPineappleCropStatistics = async () => {
   const response = await axiosInstance.get("/farming/pineapple_crops/statistics");
   return response.data;
 };
+
+// Lấy danh sách activities theo pineapple crop id
+export const getPineappleCropActivities = async (id: number) => {
+  const response = await axiosInstance.get(`/farming/pineapple_crops/${id}/activities`);
+  return response.data;
+};

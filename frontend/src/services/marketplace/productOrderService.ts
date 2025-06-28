@@ -82,3 +82,28 @@ export const updateProductOrder = async (
     throw error;
   }
 };
+
+export const getAcceptedOrdersByProduct = async (productListingId: number) => {
+  try {
+    const response = await axiosInstance.get('/marketplace/product_orders', { 
+      params: { 
+        product_listing_id: productListingId,
+        status: 'accepted'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching accepted orders:', error);
+    throw error;
+  }
+};
+
+export const checkAcceptedOrderExists = async (productListingId: number) => {
+  try {
+    const response = await getAcceptedOrdersByProduct(productListingId) as { orders?: any[] };
+    return response.orders && response.orders.length > 0;
+  } catch (error) {
+    console.error('Error checking accepted orders:', error);
+    return false;
+  }
+};

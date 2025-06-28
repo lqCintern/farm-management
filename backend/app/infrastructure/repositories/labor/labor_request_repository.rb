@@ -282,7 +282,7 @@ module Repositories
       end
 
       def has_pending_assignments(request_id)
-        ::Labor::LaborAssignment.exists?(
+        Models::Labor::LaborAssignment.exists?(
           labor_request_id: request_id,
           status: [ :pending, :assigned, :accepted, :worker_reported ]
         )

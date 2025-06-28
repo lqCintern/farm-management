@@ -132,24 +132,14 @@ const ExchangeDetail = () => {
                 household_a_id: partnerInfo.requesting_household_id || 0,
                 household_b_id: partnerInfo.providing_household_id || 0,
                 household_b_name: partnerInfo.providing_household_name || "Hộ không xác định",
-                hours_balance: 0, // Sẽ tính toán từ transactions
+                hours_balance: parseFloat((response as { data: { balance: string | number } }).data.balance?.toString() || "0"),
                 last_transaction_date: (response as { data: { transactions: Transaction[] } }).data.transactions[0]?.created_at || new Date().toISOString()
               },
-              balance: 0, // Sẽ tính toán từ transactions
-              direction: 'neutral',
+              balance: parseFloat((response as { data: { balance: string | number } }).data.balance?.toString() || "0"),
+              direction: (response as { data: { direction: string } }).data.direction as 'neutral' | 'positive' | 'negative',
               transactions: (response as { data: { transactions: Transaction[] } }).data.transactions,
               partner_name: (response as { data: { partner_name: string } }).data.partner_name || "Hộ không xác định"
             };
-            
-            // Tính tổng balance từ transactions
-            const totalBalance = (response as { data: { transactions: Transaction[] } }).data.transactions.reduce((sum, tx) => {
-              return sum + parseFloat(tx.hours || "0");
-            }, 0);
-            
-            transformedData.balance = totalBalance;
-            transformedData.exchange.hours_balance = totalBalance;
-            transformedData.direction = (totalBalance > 0 ? 'positive' : 
-                                       totalBalance < 0 ? 'negative' : 'neutral') as 'neutral' | 'positive' | 'negative';
             
             setExchangeDetail(transformedData as ExchangeDetail);
           } else {
@@ -292,16 +282,17 @@ const ExchangeDetail = () => {
     // Sử dụng direction_info để xác định vai trò nếu transaction_role chưa được thiết lập
     let transactionRole = transaction.transaction_role;
     if (!transactionRole && transaction.direction_info) {
-      // Giả sử current_household_id là ID của hộ người dùng hiện tại
-      // Bạn có thể lấy từ context hoặc props
-      const currentHouseholdId = parseInt(householdId || '0');
+      // Lấy current household ID từ context hoặc props
+      const currentHouseholdId = currentHousehold?.id;
       
-      if (transaction.direction_info.requesting_household_id === currentHouseholdId) {
-        transactionRole = 'requester';
-      } else if (transaction.direction_info.providing_household_id === currentHouseholdId) {
-        transactionRole = 'provider';
-      } else {
-        transactionRole = 'other';
+      if (currentHouseholdId) {
+        if (transaction.direction_info.requesting_household_id === currentHouseholdId) {
+          transactionRole = 'requester';
+        } else if (transaction.direction_info.providing_household_id === currentHouseholdId) {
+          transactionRole = 'provider';
+        } else {
+          transactionRole = 'other';
+        }
       }
     }
 
@@ -314,7 +305,7 @@ const ExchangeDetail = () => {
       if (transactionRole === 'requester') {
         description = `Bạn đã nhận ${Math.abs(hours)} giờ công từ ${workerName} vào ${new Date(workDate).toLocaleDateString('vi-VN')}`;
       } else if (transactionRole === 'provider') {
-        description = `${workerName} đã cung cấp ${Math.abs(hours)} giờ công vào ${new Date(workDate).toLocaleDateString('vi-VN')}`;
+        description = `${workerName} đã cung cấp ${Math.abs(hours)} giờ công cho bạn vào ${new Date(workDate).toLocaleDateString('vi-VN')}`;
       } else {
         description = transaction.description || `Giao dịch ${Math.abs(hours)} giờ công`;
       }

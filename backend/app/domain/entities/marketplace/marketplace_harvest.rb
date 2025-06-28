@@ -5,8 +5,8 @@ module Entities
       attr_reader :id, :scheduled_date, :location, :notes, :estimated_quantity,
                  :actual_quantity, :estimated_price, :final_price, :status,
                  :payment_proof_url, :payment_date, :created_at, :updated_at,
-                 :trader_id, :product_listing_id, :product_order_id,
-                 :product_listing, :trader_data, :farmer_data
+                 :trader_id, :product_listing_id, :product_order_id, :farm_activity_id,
+                 :product_listing, :trader_data, :farmer_data, :farm_activity
 
       def initialize(attributes = {})
         @id = attributes[:id]
@@ -25,9 +25,11 @@ module Entities
         @trader_id = attributes[:trader_id]
         @product_listing_id = attributes[:product_listing_id]
         @product_order_id = attributes[:product_order_id]
+        @farm_activity_id = attributes[:farm_activity_id]
         @product_listing = attributes[:product_listing]
         @trader_data = attributes[:trader_data]
         @farmer_data = attributes[:farmer_data]
+        @farm_activity = attributes[:farm_activity]
       end
 
       # Domain logic

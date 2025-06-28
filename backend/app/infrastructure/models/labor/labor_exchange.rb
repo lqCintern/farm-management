@@ -47,10 +47,9 @@ module Models::Labor
     end
 
     # Instance methods
-    def add_transaction(labor_assignment, hours, description = nil)
+    def add_transaction(labor_assignment, hours, requesting_household_id, description = nil)
       # Xác định hướng giao dịch
       worker_household_id = labor_assignment.home_household_id
-      requesting_household_id = labor_assignment.requesting_household.id
 
       # Nếu worker từ household_b làm việc cho household_a, balance tăng
       # Nếu worker từ household_a làm việc cho household_b, balance giảm

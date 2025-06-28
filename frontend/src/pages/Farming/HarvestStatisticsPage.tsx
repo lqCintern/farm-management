@@ -70,21 +70,21 @@ export default function HarvestStatisticsPage() {
           {activeTab === 'overview' ? (
             <div className="space-y-6">
               {/* Tổng quan thu hoạch */}
-              <HarvestOverview stats={stats?.harvest} />
+              <HarvestOverview />
               
               {/* Tổng quan vật tư đã dùng */}
-              <MaterialUsageStats stats={stats?.materials} />
+              <MaterialUsageStats 
+                stats={stats?.materials} 
+                material_details={stats?.material_details}
+              />
               
               {/* Biểu đồ doanh thu - chi phí */}
               <RevenueExpenseChart data={stats?.charts} />
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Bảng chi tiết thu hoạch và vật tư */}
-              <HarvestDetailTable 
-                harvestData={stats?.harvest_details}
-                materialData={stats?.material_details}
-              />
+              {/* Bảng chi tiết thu hoạch */}
+              <HarvestDetailTable />
             </div>
           )}
         </>

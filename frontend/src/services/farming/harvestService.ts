@@ -25,3 +25,9 @@ export const deleteHarvest = async (id: number) => {
   const response = await axiosInstance.delete(`/harvests/${id}`);
   return response.data;
 };
+
+// Harvest Statistics API
+export const getHarvestStats = async () => {
+  const response = await axiosInstance.get("/harvests/stats");
+  return response.data;
+};

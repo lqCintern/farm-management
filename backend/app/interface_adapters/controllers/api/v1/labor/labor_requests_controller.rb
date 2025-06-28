@@ -157,12 +157,12 @@ module Controllers::Api
           request = request_result[:request]
           
           # Kiểm tra nếu public và chưa được chỉ định cho household hiện tại
-          if request[:is_public] && request[:providing_household_id] != current_household.id
+          if request.is_public && request.providing_household_id != current_household.id
             return render_error_response("Đây là yêu cầu công khai, vui lòng sử dụng tính năng tham gia", :unprocessable_entity)
           end
           
           # Kiểm tra quyền - household phải là providing_household
-          unless request[:providing_household_id] == current_household.id
+          unless request.providing_household_id == current_household.id
             return render_error_response("Bạn không có quyền chấp nhận yêu cầu này", :unprocessable_entity)
           end
           

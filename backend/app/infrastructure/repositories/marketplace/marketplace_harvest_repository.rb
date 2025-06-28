@@ -82,7 +82,7 @@ module Repositories
       def active_for_product(product_listing_id)
         record = ::Models::Marketplace::MarketplaceHarvest
           .where(product_listing_id: product_listing_id)
-          .where.not(status: [ "completed", "cancelled" ])
+          .where.not(status: [ 2, 3 ])  # completed: 2, cancelled: 3
           .order(created_at: :desc)
           .first
 
@@ -198,9 +198,11 @@ module Repositories
           trader_id: record.trader_id,
           product_listing_id: record.product_listing_id,
           product_order_id: record.product_order_id,
+          farm_activity_id: record.farm_activity_id,
           product_listing: map_product_listing(record.product_listing),
-          trader_data: map_user(User.find_by(user_id: record.trader_id)),
-          farmer_data: map_user(record.product_listing&.user)
+          trader_data: map_user(Models::User.find_by(user_id: record.trader_id)),
+          farmer_data: map_user(record.product_listing&.user),
+          farm_activity: record.farm_activity ? map_farm_activity(record.farm_activity) : nil
         )
       end
 
@@ -239,6 +241,30 @@ module Repositories
           user_name: user.user_name,
           fullname: user.fullname,
           phone: user.phone
+        }
+      end
+
+      def map_farm_activity(farm_activity)
+        return nil unless farm_activity
+
+        {
+          id: farm_activity.id,
+          activity_type: farm_activity.activity_type,
+          title: farm_activity.description,
+          description: farm_activity.description,
+          start_date: farm_activity.start_date,
+          end_date: farm_activity.end_date,
+          status: farm_activity.status,
+          frequency: farm_activity.frequency,
+          user_id: farm_activity.user_id,
+          field_id: farm_activity.field_id,
+          crop_animal_id: farm_activity.crop_animal_id,
+          actual_completion_date: farm_activity.actual_completion_date,
+          actual_notes: farm_activity.actual_notes,
+          parent_activity_id: farm_activity.parent_activity_id,
+          coordinates: farm_activity.coordinates,
+          created_at: farm_activity.created_at,
+          updated_at: farm_activity.updated_at
         }
       end
     end

@@ -213,26 +213,38 @@ module Repositories
       def preview_plan(attributes)
         begin
           service = ::Services::Farming::PlanGeneratorService.new
-          activities_data = service.preview_activities_for_params(attributes)
+          
+          # Thêm user_id vào attributes nếu có
+          crop_params = attributes.dup
+          if attributes[:user_id].blank? && attributes[:field_id].present?
+            # Tìm user_id từ field
+            field = ::Models::Farming::Field.find_by(id: attributes[:field_id])
+            crop_params[:user_id] = field&.user_id
+          end
+          
+          activities_data = service.preview_activities_for_params(crop_params)
 
           activities_entities = activities_data.map do |act|
-            # Tìm template tương ứng để lấy thông tin vật tư
-            template = ::Models::Farming::PineappleActivityTemplate.find_by(
+            # Tìm tất cả templates tương ứng để lấy thông tin vật tư
+            templates = ::Models::Farming::PineappleActivityTemplate.where(
               activity_type: act[:activity_type],
               stage: act[:stage]
             )
             
-            # Lấy thông tin vật tư nếu có template
+            # Lấy thông tin vật tư từ tất cả templates
             materials = []
-            if template
-              materials = template.template_activity_materials.includes(:farm_material).map do |tam|
+            templates.each do |template|
+              template_materials = template.template_activity_materials.includes(:farm_material).map do |tam|
                 {
                   id: tam.farm_material.id,
                   name: tam.farm_material.name,
                   quantity: tam.quantity,
-                  unit: tam.farm_material.unit
+                  unit: tam.farm_material.unit,
+                  template_id: template.id,
+                  template_name: template.name
                 }
               end
+              materials.concat(template_materials)
             end
             
             Entities::Farming::FarmActivity.new(
@@ -258,24 +270,87 @@ module Repositories
         return { success: false, error: "Không tìm thấy vụ trồng dứa" } unless record
 
         created_activities = []
+        template_repo = ::Repositories::Farming::PineappleActivityTemplateRepository.new
 
         begin
           ActiveRecord::Base.transaction do
             # Xóa hoạt động cũ đang chờ hoặc đang thực hiện
             record.farm_activities.where(status: [ :pending, :in_progress ]).destroy_all
 
-            # Tạo hoạt động mới
+            # Tạo hoạt động mới từ template
             activities.each do |activity_attrs|
-              # Thêm trạng thái mặc định nếu không có
-              activity_attrs[:status] = "pending" unless activity_attrs[:status].present?
-
-              activity = ::Models::Farming::FarmActivity.create!(
-                crop_animal_id: record.id,
-                user_id: user_id,
-                **activity_attrs
+              # Tìm tất cả templates tương ứng (giống logic preview)
+              templates = ::Models::Farming::PineappleActivityTemplate.where(
+                activity_type: activity_attrs[:activity_type],
+                stage: activity_attrs[:stage]
               )
 
-              created_activities << map_activity_to_entity(activity)
+              if templates.any?
+                # Tạo activity mới với thông tin từ activity_attrs
+                activity = ::Models::Farming::FarmActivity.new(
+                  crop_animal_id: record.id,
+                  user_id: user_id,
+                  activity_type: activity_attrs[:activity_type],
+                  description: activity_attrs[:description],
+                  start_date: activity_attrs[:start_date],
+                  end_date: activity_attrs[:end_date],
+                  status: activity_attrs[:status] || "pending",
+                  field_id: activity_attrs[:field_id] || record.field_id,
+                  frequency: activity_attrs[:frequency] || "once"
+                )
+
+                # Bỏ qua kiểm tra trùng lặp khi tạo từ template/confirm_plan
+                activity.skip_similar_check = true if activity.respond_to?(:skip_similar_check=)
+                # Bỏ qua kiểm tra vật tư cho hoạt động không yêu cầu
+                activity.skip_materials_check = true if activity.respond_to?(:skip_materials_check=)
+
+                activity.save!
+
+                # Merge vật tư từ tất cả templates (giống logic preview)
+                materials_data = {}
+                templates.each do |template|
+                  template.template_activity_materials.includes(:farm_material).each do |tam|
+                    farm_material = ::Models::Farming::FarmMaterial.where(user_id: user_id)
+                                 .find_by(id: tam.farm_material_id)
+                    
+                    if farm_material
+                      # Nếu vật tư đã có, cộng dồn số lượng
+                      if materials_data[farm_material.id]
+                        materials_data[farm_material.id] += tam.quantity
+                      else
+                        materials_data[farm_material.id] = tam.quantity
+                      end
+                    end
+                  end
+                end
+
+                # Tạo activity_materials cho tất cả vật tư đã merge
+                materials_data.each do |material_id, quantity|
+                  activity.activity_materials.create!(
+                    farm_material_id: material_id,
+                    planned_quantity: quantity
+                  )
+                end
+
+                created_activities << map_activity_to_entity(activity)
+              else
+                # Nếu không tìm thấy template, tạo hoạt động thủ công
+                activity_attrs[:status] = "pending" unless activity_attrs[:status].present?
+
+                activity = ::Models::Farming::FarmActivity.new(
+                  crop_animal_id: record.id,
+                  user_id: user_id,
+                  **activity_attrs
+                )
+
+                # Bỏ qua kiểm tra trùng lặp khi tạo từ template/confirm_plan
+                activity.skip_similar_check = true if activity.respond_to?(:skip_similar_check=)
+                # Bỏ qua kiểm tra vật tư cho hoạt động không yêu cầu
+                activity.skip_materials_check = true if activity.respond_to?(:skip_materials_check=)
+
+                activity.save!
+                created_activities << map_activity_to_entity(activity)
+              end
             end
           end
 

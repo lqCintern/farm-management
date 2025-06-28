@@ -6,7 +6,12 @@ module Models::Marketplace
     belongs_to :product_listing, class_name: "Marketplace::ProductListing"
     belongs_to :trader, class_name: "User", foreign_key: "trader_id", primary_key: "user_id"
     belongs_to :product_order, class_name: "Marketplace::ProductOrder", optional: true
+    belongs_to :farm_activity, class_name: "Farming::FarmActivity", optional: true
     has_one_attached :payment_proof_image
+
+    # Callback tạo FarmActivity khi tạo harvest
+    after_create :create_farm_activity, unless: :farm_activity_id?
+    after_update :sync_activity_status, if: :saved_change_to_status?
 
     # Enum cho trạng thái
     enum :status, {
@@ -74,6 +79,52 @@ module Models::Marketplace
 
     private
 
+    def create_farm_activity
+      return unless product_listing&.crop_animal_id && product_listing&.pineapple_crop&.field_id
+
+      # Map MarketplaceHarvest status to FarmActivity status
+      activity_status = case status
+      when "scheduled"
+        "pending"
+      when "harvesting"
+        "in_progress"
+      when "completed"
+        "completed"
+      when "cancelled"
+        "cancelled"
+      else
+        "pending"
+      end
+
+      # Tạo hoạt động thu hoạch với các thuộc tính cần thiết
+      activity = ::Models::Farming::FarmActivity.new(
+        activity_type: "harvesting", # Sử dụng enum value đúng
+        description: "Thu hoạch #{product_listing.title} cho thương lái #{trader&.fullname || trader_id}",
+        frequency: "once",
+        status: activity_status,
+        start_date: scheduled_date.to_date,
+        end_date: scheduled_date.to_date,
+        user_id: product_listing.user_id, # farmer
+        field_id: product_listing.pineapple_crop.field_id,
+        crop_animal_id: product_listing.crop_animal_id
+      )
+
+      # Bỏ qua validation quy trình và kiểm tra trùng lặp cho hoạt động marketplace
+      activity.skip_similar_check = true
+      
+      # Thêm thuộc tính để bỏ qua validation quy trình nếu có
+      if activity.respond_to?(:skip_process_validation=)
+        activity.skip_process_validation = true
+      end
+
+      if activity.save
+        update_column(:farm_activity_id, activity.id)
+        Rails.logger.info "Created farm activity #{activity.id} for marketplace harvest #{id}"
+      else
+        Rails.logger.error "Failed to create farm activity for marketplace harvest #{id}: #{activity.errors.full_messages.join(', ')}"
+      end
+    end
+
     def find_conversation
       farmer_id = product_listing.user_id
 
@@ -86,6 +137,23 @@ module Models::Marketplace
         sender_id: farmer_id,
         receiver_id: trader_id
       )
+    end
+
+    def sync_activity_status
+      return unless farm_activity
+      
+      case status
+      when "scheduled"
+        farm_activity.update(status: "pending")
+      when "harvesting"
+        farm_activity.update(status: "in_progress")
+      when "completed"
+        farm_activity.update(status: "completed")
+      when "cancelled"
+        farm_activity.update(status: "cancelled")
+      end
+      
+      Rails.logger.info "Synced marketplace harvest #{id} status to #{status}, farm activity #{farm_activity.id} status to #{farm_activity.status}"
     end
   end
 end

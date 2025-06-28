@@ -12,7 +12,28 @@ module UseCases::Farming
         end
 
         if attributes[:stage].present? && attributes[:stage].is_a?(String)
-          attributes[:stage] = attributes[:stage].to_i
+          # Map string stage names to integer values using the enum
+          stage_mapping = {
+            'preparation' => 0,
+            'seedling_preparation' => 1,
+            'planting' => 2,
+            'leaf_tying' => 3,
+            'first_fertilizing' => 4,
+            'second_fertilizing' => 5,
+            'flower_treatment' => 6,
+            'sun_protection' => 7,
+            'fruit_development' => 8,
+            'harvesting' => 9,
+            'sprout_collection' => 10,
+            'field_cleaning' => 11
+          }
+          
+          stage_value = stage_mapping[attributes[:stage]]
+          if stage_value.nil?
+            # If not found in mapping, try to convert to integer
+            stage_value = attributes[:stage].to_i
+          end
+          attributes[:stage] = stage_value
         end
 
         result = @repository.update(id, attributes, user_id)

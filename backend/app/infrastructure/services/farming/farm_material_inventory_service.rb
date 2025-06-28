@@ -29,21 +29,26 @@ module Services
           ActiveRecord::Base.transaction do
             if material
               # Cập nhật vật tư hiện có
-              old_quantity = material.quantity.to_f
-              old_unit_cost = material.unit_cost.to_f || 0
+              old_quantity = get_attribute(material, :quantity).to_f
+              old_unit_cost = get_attribute(material, :unit_cost).to_f || 0
               old_total = old_quantity * old_unit_cost
               new_quantity = old_quantity + quantity
               avg_cost = new_quantity > 0 ? (old_total + total_price) / new_quantity : unit_price
               
-              result = @farm_material_repository.update(material.id, {
+              result = @farm_material_repository.update(get_attribute(material, :id), {
                 quantity: new_quantity,
                 unit_cost: avg_cost,
                 total_cost: new_quantity * avg_cost,
                 last_updated: Time.current
               }, user_id)
               
-              Rails.logger.info("Cập nhật vật tư #{material.id}: #{result.inspect}")
-              material = result[:data] || material
+              Rails.logger.info("Cập nhật vật tư #{get_attribute(material, :id)}: #{result.inspect}")
+              # FIX: Kiểm tra kết quả trả về là entity hay hash
+              material = if result.is_a?(Hash) && result[:data]
+                          result[:data]
+                        else
+                          result
+                        end
             else
               # Tạo vật tư mới
               create_params = {
@@ -72,7 +77,7 @@ module Services
             
             # Tạo giao dịch
             transaction_params = {
-              farm_material_id: material.id,
+              farm_material_id: get_attribute(material, :id),
               user_id: user_id,
               quantity: quantity,
               unit_price: unit_price,
@@ -107,12 +112,12 @@ module Services
           
           # Tạo transaction nếu có update số lượng
           if params[:quantity].present? && params[:unit_cost].present?
-            old_quantity = material.quantity
+            old_quantity = get_attribute(material, :quantity)
             quantity_change = params[:quantity] - old_quantity
             
             if quantity_change != 0
               @transaction_repository.create_transaction({
-                farm_material_id: material.id,
+                farm_material_id: get_attribute(material, :id),
                 user_id: user_id,
                 quantity: quantity_change,
                 unit_price: params[:unit_cost],
@@ -136,21 +141,21 @@ module Services
         ActiveRecord::Base.transaction do
           # Cập nhật số lượng
           usage = activity_material.actual_quantity || activity_material.planned_quantity
-          new_quantity = material.quantity - usage
+          new_quantity = get_attribute(material, :quantity) - usage
           
-          @farm_material_repository.update(material.id, {
+          @farm_material_repository.update(get_attribute(material, :id), {
             quantity: new_quantity,
-            total_cost: new_quantity * material.unit_cost,
+            total_cost: new_quantity * get_attribute(material, :unit_cost),
             last_updated: Time.current
           }, user_id)
           
           # Ghi nhận giao dịch sử dụng
           @transaction_repository.create_transaction({
-            farm_material_id: material.id,
+            farm_material_id: get_attribute(material, :id),
             user_id: user_id,
             quantity: -usage,
-            unit_price: material.unit_cost,
-            total_price: -usage * material.unit_cost,
+            unit_price: get_attribute(material, :unit_cost),
+            total_price: -usage * get_attribute(material, :unit_cost),
             transaction_type: "consumption",
             source_type: "Models::Farming::FarmActivity",
             source_id: activity_material.farm_activity_id,

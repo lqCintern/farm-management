@@ -10,16 +10,55 @@ interface StatisticsFilters {
 
 // Interfaces cho cấu trúc dữ liệu trả về từ API
 interface MaterialStatistics {
-  total_items: number;
-  low_stock_count: number;
-  out_of_stock_count: number;
-  categories: number;
-  total_cost: number;
-  by_category: CategoryStatistic[];
-  most_used: MostUsedMaterial[];
-  trends: {
+  total_materials: number;
+  total_quantity: number;
+  total_cost: string;
+  by_category: Record<string, number>;
+  low_stock: number;
+  out_of_stock: number;
+  trends?: {
     cost_change: number;
   };
+}
+
+interface HarvestStatistics {
+  monthly: Record<string, number>;
+  by_crop: Record<string, number>;
+  by_field: Record<string, number>;
+  total_quantity: number;
+  harvest_count: number;
+  farming_harvests: number;
+  marketplace_harvests: number;
+  total_revenue: number;
+  farming_details: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+    harvest_date: string;
+    field_name: string | null;
+    crop_name: string | null;
+    farm_activity_id: number | null;
+    farm_activity_type: string | null;
+    farm_activity_status: string | null;
+    created_at: string;
+    revenue: number;
+  }>;
+  marketplace_details: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+    harvest_date: string;
+    field_name: string | null;
+    crop_name: string | null;
+    order_id: number;
+    order_title: string;
+    buyer_name: string;
+    farm_activity_id: number | null;
+    farm_activity_type: string | null;
+    farm_activity_status: string | null;
+    created_at: string;
+    revenue: number;
+  }>;
 }
 
 interface CategoryStatistic {
@@ -49,8 +88,8 @@ interface MaterialDetail {
   used_date: string;
   activity_name: string;
   field_name: string;
-  unit_price: number;
-  total_price: number;
+  unit_cost: string | number;
+  total_cost: string | number;
 }
 
 interface MonthlyData {
@@ -65,6 +104,11 @@ interface MaterialStatsResponse {
   statistics: MaterialStatistics;
   details: MaterialDetail[];
   monthly_data: MonthlyData[];
+}
+
+interface HarvestStatsResponse {
+  message: string;
+  data: HarvestStatistics;
 }
 
 export const getFarmStatistics = async (filters: StatisticsFilters = {}) => {
@@ -95,24 +139,37 @@ export const getFarmStatistics = async (filters: StatisticsFilters = {}) => {
       { params }
     );
     
+    // Map dữ liệu để phù hợp với MaterialUsageStats component
+    const apiStats = materialStatsResponse.data.statistics;
+    const apiDetails = materialStatsResponse.data.details;
+    
     return {
       materials: {
-        total_items: materialStatsResponse.data.statistics?.total_items || 0,
-        low_stock_count: materialStatsResponse.data.statistics?.low_stock_count || 0,
-        out_of_stock_count: materialStatsResponse.data.statistics?.out_of_stock_count || 0,
-        categories: materialStatsResponse.data.statistics?.categories || 0,
-        total_cost: materialStatsResponse.data.statistics?.total_cost || 0,
-        by_category: materialStatsResponse.data.statistics?.by_category || [],
-        most_used: materialStatsResponse.data.statistics?.most_used || [],
+        total_materials: apiStats?.total_materials || 0,
+        total_quantity: apiStats?.total_quantity || 0,
+        total_cost: apiStats?.total_cost?.toString() || '0',
+        by_category: apiStats?.by_category || {},
+        low_stock: apiStats?.low_stock || 0,
+        out_of_stock: apiStats?.out_of_stock || 0,
         trend: {
-          cost_change: materialStatsResponse.data.statistics?.trends?.cost_change || 0
+          cost_change: apiStats?.trends?.cost_change || 0
         }
       },
-      material_details: materialStatsResponse.data.details || [],
+      material_details: apiDetails || [],
       monthly_data: materialStatsResponse.data.monthly_data || []
     };
   } catch (error) {
     console.error('Error fetching farm statistics:', error);
+    throw error;
+  }
+};
+
+export const getHarvestStatistics = async () => {
+  try {
+    const response = await axiosInstance.get<HarvestStatsResponse>('/farming/harvests/stats');
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching harvest statistics:', error);
     throw error;
   }
 };

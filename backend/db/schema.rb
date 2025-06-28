@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_25_171511) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_26_003356) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -130,6 +130,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_25_171511) do
     t.integer "category", default: 4
     t.decimal "unit_cost", precision: 10, scale: 2, default: "0.0"
     t.decimal "total_cost", precision: 10, scale: 2, default: "0.0"
+    t.decimal "reserved_quantity", precision: 10, scale: 2, default: "0.0"
+    t.virtual "available_quantity", type: :decimal, precision: 10, scale: 2, as: "(`quantity` - coalesce(`reserved_quantity`,0))", stored: true
   end
 
   create_table "fields", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -289,6 +291,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_25_171511) do
     t.datetime "payment_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "farm_activity_id"
+    t.index ["farm_activity_id"], name: "index_marketplace_harvests_on_farm_activity_id"
     t.index ["product_listing_id"], name: "index_marketplace_harvests_on_product_listing_id"
     t.index ["product_order_id"], name: "index_marketplace_harvests_on_product_order_id"
     t.index ["status"], name: "index_marketplace_harvests_on_status"
@@ -649,6 +653,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_25_171511) do
   add_foreign_key "labor_requests", "labor_farm_households", column: "requesting_household_id"
   add_foreign_key "labor_requests", "labor_requests", column: "parent_request_id"
   add_foreign_key "labor_worker_profiles", "users", primary_key: "user_id"
+  add_foreign_key "marketplace_harvests", "farm_activities"
   add_foreign_key "marketplace_harvests", "product_listings"
   add_foreign_key "marketplace_harvests", "product_orders"
   add_foreign_key "marketplace_harvests", "users", column: "trader_id", primary_key: "user_id"

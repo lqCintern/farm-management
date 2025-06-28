@@ -75,15 +75,19 @@ export const getStatusColor = (status: number): string => {
 export const formatTime = (timeString?: string) => {
   if (!timeString) return "";
 
-  // Nếu timeString có dạng HH:MM:SS
+  // Nếu là ISO string kiểu 2000-01-01T23:47:00.000Z hoặc 2025-06-14T09:00:00Z
+  if (timeString.includes('T')) {
+    const date = new Date(timeString);
+    // Lấy giờ và phút, luôn hiển thị 2 số
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  // Nếu chỉ là HH:MM:SS hoặc HH:MM
   if (timeString.indexOf(":") > 0) {
     return timeString.substring(0, 5); // Lấy chỉ HH:MM
   }
 
-  // Nếu timeString là ISO string
-  const date = new Date(timeString);
-  return date.toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return "";
 };

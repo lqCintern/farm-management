@@ -8,15 +8,21 @@ import * as pineappleCropService from '@/services/farming/pineappleCropService';
 import * as farmService from '@/services/farming/farmService';
 import { PineappleCrop, FarmActivity } from '@/types/labor/types';
 import Modal from '@/components/common/Modal';
+import { Steps, Tooltip, Tag } from 'antd';
 
 const STAGE_COLORS = {
-  preparation: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chuẩn bị' },
-  planting: { bg: 'bg-green-100', text: 'text-green-800', label: 'Trồng' },
-  growing: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Sinh trưởng' },
-  flowering: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Ra hoa' },
-  fruiting: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Ra quả' },
+  preparation: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chuẩn bị đất & mật độ trồng' },
+  seedling_preparation: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Chuẩn bị giống & vật tư' },
+  planting: { bg: 'bg-green-100', text: 'text-green-800', label: 'Trồng dứa' },
+  leaf_tying: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Buộc lá (tránh chính vụ)' },
+  first_fertilizing: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Bón phân thúc lần 1' },
+  second_fertilizing: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Bón phân thúc lần 2' },
+  flower_treatment: { bg: 'bg-pink-100', text: 'text-pink-800', label: 'Xử lý ra hoa' },
+  sun_protection: { bg: 'bg-indigo-100', text: 'text-indigo-800', label: 'Buộc tránh nắng / Che lưới đen' },
+  fruit_development: { bg: 'bg-red-100', text: 'text-red-800', label: 'Bón phân thúc quả lớn' },
   harvesting: { bg: 'bg-red-100', text: 'text-red-800', label: 'Thu hoạch' },
-  completed: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Hoàn thành' }
+  sprout_collection: { bg: 'bg-teal-100', text: 'text-teal-800', label: 'Tách chồi giống' },
+  field_cleaning: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Dọn vườn' }
 };
 
 const STATUS_COLORS = {
@@ -25,6 +31,22 @@ const STATUS_COLORS = {
   completed: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Hoàn thành' },
   cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã hủy' }
 };
+
+// Thứ tự các giai đoạn đúng chuẩn quy trình dứa
+const STAGE_ORDER = [
+  'preparation',
+  'seedling_preparation',
+  'planting',
+  'leaf_tying',
+  'first_fertilizing',
+  'second_fertilizing',
+  'flower_treatment',
+  'sun_protection',
+  'fruit_development',
+  'harvesting',
+  'sprout_collection',
+  'field_cleaning'
+];
 
 const PineappleCropDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +65,6 @@ const PineappleCropDetailPage: React.FC = () => {
 
   useEffect(() => {
     fetchCropData();
-    fetchActivities();
   }, [id]);
 
   const fetchCropData = async () => {
@@ -51,29 +72,25 @@ const PineappleCropDetailPage: React.FC = () => {
       setLoading(true);
       const response = await pineappleCropService.getPineappleCropById(Number(id));
       // Sửa lại đoạn này - response chính là dữ liệu cần thiết, không cần truy cập .data nữa
-      setCrop(response as PineappleCrop);
+      const cropData = response as PineappleCrop;
+      setCrop(cropData);
+      
+      // Sử dụng farm_activities từ response thay vì gọi API riêng
+      if (cropData.farm_activities) {
+        setActivities(cropData.farm_activities);
+      }
     } catch (error) {
       console.error('Error fetching pineapple crop:', error);
       setError('Không thể tải dữ liệu vụ trồng. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
+      setActivitiesLoading(false); // Cũng set loading cho activities thành false
     }
   };
 
   const fetchActivities = async () => {
-    try {
-      setActivitiesLoading(true);
-      // Lấy tất cả hoạt động, lọc theo crop_animal_id phía client
-      const response = await farmService.getFarmActivities();
-      const activities = (response?.farm_activities || []).filter(
-        (activity: FarmActivity) => activity.crop_animal_id === Number(id)
-      );
-      setActivities(activities);
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-    } finally {
-      setActivitiesLoading(false);
-    }
+    // Không cần gọi API riêng nữa vì đã có dữ liệu từ fetchCropData
+    // Chỉ giữ lại function này để tương thích ngược nếu cần
   };
 
   const handleAdvanceStage = async () => {
@@ -135,7 +152,7 @@ const PineappleCropDetailPage: React.FC = () => {
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg text-center">
           <p className="text-red-600 font-medium mb-4">Không tìm thấy vụ trồng dứa</p>
           <button
-            onClick={() => navigate('/pineapple_crops')}
+            onClick={() => navigate('/pineapple')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Quay lại danh sách
@@ -148,19 +165,16 @@ const PineappleCropDetailPage: React.FC = () => {
   const stageStyle = STAGE_COLORS[crop.current_stage as keyof typeof STAGE_COLORS] || STAGE_COLORS.preparation;
   const statusStyle = STATUS_COLORS[crop.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.planning;
 
-  // Tính các giai đoạn và trạng thái tiếp theo
-  const getNextStage = () => {
-    const stages = ['preparation', 'planting', 'growing', 'flowering', 'fruiting', 'harvesting', 'completed'];
-    const currentIndex = stages.indexOf(crop.current_stage);
-    return currentIndex < stages.length - 1 ? stages[currentIndex + 1] : null;
-  };
-
-  const nextStage = getNextStage();
-  const nextStageStyle = nextStage ? STAGE_COLORS[nextStage as keyof typeof STAGE_COLORS] : null;
+  const currentStageIndex = STAGE_ORDER.indexOf(crop.current_stage);
+  const nextStage = currentStageIndex < STAGE_ORDER.length - 1 ? STAGE_ORDER[currentStageIndex + 1] : null;
+  const nextStageLabel = nextStage ? STAGE_COLORS[nextStage as keyof typeof STAGE_COLORS].label : null;
+  const nextStageColor = nextStage ? STAGE_COLORS[nextStage as keyof typeof STAGE_COLORS].text.replace('text-', '') : 'gray';
 
   // Lọc các hoạt động theo trạng thái
   const pendingActivities = activities.filter(activity => activity.status === 'pending' || activity.status === 'in_progress');
   const completedActivities = activities.filter(activity => activity.status === 'completed');
+
+  const isMobile = window.innerWidth < 768;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -239,8 +253,8 @@ const PineappleCropDetailPage: React.FC = () => {
           </div>
 
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              {/* Thông tin cơ bản */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Thông tin vụ trồng */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-lg font-semibold mb-4">Thông tin vụ trồng</h2>
                 
@@ -290,84 +304,36 @@ const PineappleCropDetailPage: React.FC = () => {
                   </div>
                 )}
               </div>
-
               {/* Tiến độ vụ trồng */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-lg font-semibold mb-4">Tiến độ vụ trồng</h2>
-                
-                {/* Progress bar */}
-                <div className="relative pt-1 mb-6">
-                  <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                  <div
-                    style={{ width: getStageProgressPercent(crop) }}
-                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Chuẩn bị</span>
-                    <span>Trồng</span>
-                    <span>Sinh trưởng</span>
-                    <span>Ra hoa</span>
-                    <span>Ra quả</span>
-                    <span>Thu hoạch</span>
-                  </div>
+                <div className="mb-3 flex items-center justify-between">
+                  <span>Giai đoạn hiện tại:</span>
+                  <Tag color={stageStyle.text.replace('text-', '')}>{stageStyle.label}</Tag>
                 </div>
-
-                {/* Thống kê tiến độ */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Giai đoạn hiện tại:</span>
-                    <span className={`font-medium ${stageStyle.text}`}>{stageStyle.label}</span>
+                {nextStage && (
+                  <div className="mb-3 flex items-center justify-between">
+                    <span>Giai đoạn tiếp theo:</span>
+                    <Tag color={nextStageColor}>{nextStageLabel}</Tag>
                   </div>
-                  {nextStage && nextStageStyle && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Giai đoạn tiếp theo:</span>
-                      <span className={`font-medium ${nextStageStyle.text}`}>{nextStageStyle.label}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Công việc chờ xử lý:</span>
-                    <span className="font-medium">{pendingActivities.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Công việc đã hoàn thành:</span>
-                    <span className="font-medium">{completedActivities.length}</span>
-                  </div>
+                )}
+                <div className="mb-3 flex items-center justify-between">
+                  <span>Tiến độ:</span>
+                  <b>{crop.completion_percentage}%</b>
                 </div>
-
-                {/* Action buttons */}
-                <div className="space-y-2 pt-4 border-t border-gray-100">
-                  {nextStage && crop.status !== 'completed' && (
-                    <button
-                      onClick={() => setShowAdvanceModal(true)}
-                      className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center"
-                    >
-                      <FaArrowRight className="mr-2" />
-                      Chuyển sang giai đoạn tiếp theo
-                    </button>
-                  )}
-                  
-                  {crop.current_stage === 'harvesting' && (
-                    <button
-                      onClick={() => setShowHarvestModal(true)}
-                      className="w-full py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center"
-                    >
-                      <FaLeaf className="mr-2" />
-                      Ghi nhận thu hoạch
-                    </button>
-                  )}
-                  
-                  <button
-                    onClick={() => navigate(`/farm_activities?crop_animal_id=${id}`)}
-                    className="w-full py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center"
-                  >
-                    <FaCalendarAlt className="mr-2" />
-                    Xem tất cả công việc
-                  </button>
+                <div className="mb-3 flex items-center justify-between">
+                  <span>Công việc chờ xử lý:</span>
+                  <b>{pendingActivities.length}</b>
                 </div>
+                <div className="mb-3 flex items-center justify-between">
+                  <span>Công việc đã hoàn thành:</span>
+                  <b>{completedActivities.length}</b>
+                </div>
+                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded w-full mt-4" onClick={handleAdvanceStage}>
+                  Chuyển sang giai đoạn tiếp theo
+                </button>
               </div>
-
-              {/* Thông tin bổ sung */}
+              {/* Hoạt động sắp tới */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-lg font-semibold mb-4">Hoạt động sắp tới</h2>
                 
@@ -614,9 +580,9 @@ const PineappleCropDetailPage: React.FC = () => {
                 {stageStyle.label}
               </span>
               <FaArrowRight className="text-gray-400" />
-              {nextStageStyle && (
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${nextStageStyle.bg} ${nextStageStyle.text}`}>
-                  {nextStageStyle.label}
+              {nextStageLabel && (
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${nextStageColor}`}>
+                  {nextStageLabel}
                 </span>
               )}
             </div>
@@ -733,11 +699,10 @@ const PineappleCropDetailPage: React.FC = () => {
   );
 };
 
-// Helper function để tính phần trăm tiến độ giai đoạn
+// Hàm tính phần trăm tiến độ giai đoạn
 function getStageProgressPercent(crop: any) {
-    const stages = ['preparation', 'planting', 'growing', 'flowering', 'fruiting', 'harvesting', 'completed'];
-    const currentStageIndex = stages.indexOf(crop.current_stage);
-    return `${Math.min(100, (currentStageIndex / (stages.length - 1)) * 100)}%`;
-  }
+  const currentStageIndex = STAGE_ORDER.indexOf(crop.current_stage);
+  return `${Math.min(100, (currentStageIndex / (STAGE_ORDER.length - 1)) * 100)}%`;
+}
 
 export default PineappleCropDetailPage;

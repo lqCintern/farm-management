@@ -157,14 +157,11 @@ module Repositories
           materials_data.each do |material_id, quantity|
             farm_material = ::Models::Farming::FarmMaterial.find(material_id)
             
-            # Tạo liên kết vật tư
+            # Tạo liên kết vật tư (sẽ tự động reserve thông qua callback)
             activity.activity_materials.create!(
               farm_material_id: material_id,
               planned_quantity: quantity
             )
-            
-            # Trừ số lượng vật tư trong kho
-            farm_material.update!(quantity: farm_material.quantity - quantity)
           end
           
           # Trả về hoạt động đã tạo

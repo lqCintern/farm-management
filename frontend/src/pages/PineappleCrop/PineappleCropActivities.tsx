@@ -42,21 +42,26 @@ const PineappleCropActivities: React.FC = () => {
       setShowCompletionModal(false);
       setLoading(true);
       const result = await farmService.completeFarmActivity(activityId, {
-        farm_activity: {
-          actual_notes: completionNotes,
-          actual_completion_date: new Date().toISOString().split('T')[0]
-        }
+        actual_notes: completionNotes,
+        actual_materials: {} // Không có vật tư thực tế trong trường hợp này
       });
 
       fetchActivities();
-      alert("Đã đánh dấu hoàn thành hoạt động");
-      if (
-        typeof result === 'object' &&
-        result !== null &&
-        'suggestion' in result
-      ) {
-        console.log("Gợi ý từ hệ thống:", (result as { suggestion: string }).suggestion);
+      
+      // Hiển thị thông báo thành công
+      let successMessage = "Đã đánh dấu hoàn thành hoạt động";
+      
+      // Thêm thông báo về việc tự động chuyển giai đoạn nếu có
+      if (result.stage_advance_message) {
+        successMessage += `\n\n${result.stage_advance_message}`;
       }
+      
+      // Thêm gợi ý nếu có
+      if (result.suggestion) {
+        successMessage += `\n\nGợi ý: ${result.suggestion}`;
+      }
+      
+      alert(successMessage);
     } catch (error) {
       console.error('Error completing activity:', error);
       alert("Không thể hoàn thành hoạt động. Vui lòng thử lại.");

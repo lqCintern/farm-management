@@ -7,13 +7,13 @@ import {
   CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import { message } from "antd";
-import { socketService } from '@/services/socketService';
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ScheduleHarvestModal from "./ScheduleHarvestModal";
 import TransactionConfirmModal from "./TransactionConfirmModal";
 import UserVerification from "./UserVerification";
 import { getActiveHarvest } from "@/services/marketplace/harvestService";
+import { checkAcceptedOrderExists } from "@/services/marketplace/productOrderService";
 import {
   sendMessage,
   sendPaymentMessage,
@@ -58,6 +58,7 @@ const Conversation: React.FC<ConversationProps> = ({
   const [userRole, setUserRole] = useState<"farmer" | "trader" | null>(null);
   const [pendingAction, setPendingAction] = useState<'schedule' | 'payment' | null>(null);
   const [currentHarvest, setCurrentHarvest] = useState<any>(null);
+  const [hasAcceptedOrderState, setHasAcceptedOrderState] = useState(false);
   const navigate = useNavigate();
 
   const getCurrentUserId = () => {
@@ -85,6 +86,21 @@ const Conversation: React.FC<ConversationProps> = ({
     }
   }, [conversation, currentUserId]);
 
+  // Kiểm tra xem có đơn hàng đã chấp nhận cho sản phẩm này không
+  const checkAcceptedOrder = useCallback(async () => {
+    try {
+      const hasOrder = await checkAcceptedOrderExists(conversation.product_listing.id);
+      setHasAcceptedOrderState(!!hasOrder);
+    } catch (error) {
+      console.error('Error checking accepted orders:', error);
+      setHasAcceptedOrderState(false);
+    }
+  }, [conversation.product_listing.id]);
+
+  useEffect(() => {
+    checkAcceptedOrder();
+  }, [checkAcceptedOrder]);
+
   const handleSendMessage = async (messageText: string, image?: File) => {
     try {
       let data;
@@ -96,15 +112,6 @@ const Conversation: React.FC<ConversationProps> = ({
       } else {
         data = await sendMessage(conversation.id, messageText);
       }
-
-      // Gửi tin nhắn qua WebSocket
-      socketService.send({
-        type: "chat",
-        conversation_id: conversation.id,
-        content: messageText,
-        user_id: currentUserId,
-        created_at: new Date().toISOString(),
-      });
 
       return data;
     } catch (err) {
@@ -195,15 +202,16 @@ const Conversation: React.FC<ConversationProps> = ({
 
   // Kết nối WebSocket khi component mount
   useEffect(() => {
-    const token = localStorage.getItem("token") || "";
-    socketService.connect(token);
+    // Tạm thời comment out WebSocket logic để tránh lỗi
+    // const token = localStorage.getItem("token") || "";
+    // socketService.connect(token);
 
     // Lắng nghe tin nhắn mới
-    socketService.onMessage((data: any) => {
-      if (data.type === "chat" && data.conversation_id === conversation.id) {
-        onNewMessages([...messages, data]);
-      }
-    });
+    // socketService.onMessage((data: any) => {
+    //   if (data.type === "chat" && data.conversation_id === conversation.id) {
+    //     onNewMessages([...messages, data]);
+    //   }
+    // });
 
     return () => {
       // Cleanup nếu cần
@@ -211,62 +219,52 @@ const Conversation: React.FC<ConversationProps> = ({
   }, [conversation.id, messages, onNewMessages]);
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="bg-white border-b border-gray-200 p-3 flex items-center">
-        <button
-          className="md:hidden mr-2 text-gray-500 hover:text-gray-700"
-          onClick={onClose}
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-        </button>
-
-        <div
-          className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden mr-3 cursor-pointer"
-          onClick={() => navigate(`/products/${conversation.product_listing.id}`)}
-        >
-          {conversation.product_listing.product_images?.[0]?.image_url ? (
-            <img
-              src={conversation.product_listing.product_images[0].image_url}
-              alt="Product"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center bg-green-100 text-green-500">
-              <span className="text-sm font-medium">SP</span>
-            </div>
-          )}
+    <div className="flex flex-col h-full bg-white">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+          <div>
+            <h3 className="font-semibold text-gray-900">
+              {conversation.product_listing.title}
+            </h3>
+            <p className="text-sm text-gray-500">
+              {conversation.sender.fullname} ↔ {conversation.receiver.fullname}
+            </p>
+          </div>
         </div>
 
-        <div className="flex-1">
-          <h3 className="font-medium">{conversation.product_listing.title}</h3>
-          <p className="text-sm text-gray-500">
-            {currentUserId === conversation.sender.user_id
-              ? conversation.receiver.fullname
-              : conversation.sender.fullname}
-          </p>
-        </div>
-
-        <div className="flex space-x-2">
-          {userRole === "trader" && (
-            <button 
-              className="text-blue-500 hover:text-blue-700 p-1 flex items-center"
+        {/* Action buttons */}
+        <div className="flex items-center space-x-2">
+          {/* Nút lên lịch thu hoạch cho farmer khi có đơn hàng đã chấp nhận */}
+          {userRole === "farmer" && hasAcceptedOrderState && (
+            <button
               onClick={handleScheduleButtonClick}
+              className="flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
             >
-              <CalendarIcon className="h-5 w-5 mr-1" />
-              <span className="text-sm">Lên lịch</span>
+              <CalendarIcon className="w-4 h-4 mr-1" />
+              Lên lịch thu hoạch
             </button>
           )}
-          {userRole && (
-            <button 
-              className="text-green-500 hover:text-green-700 p-1 flex items-center"
+
+          {/* Nút thanh toán cho trader */}
+          {userRole === "trader" && (
+            <button
               onClick={handlePaymentButtonClick}
+              className="flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
             >
-              <CurrencyDollarIcon className="h-5 w-5 mr-1" />
-              <span className="text-sm">Thanh toán</span>
+              <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+              Thanh toán
             </button>
           )}
-          <button className="text-gray-500 hover:text-gray-700 p-1">
-            <InformationCircleIcon className="h-5 w-5" />
+
+          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <InformationCircleIcon className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -304,6 +302,7 @@ const Conversation: React.FC<ConversationProps> = ({
               ? conversation.receiver.user_id
               : conversation.sender.user_id
           }
+          productListing={conversation.product_listing}
           onSuccess={() => {
             setShowScheduleModal(false);
           }}

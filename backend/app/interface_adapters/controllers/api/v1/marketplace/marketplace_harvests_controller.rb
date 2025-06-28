@@ -41,11 +41,17 @@ module Controllers::Api
 
         # POST /api/v1/marketplace/harvests
         def create
+          Rails.logger.info "Creating harvest with params: #{params.inspect}"
+          Rails.logger.info "Current user: #{current_user.inspect}"
+          
           result = Services::CleanArch.marketplace_create_harvest.execute(
             marketplace_harvest_params.to_h,
             current_user.user_id,
-            params[:product_listing_id]
+            params[:product_listing_id],
+            params[:trader_id]
           )
+
+          Rails.logger.info "Create harvest result: #{result.inspect}"
 
           if result[:success]
             render json: {
@@ -53,30 +59,49 @@ module Controllers::Api
               harvest: harvest_response(result[:harvest])
             }, status: :created
           else
+            Rails.logger.error "Failed to create harvest: #{result[:error]}"
             render json: { errors: [ result[:error] ] }, status: :unprocessable_entity
           end
         end
 
         # PATCH/PUT /api/v1/marketplace/harvests/:id
         def update
+          harvest = Models::Marketplace::MarketplaceHarvest.find(params[:id])
+          authorize! :update, harvest
+
+          allowed_statuses = %w[scheduled harvesting completed cancelled]
+          new_status = params[:status]
+          unless allowed_statuses.include?(new_status)
+            return render json: { error: "Trạng thái không hợp lệ" }, status: :unprocessable_entity
+          end
+
+          # Chuẩn bị attributes để cập nhật
+          update_attributes = { status: new_status }
+          
+          # Cập nhật số lượng thực tế nếu có
+          if params[:actual_quantity].present?
+            update_attributes[:actual_quantity] = params[:actual_quantity]
+          end
+          
+          # Cập nhật giá cuối cùng nếu có
+          if params[:final_price].present?
+            update_attributes[:final_price] = params[:final_price]
+          end
+
+          # Sử dụng use case để cập nhật với logic phức tạp
           result = Services::CleanArch.marketplace_update_harvest_status.execute(
             params[:id],
-            marketplace_harvest_params.to_h,
+            update_attributes,
             current_user.user_id
           )
 
           if result[:success]
-            render json: {
-              status: "success",
-              message: result[:message] || "Cập nhật đơn thu hoạch thành công",
-              data: { harvest: marketplace_harvest_response(result[:harvest]) }
+            render json: { 
+              message: result[:message] || "Cập nhật trạng thái thành công", 
+              harvest: harvest_response(result[:harvest]) 
             }
           else
-            render json: {
-              status: "error",
-              message: "Không thể cập nhật đơn thu hoạch",
-              errors: result[:errors]
-            }, status: :unprocessable_entity
+            render json: { error: result[:errors]&.join(', ') || "Cập nhật thất bại" }, status: :unprocessable_entity
           end
         end
 
@@ -129,6 +154,37 @@ module Controllers::Api
           end
         end
 
+        # GET /api/v1/marketplace/harvests/my_harvests
+        def my_harvests
+          pagy, harvests = Services::CleanArch.marketplace_list_my_harvests.execute(
+            user_id: current_user.user_id,
+            user_type: current_user.user_type,
+            status: params[:status],
+            page: params[:page] || 1,
+            per_page: params[:per_page] || 10
+          )
+
+          render json: {
+            harvests: harvests.map { |h| harvest_response(h) },
+            pagination: {
+              current_page: pagy.page,
+              total_pages: pagy.pages,
+              total_items: pagy.count
+            }
+          }
+        end
+
+        # GET /api/v1/marketplace/harvests/by_product/:product_listing_id
+        def by_product
+          harvests = Services::CleanArch.marketplace_list_harvests_by_product.execute(
+            params[:product_listing_id]
+          )
+
+          render json: {
+            harvests: harvests.map { |h| harvest_response(h) }
+          }
+        end
+
         private
 
         def marketplace_harvest_params
@@ -159,6 +215,7 @@ module Controllers::Api
             payment_date: harvest.payment_date,
             created_at: harvest.created_at,
             updated_at: harvest.updated_at,
+            farm_activity_id: harvest.farm_activity_id,
             product_listing: {
               id: harvest.product_listing.id,
               title: harvest.product_listing.title,
@@ -169,7 +226,8 @@ module Controllers::Api
               images: harvest.product_listing.product_images.map(&:image_url).compact
             },
             trader: harvest.trader_data,
-            farmer: harvest.farmer_data
+            farmer: harvest.farmer_data,
+            farm_activity: harvest.farm_activity
           }
         end
       end

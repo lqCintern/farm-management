@@ -1,4 +1,5 @@
 import axiosInstance from '@/utils/axiosConfig';
+import axios from 'axios';
 
 export const getMarketplaceHarvests = async (params: any = {}) => {
   const response = await axiosInstance.get('/marketplace/harvests', { params });
@@ -47,3 +48,12 @@ export const getActiveHarvest = async (productListingId: number) => {
     throw error;
   }
 };
+
+export const getMyHarvests = () =>
+  axios.get('/api/v1/marketplace/harvests/my_harvests').then(res => res.data);
+
+export const getHarvestDetail = (id: string) =>
+  axios.get(`/api/v1/marketplace/harvests/${id}`).then(res => res.data.harvest);
+
+export const updateHarvestStatus = (id: string, data: any) =>
+  axios.patch(`/api/v1/marketplace/harvests/${id}`, data).then(res => res.data);

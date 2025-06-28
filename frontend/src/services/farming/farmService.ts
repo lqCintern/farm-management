@@ -143,6 +143,7 @@ export const getFarmActivityStatistics = async (params: StatisticsParams) => {
   }
 };
 
+// Complete farm activity (material is committed when activity is completed)
 export const completeFarmActivity = async (id: number, data: {
   actual_notes?: string;
   actual_materials: Record<string, number>;

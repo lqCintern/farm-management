@@ -57,36 +57,33 @@ module Repositories
 
       def update(id, attributes, user_id)
         record = ::Models::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
-        return { success: false, error: "Không tìm thấy hoạt động" } unless record
+        return { success: false, errors: ["Không tìm thấy hoạt động"] } unless record
 
-        # Tách materials
+        # Tách materials khỏi params để xử lý riêng
         materials = attributes.delete(:materials)
 
-        # Lưu materials cũ để trả về kho nếu cần
-        old_materials = get_current_materials(record)
+        # Kiểm tra xem hoạt động đã hoàn thành chưa
+        if record.completed?
+          return { success: false, errors: ["Không thể chỉnh sửa hoạt động đã hoàn thành"] }
+        end
 
         begin
           ActiveRecord::Base.transaction do
-            record.assign_attributes(attributes)
-
-            if record.save
+            # Cập nhật record
+            if record.update(attributes)
               # Xử lý materials nếu có
-              if materials.present?
-                # Trả materials cũ về kho
-                return_materials_to_inventory(old_materials, user_id)
+              process_materials(record, materials, user_id) if materials.present?
 
-                # Xử lý materials mới
-                process_materials(record, materials, user_id)
-              end
+              # Xử lý lịch trình lặp lại nếu cần
+              process_recurring_schedule(record, attributes) if record.frequency != "once" && record.frequency != :once
             else
               raise ActiveRecord::Rollback
             end
           end
 
-          # Nếu đến đây nghĩa là transaction đã thành công
           map_to_entity(record)
         rescue => e
-          { success: false, errors: [ e.message ] }
+          { success: false, errors: [e.message] }
         end
       end
 
@@ -116,30 +113,32 @@ module Repositories
         record = ::Models::Farming::FarmActivity.where(user_id: user_id).find_by(id: id)
         return { success: false, error: "Không tìm thấy hoạt động" } unless record
 
-        begin
-          ActiveRecord::Base.transaction do
-            # Cập nhật thông tin hoàn thành
-            record.status = :completed
-            record.actual_completion_date = Date.today
-            record.actual_notes = completion_params[:actual_notes] if completion_params[:actual_notes].present?
+        # Kiểm tra trạng thái
+        unless record.status == "pending"
+          return { success: false, error: "Chỉ có thể hoàn thành hoạt động ở trạng thái pending" }
+        end
 
-            # Xử lý actual_materials nếu có
-            if completion_params[:actual_materials].present?
-              update_actual_materials(record, completion_params[:actual_materials], user_id)
-            end
+        # Cập nhật thông tin hoàn thành
+        record.actual_completion_date = Date.today
+        record.actual_notes = completion_params[:actual_notes] if completion_params[:actual_notes].present?
 
-            record.save!
+        # Hoàn thành hoạt động (sẽ tự động commit material và cập nhật actual_materials)
+        actual_materials = completion_params[:actual_materials] || {}
+        if record.complete_activity(actual_materials)
+          # Cập nhật pineapple_crop sau khi hoàn thành hoạt động
+          stage_advance_message = update_pineapple_crop_after_completion(record)
 
-            # Kiểm tra và cập nhật PineappleCrop sau khi hoàn thành
-            update_pineapple_crop_after_completion(record)
+          # Kiểm tra chuyển giai đoạn (cho suggestion)
+          suggestion = check_stage_completion(record)
 
-            # Kiểm tra hoàn thành giai đoạn
-            suggestion = check_stage_completion(record)
-
-            { success: true, entity: map_to_entity(record), suggestion: suggestion }
-          end
-        rescue => e
-          { success: false, error: e.message }
+          { 
+            success: true, 
+            farm_activity: map_to_entity(record),
+            suggestion: suggestion,
+            stage_advance_message: stage_advance_message
+          }
+        else
+          { success: false, error: record.errors.full_messages.join(", ") }
         end
       end
 
@@ -260,14 +259,12 @@ module Repositories
             raise "Không tìm thấy vật tư với ID #{material_id}"
           end
 
-          if material.quantity < quantity
-            raise "Không đủ vật tư #{material.name} trong kho (cần: #{quantity}, còn: #{material.quantity})"
+          # Kiểm tra available_quantity thay vì quantity
+          if material.available_quantity < quantity
+            raise "Không đủ vật tư #{material.name} trong kho (cần: #{quantity}, có thể sử dụng: #{material.available_quantity})"
           end
 
-          # Trừ vật tư từ kho
-          material.update!(quantity: material.quantity - quantity)
-
-          # Tạo liên kết
+          # Tạo liên kết (sẽ tự động reserve thông qua callback)
           record.activity_materials.create!(
             farm_material_id: material_id,
             planned_quantity: quantity
@@ -296,7 +293,10 @@ module Repositories
       def return_materials_to_inventory(materials_hash, user_id)
         materials_hash.each do |material_id, quantity|
           material = ::Models::Farming::FarmMaterial.where(user_id: user_id).find_by(id: material_id)
-          material.update!(quantity: material.quantity + quantity) if material
+          if material
+            # Release reserved quantity thay vì cộng vào quantity
+            material.release_reserved_quantity(quantity)
+          end
         end
       end
 
@@ -323,21 +323,10 @@ module Repositories
               actual_quantity: quantity
             )
           else
-            activity_material.update!(actual_quantity: quantity)
-          end
-
-          # Giảm số lượng vật tư trong kho nếu cần
-          if activity_material.actual_quantity > activity_material.planned_quantity
-            extra = activity_material.actual_quantity - activity_material.planned_quantity
-
-            if material.quantity < extra
-              raise "Không đủ vật tư #{material.name} trong kho"
+            # Gọi update_actual_quantity để trigger đúng callback và logic
+            unless activity_material.update_actual_quantity(quantity)
+              raise "Không thể cập nhật vật tư #{material.name}"
             end
-
-            material.update!(
-              quantity: material.quantity - extra,
-              last_updated: Time.current
-            )
           end
         end
       end
@@ -386,6 +375,52 @@ module Repositories
         when "harvesting"
           # Xử lý hoạt động thu hoạch nếu cần
         end
+
+        # Kiểm tra và tự động chuyển giai đoạn nếu tất cả hoạt động của giai đoạn hiện tại đã hoàn thành
+        check_and_advance_stage(pineapple_crop, record.user_id)
+      end
+
+      def check_and_advance_stage(pineapple_crop, user_id)
+        # Mapping giữa stage và activity types theo quy trình thực tế trồng dứa
+        stage_activity_mapping = {
+          "preparation" => ["soil_preparation"],
+          "seedling_preparation" => ["seedling_preparation"],
+          "planting" => ["planting"],
+          "leaf_tying" => ["leaf_tying"],
+          "first_fertilizing" => ["fertilizing"],
+          "second_fertilizing" => ["fertilizing"],
+          "flower_treatment" => ["pesticide"],
+          "sun_protection" => ["sun_protection"],
+          "fruit_development" => ["fruit_development"],
+          "harvesting" => ["harvesting"],
+          "sprout_collection" => ["sprout_collection"],
+          "field_cleaning" => ["field_cleaning"]
+        }
+
+        current_stage = pineapple_crop.current_stage
+        stage_activity_types = stage_activity_mapping[current_stage] || []
+        
+        # Lấy tất cả hoạt động của giai đoạn hiện tại
+        stage_activities = ::Models::Farming::FarmActivity
+                           .where(crop_animal_id: pineapple_crop.id, user_id: user_id)
+                           .where(activity_type: stage_activity_types)
+
+        # Nếu tất cả hoạt động của giai đoạn hiện tại đã hoàn thành
+        if stage_activities.where.not(status: :completed).empty? && stage_activities.exists?
+          # Tự động chuyển sang giai đoạn tiếp theo
+          if pineapple_crop.advance_to_next_stage
+            next_stage = pineapple_crop.current_stage
+            next_stage_name = ::Models::Farming::PineappleCrop.current_stages.key(next_stage)
+            
+            return {
+              stage_advanced: true,
+              message: "Đã tự động chuyển sang giai đoạn: #{I18n.t("pineapple_stages.#{next_stage_name}")}",
+              next_stage: next_stage_name
+            }
+          end
+        end
+
+        nil
       end
 
       def check_stage_completion(record)

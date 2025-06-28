@@ -5,7 +5,8 @@ import {
 } from "antd";
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, 
-  CopyOutlined, CheckCircleOutlined, FilterOutlined 
+  CopyOutlined, CheckCircleOutlined, FilterOutlined,
+  ShoppingCartOutlined
 } from "@ant-design/icons";
 import pineappleActivityTemplateService, { 
   PineappleTemplateParams, 
@@ -14,7 +15,9 @@ import pineappleActivityTemplateService, {
   PineappleActivityType 
 } from "@/services/farming/pineappleActivityTemplateService";
 import { getPineappleCrops } from "@/services/farming/pineappleCropService";
+import templateMaterialService from "@/services/farming/templateMaterialService";
 import ActivityTemplateForm from "./ActivityTemplateForm";
+import MaterialsOverview from "@/components/TemplateMaterials/MaterialsOverview";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -40,13 +43,18 @@ const stageOptions = [
 // Mapping cho loại hoạt động (activity_type)
 const activityTypeOptions = [
   { value: PineappleActivityType.SOIL_PREPARATION, label: "Chuẩn bị đất" },
-  { value: PineappleActivityType.PLANTING, label: "Trồng cây" },
+  { value: PineappleActivityType.SEEDLING_PREPARATION, label: "Chuẩn bị giống & vật tư" },
+  { value: PineappleActivityType.PLANTING, label: "Trồng dứa" },
+  { value: PineappleActivityType.LEAF_TYING, label: "Buộc lá" },
   { value: PineappleActivityType.FERTILIZING, label: "Bón phân" },
-  { value: PineappleActivityType.WATERING, label: "Tưới nước" },
   { value: PineappleActivityType.PESTICIDE, label: "Phun thuốc" },
-  { value: PineappleActivityType.PRUNING, label: "Tỉa cây" },
-  { value: PineappleActivityType.WEEDING, label: "Làm cỏ" },
+  { value: PineappleActivityType.SUN_PROTECTION, label: "Che nắng" },
+  { value: PineappleActivityType.FRUIT_DEVELOPMENT, label: "Thúc quả" },
   { value: PineappleActivityType.HARVESTING, label: "Thu hoạch" },
+  { value: PineappleActivityType.SPROUT_COLLECTION, label: "Tách chồi" },
+  { value: PineappleActivityType.FIELD_CLEANING, label: "Dọn vườn" },
+  { value: PineappleActivityType.WATERING, label: "Tưới nước" },
+  { value: PineappleActivityType.WEEDING, label: "Làm cỏ" },
   { value: PineappleActivityType.OTHER, label: "Khác" }
 ];
 
@@ -65,6 +73,7 @@ export default function PineappleActivityTemplates() {
   const [selectedCropId, setSelectedCropId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [cropsLoading, setCropsLoading] = useState(false);
+  const [materialsStats, setMaterialsStats] = useState<Record<number, any>>({});
 
   // Fetch dữ liệu
   useEffect(() => {
@@ -79,7 +88,23 @@ export default function PineappleActivityTemplates() {
       if (filteredType) params.activity_type = filteredType;
       
       const response = await pineappleActivityTemplateService.getTemplates(params);
-      setTemplates(response.data || []);
+      const templatesData = response.data || [];
+      setTemplates(templatesData);
+      
+      // Fetch materials stats for each template
+      const stats: Record<number, any> = {};
+      for (const template of templatesData) {
+        if (template.id) {
+          try {
+            const statsResponse = await templateMaterialService.getTemplateMaterialStats(template.id);
+            stats[template.id] = statsResponse.stats;
+          } catch (error) {
+            console.error(`Error fetching stats for template ${template.id}:`, error);
+            stats[template.id] = { total_materials: 0, total_estimated_cost: 0 };
+          }
+        }
+      }
+      setMaterialsStats(stats);
     } catch (error) {
       message.error("Không thể tải danh sách mẫu hoạt động");
       console.error("Error fetching templates:", error);
@@ -170,13 +195,18 @@ const getActivityTypeLabel = (type: number): string => {
     // Chuyển đổi từ số sang tên loại hoạt động
     switch(type) {
         case PineappleActivityType.SOIL_PREPARATION: return "Chuẩn bị đất";
-        case PineappleActivityType.PLANTING: return "Trồng cây";
+        case PineappleActivityType.SEEDLING_PREPARATION: return "Chuẩn bị giống & vật tư";
+        case PineappleActivityType.PLANTING: return "Trồng dứa";
+        case PineappleActivityType.LEAF_TYING: return "Buộc lá";
         case PineappleActivityType.FERTILIZING: return "Bón phân";
-        case PineappleActivityType.WATERING: return "Tưới nước";
         case PineappleActivityType.PESTICIDE: return "Phun thuốc";
-        case PineappleActivityType.PRUNING: return "Tỉa cây";
-        case PineappleActivityType.WEEDING: return "Làm cỏ";
+        case PineappleActivityType.SUN_PROTECTION: return "Che nắng";
+        case PineappleActivityType.FRUIT_DEVELOPMENT: return "Thúc quả";
         case PineappleActivityType.HARVESTING: return "Thu hoạch";
+        case PineappleActivityType.SPROUT_COLLECTION: return "Tách chồi";
+        case PineappleActivityType.FIELD_CLEANING: return "Dọn vườn";
+        case PineappleActivityType.WATERING: return "Tưới nước";
+        case PineappleActivityType.WEEDING: return "Làm cỏ";
         case PineappleActivityType.OTHER: return "Khác";
         default: return `Loại ${type}`;
     }
@@ -220,6 +250,29 @@ const columns = [
         dataIndex: "activity_type",
         key: "activity_type",
         render: (type: number) => <Tag color="blue">{getActivityTypeLabel(type)}</Tag>
+    },
+    {
+        title: "Vật tư",
+        key: "materials",
+        render: (_: any, record: ColumnRecord) => {
+            const stats = materialsStats[record.id];
+            if (!stats || stats.total_materials === 0) {
+                return <span style={{ color: '#999' }}>Chưa có vật tư</span>;
+            }
+            return (
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <ShoppingCartOutlined style={{ color: '#1890ff' }} />
+                        <span>{stats.total_materials} vật tư</span>
+                    </div>
+                    {stats.total_estimated_cost > 0 && (
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                            ~{stats.total_estimated_cost.toLocaleString()} VNĐ
+                        </div>
+                    )}
+                </div>
+            );
+        }
     },
     {
         title: "Bắt đầu sau (ngày)",
@@ -393,26 +446,37 @@ const columns = [
         <TabPane tab="Tất cả mẫu" key="all" />
         <TabPane tab="Mẫu mặc định" key="default" />
         <TabPane tab="Mẫu tùy chỉnh" key="custom" />
+        <TabPane tab="Tổng quan vật tư" key="materials-overview" />
       </Tabs>
 
-      {/* Table chú giải */}
-      <div className="mb-4 flex items-center text-sm">
-        <Badge color="blue" className="mr-1" />
-        <span className="mr-4">Mẫu mặc định</span>
-        <span className="mr-2 text-gray-500">Ghi chú:</span>
-        <span className="text-gray-500">Mẫu mặc định không thể sửa/xóa nhưng có thể sao chép để tạo mẫu riêng</span>
-      </div>
+      {/* Content based on active tab */}
+      {activeTab === "materials-overview" ? (
+        <MaterialsOverview
+          templateIds={templates.map(t => t.id!).filter(Boolean)}
+          onRefresh={fetchTemplates}
+        />
+      ) : (
+        <>
+          {/* Table chú giải */}
+          <div className="mb-4 flex items-center text-sm">
+            <Badge color="blue" className="mr-1" />
+            <span className="mr-4">Mẫu mặc định</span>
+            <span className="mr-2 text-gray-500">Ghi chú:</span>
+            <span className="text-gray-500">Mẫu mặc định không thể sửa/xóa nhưng có thể sao chép để tạo mẫu riêng</span>
+          </div>
 
-      {/* Table */}
-      <Table 
-        columns={columns} 
-        dataSource={filteredTemplates}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-        rowClassName={(record) => !record.user_id ? "bg-blue-50" : ""}
-        locale={{ emptyText: "Không có mẫu hoạt động nào" }}
-      />
+          {/* Table */}
+          <Table 
+            columns={columns} 
+            dataSource={filteredTemplates}
+            rowKey="id"
+            loading={loading}
+            pagination={{ pageSize: 10 }}
+            rowClassName={(record) => !record.user_id ? "bg-blue-50" : ""}
+            locale={{ emptyText: "Không có mẫu hoạt động nào" }}
+          />
+        </>
+      )}
 
       {/* Form modal */}
       <ActivityTemplateForm

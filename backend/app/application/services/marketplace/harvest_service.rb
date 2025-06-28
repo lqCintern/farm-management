@@ -31,8 +31,17 @@ module Services::Marketplace
         # Cập nhật trạng thái sản phẩm
         product_listing.update(status: ::Marketplace::ProductListing::STATUS_RESERVED)
 
+        # Nếu trạng thái là completed ngay từ đầu, cập nhật sản lượng mùa vụ
+        if @harvest.status == "completed" && @harvest.actual_quantity.present?
+          update_crop_yield(product_listing, @harvest.actual_quantity)
+        end
+
         # Gửi tin nhắn thông báo
-        message_content = "Đã lên lịch thu hoạch cho sản phẩm #{product_listing.title} vào #{@harvest.scheduled_date.strftime('%d/%m/%Y %H:%M')}. Địa điểm: #{@harvest.location}"
+        message_content = if @harvest.status == "completed"
+          "Đã ghi nhận thu hoạch #{@harvest.actual_quantity}kg cho sản phẩm #{product_listing.title}"
+        else
+          "Đã lên lịch thu hoạch cho sản phẩm #{product_listing.title} vào #{@harvest.scheduled_date.strftime('%d/%m/%Y %H:%M')}. Địa điểm: #{@harvest.location}"
+        end
         @conversation_service.send_schedule_notification(@harvest, @user, message_content)
 
         { success: true, harvest: @harvest }
@@ -50,6 +59,9 @@ module Services::Marketplace
       status_changed = params[:status] &&
                       params[:status].to_i != @harvest.status_before_type_cast
 
+      # Lưu số lượng thực tế cũ để so sánh
+      old_actual_quantity = @harvest.actual_quantity
+
       if @harvest.update(params)
         # Cập nhật trạng thái sản phẩm nếu trạng thái thu hoạch thay đổi
         if status_changed
@@ -59,6 +71,11 @@ module Services::Marketplace
             # Cập nhật đơn hàng nếu có
             if @harvest.product_order
               @harvest.product_order.update(status: :completed)
+            end
+            
+            # Cập nhật sản lượng mùa vụ khi hoàn thành
+            if @harvest.actual_quantity.present? && @harvest.actual_quantity != old_actual_quantity
+              update_crop_yield(@harvest.product_listing, @harvest.actual_quantity - (old_actual_quantity || 0))
             end
           when "cancelled"
             @harvest.product_listing.update(status: ::Marketplace::ProductListing::STATUS_ACTIVE)
@@ -168,6 +185,25 @@ module Services::Marketplace
       else
         { success: false, error: "Không thể xóa lịch thu hoạch" }
       end
+    end
+
+    private
+
+    def update_crop_yield(product_listing, quantity)
+      return unless product_listing.crop_animal_id.present?
+
+      # Tìm pineapple crop và cập nhật sản lượng thực tế
+      pineapple_crop = ::Models::Farming::PineappleCrop.find_by(id: product_listing.crop_animal_id)
+      return unless pineapple_crop
+
+      # Cập nhật sản lượng thực tế
+      current_yield = pineapple_crop.actual_yield || 0
+      pineapple_crop.update(actual_yield: current_yield + quantity)
+
+      # Không tạo bản ghi Harvest riêng biệt vì đã có FarmActivity được tạo tự động
+      # FarmActivity sẽ được đồng bộ với Harvest thông qua logic trong model
+
+      Rails.logger.info "Updated crop yield: #{pineapple_crop.title} - Added #{quantity}kg, Total: #{pineapple_crop.actual_yield}kg"
     end
   end
 end

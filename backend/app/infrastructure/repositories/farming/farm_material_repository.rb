@@ -85,6 +85,89 @@ module Repositories
         end
       end
 
+      def get_statistics(user_id, filters = {})
+        materials = ::Models::Farming::FarmMaterial.where(user_id: user_id)
+        
+        # Áp dụng filters nếu có
+        if filters[:start_date].present? || filters[:end_date].present?
+          # Logic filter theo thời gian nếu cần
+        end
+        
+        # Tính toán thống kê cơ bản
+        total_materials = materials.count
+        total_quantity = materials.sum(:quantity)
+        total_cost = materials.sum(:total_cost)
+        
+        # Thống kê theo loại
+        by_category = materials.group(:category).count
+        
+        # Thống kê vật tư sắp hết
+        low_stock = materials.where('quantity <= 10 AND quantity > 0').count
+        out_of_stock = materials.where('quantity <= 0').count
+        
+        # Dữ liệu chi tiết với thông tin ruộng và hoạt động
+        details = materials.map do |material|
+          # Lấy thông tin sử dụng vật tư từ ActivityMaterial
+          activity_materials = material.activity_materials
+            .joins(:farm_activity)
+            .joins("LEFT JOIN fields ON farm_activities.field_id = fields.id")
+            .select("activity_materials.*, 
+                    farm_activities.start_date as used_date,
+                    farm_activities.description as activity_name,
+                    fields.name as field_name")
+            .order("farm_activities.start_date DESC")
+          
+          # Nếu có activity_materials, lấy thông tin từ record đầu tiên
+          if activity_materials.any?
+            first_usage = activity_materials.first
+            {
+              id: material.id,
+              name: material.name,
+              category: material.category,
+              quantity: material.quantity,
+              unit: material.unit,
+              unit_cost: material.unit_cost,
+              total_cost: material.total_cost,
+              last_updated: material.last_updated,
+              used_date: first_usage.used_date,
+              activity_name: first_usage.activity_name,
+              field_name: first_usage.field_name || "Không có ruộng"
+            }
+          else
+            {
+              id: material.id,
+              name: material.name,
+              category: material.category,
+              quantity: material.quantity,
+              unit: material.unit,
+              unit_cost: material.unit_cost,
+              total_cost: material.total_cost,
+              last_updated: material.last_updated,
+              used_date: nil,
+              activity_name: nil,
+              field_name: nil
+            }
+          end
+        end
+        
+        # Dữ liệu theo tháng (giả định)
+        monthly_data = []
+        
+        {
+          success: true,
+          statistics: {
+            total_materials: total_materials,
+            total_quantity: total_quantity,
+            total_cost: total_cost,
+            by_category: by_category,
+            low_stock: low_stock,
+            out_of_stock: out_of_stock
+          },
+          details: details,
+          monthly_data: monthly_data
+        }
+      end
+
       private
       
       def apply_filters(query, filters)

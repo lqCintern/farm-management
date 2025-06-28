@@ -91,7 +91,7 @@ const FarmActivityDetail = () => {
     try {
       setCompletingActivity(true);
       // Sử dụng completeFarmActivity thay vì updateFarmActivity
-      await completeFarmActivity(activity.id, {
+      const result = await completeFarmActivity(activity.id, {
         actual_notes: notes,
         actual_materials: actualMaterialsData
       });
@@ -108,7 +108,21 @@ const FarmActivityDetail = () => {
       });
       
       setShowCompleteModal(false);
-      alert("Hoạt động đã được cập nhật thành công");
+      
+      // Hiển thị thông báo thành công
+      let successMessage = "Hoạt động đã được hoàn thành thành công";
+      
+      // Thêm thông báo về việc tự động chuyển giai đoạn nếu có
+      if (result.stage_advance_message) {
+        successMessage += `\n\n${result.stage_advance_message}`;
+      }
+      
+      // Thêm gợi ý nếu có
+      if (result.suggestion) {
+        successMessage += `\n\nGợi ý: ${result.suggestion}`;
+      }
+      
+      alert(successMessage);
     } catch (err) {
       console.error("Error updating activity status:", err);
       alert("Có lỗi xảy ra khi hoàn thành hoạt động");

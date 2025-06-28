@@ -44,8 +44,8 @@ module Models::Farming
     def advance_to_next_stage
       return false if current_stage == "field_cleaning" # Giai đoạn cuối cùng
 
-      current_index = Farming::PineappleCrop.current_stages[current_stage]
-      next_stage = Farming::PineappleCrop.current_stages.key(current_index + 1)
+      current_index = Models::Farming::PineappleCrop.current_stages[current_stage]
+      next_stage = Models::Farming::PineappleCrop.current_stages.key(current_index + 1)
 
       # Cập nhật giai đoạn và ngày bắt đầu giai đoạn
       update(
@@ -65,7 +65,7 @@ module Models::Farming
     # Cập nhật % hoàn thành dựa trên giai đoạn hiện tại
     def update_completion_percentage
       total_stages = 12 # Tổng số giai đoạn
-      current_index = Farming::PineappleCrop.current_stages[current_stage]
+      current_index = Models::Farming::PineappleCrop.current_stages[current_stage]
       percentage = ((current_index + 1).to_f / total_stages * 100).round(2)
       update(completion_percentage: percentage)
     end

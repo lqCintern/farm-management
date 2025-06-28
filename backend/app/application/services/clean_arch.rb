@@ -137,7 +137,8 @@ module Services
           marketplace_product_listing_repository,
           nil,
           notification_service,
-          nil
+          nil,
+          marketplace_create_harvest
         )
       end
 
@@ -147,10 +148,10 @@ module Services
         )
       end
 
-      def self.marketplace_update_harvest_status
-        UseCases::Marketplace::MarketplaceHarvests::UpdateMarketplaceHarvestStatus.new(
-          Repositories::Marketplace::MarketplaceHarvestRepository.new,
-          Repositories::Farming::HarvestRepository.new
+      def marketplace_update_harvest_status
+        @marketplace_update_harvest_status ||= UseCases::Marketplace::MarketplaceHarvests::UpdateMarketplaceHarvestStatus.new(
+          marketplace_harvest_repository,
+          harvest_repository
         )
       end
 
@@ -1074,6 +1075,18 @@ module Services
 
       def user_repository
         @user_repository ||= Repositories::Users::UserRepository.new
+      end
+
+      def marketplace_list_my_harvests
+        @marketplace_list_my_harvests ||= UseCases::Marketplace::MarketplaceHarvests::ListMyHarvests.new(
+          marketplace_harvest_repository
+        )
+      end
+
+      def marketplace_list_harvests_by_product
+        @marketplace_list_harvests_by_product ||= UseCases::Marketplace::MarketplaceHarvests::ListHarvestsByProduct.new(
+          marketplace_harvest_repository
+        )
       end
     end
 

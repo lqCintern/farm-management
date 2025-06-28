@@ -21,19 +21,45 @@ module Models::Farming
 
     # Kiểm tra số lượng còn lại
     def available_quantity
-      # Tính toán số lượng đã được sử dụng trong các hoạt động chưa hoàn thành
-      used_quantity = activity_materials
-        .joins(:farm_activity)
-        .where.not(farm_activities: { status: "completed" })
-        .sum(:planned_quantity)
-
-      # Trừ đi số lượng đã sử dụng từ tổng
-      quantity - used_quantity
+      # Sử dụng virtual field available_quantity đã được tính toán
+      # quantity - reserved_quantity
+      self[:available_quantity] || (quantity - (reserved_quantity || 0))
     end
 
     # Kiểm tra xem có đủ số lượng không
     def has_enough?(amount)
       available_quantity >= amount
+    end
+
+    # Reserve vật tư cho hoạt động
+    def reserve_quantity(amount)
+      return false if available_quantity < amount
+      
+      update(reserved_quantity: (reserved_quantity || 0) + amount)
+    end
+
+    # Commit vật tư (trừ kho thật)
+    def commit_quantity(amount)
+      return false if quantity < amount
+      
+      # Trừ quantity và reserved_quantity
+      update(
+        quantity: quantity - amount,
+        reserved_quantity: (reserved_quantity || 0) - amount
+      )
+    end
+
+    # Hoàn trả vật tư đã reserve
+    def release_reserved_quantity(amount)
+      current_reserved = reserved_quantity || 0
+      return false if current_reserved < amount
+      
+      update(reserved_quantity: current_reserved - amount)
+    end
+
+    # Hoàn trả vật tư vào kho (khi dùng ít hơn planned)
+    def return_quantity(amount)
+      update(quantity: quantity + amount)
     end
   end
 end

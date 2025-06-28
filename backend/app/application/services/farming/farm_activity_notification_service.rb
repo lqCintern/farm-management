@@ -26,7 +26,6 @@ module Services::Farming
         title: "Hoạt động đã hoàn thành",
         message: "Hoạt động #{activity_name(activity)} đã được hoàn thành",  # Thay content bằng message
         category: "farm",
-        status: "unread",
         event_type: "activity_completed",
         notifiable_type: "Farming::FarmActivity",
         notifiable_id: activity.id
@@ -61,7 +60,6 @@ module Services::Farming
         title: "Hoạt động quá hạn",
         message: "Hoạt động #{activity_name(activity)} đã quá hạn #{days_overdue} ngày",  # Thay content bằng message
         category: "farm",
-        status: "unread",
         event_type: "activity_overdue",
         notifiable_type: "Farming::FarmActivity",
         notifiable_id: activity.id

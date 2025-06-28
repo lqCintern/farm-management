@@ -66,8 +66,8 @@ module Controllers::Api
         # POST /api/v1/conversations
         def create
           # Tìm product_listing và người nhận
-          product_listing = ProductListing.find_by(id: params[:product_listing_id])
-          other_user = User.find_by(user_id: params[:user_id])
+          product_listing = Models::Marketplace::ProductListing.find_by(id: params[:product_listing_id])
+          other_user = Models::User.find_by(user_id: params[:user_id])
 
           if product_listing.nil?
             return render json: { error: "Không tìm thấy sản phẩm" }, status: :not_found

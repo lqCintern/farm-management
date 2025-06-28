@@ -10,8 +10,8 @@ module Services::NotificationServices
 
     # Phương thức chung để tạo thông báo
     def create_notification(args)
-      # Sửa lỗi sử dụng ::Notification thay vì ::Notification::Notification
-      notification = ::Notification.create!(args)
+      # Sử dụng đúng model notification
+      notification = Models::Notifications::Notification.create!(args)
 
       notification
     end

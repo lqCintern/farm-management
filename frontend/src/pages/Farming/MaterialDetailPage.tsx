@@ -36,6 +36,8 @@ const MaterialDetailPage: React.FC = () => {
   const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('overview');
   
+  const [statistics, setStatistics] = useState<any>(null);
+  
   useEffect(() => {
     const fetchMaterialDetail = async () => {
       setLoading(true);
@@ -170,16 +172,13 @@ const MaterialDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Stock warning if applicable */}
-          {material.quantity <= 10 && (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          {/* Thêm cảnh báo nếu available_quantity <= 0 */}
+          {Number(material.available_quantity) <= 0 && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
               <div className="flex items-center">
-                <AlertTriangle size={20} className="text-yellow-600 mr-2" />
-                <p className="text-yellow-700">
-                  {material.quantity <= 0 
-                    ? "Vật tư đã hết! Hãy nhập thêm để đảm bảo hoạt động nông trại không bị gián đoạn."
-                    : "Số lượng vật tư thấp! Hãy cân nhắc nhập thêm trong thời gian sớm."
-                  }
+                <AlertTriangle size={20} className="text-red-600 mr-2" />
+                <p className="text-red-700">
+                  Vật tư đã được giữ hết cho các hoạt động chưa hoàn thành! Hãy hoàn thành hoặc hủy các hoạt động để giải phóng vật tư, hoặc nhập thêm kho.
                 </p>
               </div>
             </div>
@@ -271,7 +270,7 @@ const MaterialDetailPage: React.FC = () => {
                     <span className="font-semibold">{material.unit}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Tồn kho:</span>
+                    <span className="text-gray-500">Tồn kho (quantity):</span>
                     <span className="font-semibold">
                       <Badge 
                         label={`${material.quantity} ${material.unit}`} 
@@ -281,9 +280,36 @@ const MaterialDetailPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-gray-500">Có thể sử dụng (available_quantity):</span>
+                    <span className="font-semibold">
+                      <Badge 
+                        label={`${material.available_quantity} ${material.unit}`} 
+                        color={Number(material.available_quantity) <= 0 ? 'red' : Number(material.available_quantity) <= 10 ? 'yellow' : 'green'} 
+                        size="medium"
+                      />
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Đang giữ cho hoạt động (reserved):</span>
+                    <span className="font-semibold">{material.quantity - Number(material.available_quantity)} {material.unit}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-gray-500">Giá trị tồn kho:</span>
                     <span className="font-semibold">{formatCurrency(material.quantity * material.unit_cost)}</span>
                   </div>
+                  {/* Thống kê đã dùng */}
+                  {statistics && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Tổng đã dùng:</span>
+                        <span className="font-semibold">{statistics.total_used} {material.unit}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Số hoạt động đã dùng:</span>
+                        <span className="font-semibold">{statistics.activities_count}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </Card>
             </div>

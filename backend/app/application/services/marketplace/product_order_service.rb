@@ -8,7 +8,7 @@ module Services::Marketplace
     end
 
     def create(params)
-      unless @user.trader?
+      unless @user.user_type == 'trader'
         return { success: false, error: "Chỉ thương lái mới có thể đặt mua sản phẩm" }
       end
 
@@ -19,10 +19,8 @@ module Services::Marketplace
         return { success: false, error: "Không tìm thấy sản phẩm", status: :not_found }
       end
 
-      # Kiểm tra đã đặt hàng chưa
-      if ::Marketplace::ProductOrder.exists?(product_listing: product_listing, buyer: @user)
-        return { success: false, error: "Bạn đã đặt mua sản phẩm này rồi", status: :unprocessable_entity }
-      end
+      # Cho phép thương lái tạo nhiều đơn hàng trên 1 sản phẩm
+      # Không kiểm tra đơn hàng đã tồn tại nữa
 
       # Tạo đơn hàng
       @order.buyer = @user
@@ -36,9 +34,9 @@ module Services::Marketplace
         )
 
         # Thêm tin nhắn thông báo
-        message_content = "Tôi đã đặt mua #{@order.quantity} #{product_listing.product_type}."
-        message_content += " Giá đề xuất: #{@order.price}/kg" if @order.price.present?
-        message_content += " Ghi chú: #{@order.note}" if @order.note.present?
+        message_content = "Tôi đã đặt mua \\#{@order.quantity} \\#{product_listing.product_type}."
+        message_content += " Giá đề xuất: \\#{@order.price}/kg" if @order.price.present?
+        message_content += " Ghi chú: \\#{@order.note}" if @order.note.present?
 
         conversation.messages.create(
           user: @user,
@@ -50,6 +48,7 @@ module Services::Marketplace
 
         { success: true, message: "Đã gửi yêu cầu đặt mua thành công", order: @order, conversation_id: conversation.id }
       else
+        Rails.logger.info "Order create failed: \\#{@order.errors.full_messages}"
         { success: false, errors: @order.errors.full_messages }
       end
     end
@@ -104,6 +103,16 @@ module Services::Marketplace
         unless @order.status == "accepted"
           return { success: false, error: "Đơn hàng cần được chấp nhận trước khi hoàn thành" }
         end
+
+        # Kiểm tra số lượng sản phẩm có đủ không
+        product_listing = @order.product_listing
+        if product_listing.quantity < @order.quantity
+          return { success: false, error: "Số lượng sản phẩm không đủ để hoàn thành đơn hàng" }
+        end
+
+        # Giảm số lượng sản phẩm
+        new_quantity = product_listing.quantity - @order.quantity
+        product_listing.update(quantity: new_quantity)
 
         @order.update(status: :completed)
 

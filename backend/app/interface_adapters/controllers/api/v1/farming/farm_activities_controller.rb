@@ -82,18 +82,25 @@ module Controllers::Api
         def complete
           result = Services::CleanArch.farming_complete_farm_activity.execute(
             params[:id],
-            completion_params.to_h,
+            completion_params,
             current_user.user_id
           )
 
           if result[:success]
-            render json: {
-              message: "Đã đánh dấu hoàn thành hoạt động",
-              data: ::Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity]),
+            response_data = {
+              success: true,
+              message: "Hoạt động đã hoàn thành",
               suggestion: result[:suggestion]
-            }, status: :ok
+            }
+            
+            # Thêm thông báo về việc tự động chuyển giai đoạn nếu có
+            if result[:stage_advance_message].present?
+              response_data[:stage_advance_message] = result[:stage_advance_message]
+            end
+
+            render json: response_data, status: :ok
           else
-            render json: { error: result[:error] }, status: :unprocessable_entity
+            render json: { success: false, error: result[:error] }, status: :unprocessable_entity
           end
         end
 

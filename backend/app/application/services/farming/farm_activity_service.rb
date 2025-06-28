@@ -168,7 +168,7 @@ module Services::Farming
                   .where(status: [ "pending", "in_progress" ])
                   .find_each do |activity|
         # Kiểm tra xem đã nhắc nhở trong vòng 24h chưa
-        last_reminder = ::Notification.where(
+        last_reminder = Models::Notifications::Notification.where(
           notifiable_type: "Farming::FarmActivity",
           notifiable_id: activity.id,
           event_type: "activity_reminder"
@@ -187,7 +187,7 @@ module Services::Farming
                   .where.not(status: "completed")
                   .find_each do |activity|
         # Kiểm tra xem đã cảnh báo trong vòng 24h chưa
-        last_alert = ::Notification.where(
+        last_alert = Models::Notifications::Notification.where(
           notifiable_type: "Farming::FarmActivity",
           notifiable_id: activity.id,
           event_type: "activity_overdue"
@@ -325,8 +325,8 @@ module Services::Farming
           next
         end
 
-        if material.quantity < quantity.to_f
-          raise ActiveRecord::RecordInvalid.new("Không đủ vật tư #{material.name} trong kho (cần: #{quantity}, còn: #{material.quantity})")
+        if material.available_quantity < quantity.to_f
+          raise ActiveRecord::RecordInvalid.new("Không đủ vật tư #{material.name} trong kho (cần: #{quantity}, có thể sử dụng: #{material.available_quantity})")
         end
 
         if quantity.to_f <= 0
@@ -334,10 +334,7 @@ module Services::Farming
           next
         end
 
-        # Trừ vật tư từ kho
-        material.update!(quantity: material.quantity - quantity.to_f)
-
-        # Tạo liên kết
+        # Tạo liên kết (sẽ tự động reserve thông qua callback)
         activity_material = @farm_activity.activity_materials.create(
           farm_material_id: material_id,
           planned_quantity: quantity.to_f
@@ -385,7 +382,7 @@ module Services::Farming
         material = @user.farm_materials.find_by(id: material_id)
 
         # Kiểm tra xem còn đủ vật tư không
-        if material.nil? || material.quantity < quantity
+        if material.nil? || material.available_quantity < quantity
           return false # Không đủ vật tư
         end
 
@@ -397,13 +394,11 @@ module Services::Farming
             actual_quantity: quantity
           )
         else
-          activity_material.update(actual_quantity: quantity)
+          # Gọi update_actual_quantity để trigger đúng callback và logic
+          unless activity_material.update_actual_quantity(quantity)
+            return false
+          end
         end
-
-        # Giảm số lượng vật tư trong kho
-        material.quantity -= quantity
-        material.last_updated = Time.current
-        material.save
       end
 
       true

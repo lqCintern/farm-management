@@ -89,8 +89,9 @@ module UseCases::Labor
                        (updated_assignment.hours_worked && updated_assignment.hours_worked >= 6 ? 1.0 : 0.5)
 
             exchange_transaction = labor_exchange.add_transaction(
-              updated_assignment.id,
-              work_units
+              updated_assignment,
+              work_units,
+              labor_request.requesting_household_id
             )
 
             unless exchange_transaction

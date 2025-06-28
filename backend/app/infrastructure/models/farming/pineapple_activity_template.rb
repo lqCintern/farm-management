@@ -18,15 +18,20 @@ module Models::Farming
     }, prefix: true
 
     enum :activity_type, {
-      soil_preparation: 0,
-      planting: 1,
-      fertilizing: 2,
-      watering: 3,
-      pesticide: 4,
-      pruning: 5,
-      weeding: 6,
-      harvesting: 7,
-      other: 8
+      soil_preparation: 0,      # Chuẩn bị đất
+      seedling_preparation: 1,  # Chuẩn bị giống & vật tư
+      planting: 2,              # Trồng dứa
+      leaf_tying: 3,            # Buộc lá
+      fertilizing: 4,           # Bón phân
+      pesticide: 5,             # Phun thuốc
+      sun_protection: 6,        # Che nắng
+      fruit_development: 7,     # Thúc quả
+      harvesting: 8,            # Thu hoạch
+      sprout_collection: 9,     # Tách chồi
+      field_cleaning: 10,       # Dọn vườn
+      watering: 11,             # Tưới nước
+      weeding: 12,              # Làm cỏ
+      other: 13                 # Khác
     }, prefix: true
 
     validates :name, :activity_type, :stage, presence: true

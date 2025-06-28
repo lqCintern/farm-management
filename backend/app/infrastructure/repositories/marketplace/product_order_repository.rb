@@ -105,10 +105,9 @@ module Repositories
       end
 
       def order_exists?(product_listing_id, buyer_id)
-        Models::Marketplace::ProductOrder.exists?(
-          product_listing_id: product_listing_id,
-          buyer_id: buyer_id
-        )
+        # Cho phép thương lái tạo nhiều đơn hàng trên 1 sản phẩm
+        # Luôn trả về false để không block việc tạo đơn hàng mới
+        false
       end
 
       def reject_other_orders(accepted_order_id, product_listing_id, reason = "Đơn hàng đã được bán cho người khác")

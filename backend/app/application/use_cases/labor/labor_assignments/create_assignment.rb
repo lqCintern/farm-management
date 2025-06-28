@@ -98,28 +98,32 @@ module UseCases::Labor
           # Nếu start_time từ frontend là chuỗi giờ:phút (HH:MM)
           if time_param.is_a?(String) && time_param.match(/^\d{1,2}:\d{2}$/)
             hours, minutes = time_param.split(":").map(&:to_i)
-            work_date.to_time.change(hour: hours, min: minutes, sec: 0)
+            # Trả về Time object chỉ với giờ phút (không có ngày)
+            Time.new(2000, 1, 1, hours, minutes, 0)
           # Nếu là chuỗi giờ:phút:giây (HH:MM:SS)
           elsif time_param.is_a?(String) && time_param.match(/^\d{1,2}:\d{2}:\d{2}$/)
             hours, minutes, seconds = time_param.split(":").map(&:to_i)
-            work_date.to_time.change(hour: hours, min: minutes, sec: seconds)
+            # Trả về Time object chỉ với giờ phút giây (không có ngày)
+            Time.new(2000, 1, 1, hours, minutes, seconds)
           # Nếu là datetime string (ISO format)
           elsif time_param.is_a?(String) && time_param.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
             time = Time.parse(time_param.to_s)
-            work_date.to_time.change(hour: time.hour, min: time.min, sec: time.sec)
+            # Chỉ lấy giờ phút giây, bỏ qua ngày tháng năm
+            Time.new(2000, 1, 1, time.hour, time.min, time.sec)
           else
             # Fallback: cố gắng parse và lấy giờ phút
             begin
               time = Time.parse(time_param.to_s)
-              work_date.to_time.change(hour: time.hour, min: time.min, sec: time.sec)
+              # Chỉ lấy giờ phút giây, bỏ qua ngày tháng năm
+              Time.new(2000, 1, 1, time.hour, time.min, time.sec)
             rescue
               # Nếu không parse được, sử dụng default_time
-              work_date.to_time.change(hour: default_time.hour, min: default_time.min, sec: default_time.sec)
+              Time.new(2000, 1, 1, default_time.hour, default_time.min, default_time.sec)
             end
           end
         else
           # Sử dụng default_time (từ labor_request)
-          work_date.to_time.change(hour: default_time.hour, min: default_time.min, sec: default_time.sec)
+          Time.new(2000, 1, 1, default_time.hour, default_time.min, default_time.sec)
         end
       end
     end

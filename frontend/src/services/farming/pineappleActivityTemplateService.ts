@@ -18,15 +18,20 @@ export enum PineappleStage {
 
 // Enum cho activity_type
 export enum PineappleActivityType {
-  SOIL_PREPARATION = 0,
-  PLANTING = 1, 
-  FERTILIZING = 2,
-  WATERING = 3,
-  PESTICIDE = 4,
-  PRUNING = 5,
-  WEEDING = 6,
-  HARVESTING = 7,
-  OTHER = 8
+  SOIL_PREPARATION = 0,      // Chuẩn bị đất
+  SEEDLING_PREPARATION = 1,  // Chuẩn bị giống & vật tư
+  PLANTING = 2,              // Trồng dứa
+  LEAF_TYING = 3,            // Buộc lá
+  FERTILIZING = 4,           // Bón phân
+  PESTICIDE = 5,             // Phun thuốc
+  SUN_PROTECTION = 6,        // Che nắng
+  FRUIT_DEVELOPMENT = 7,     // Thúc quả
+  HARVESTING = 8,            // Thu hoạch
+  SPROUT_COLLECTION = 9,     // Tách chồi
+  FIELD_CLEANING = 10,       // Dọn vườn
+  WATERING = 11,             // Tưới nước
+  WEEDING = 12,              // Làm cỏ
+  OTHER = 13                 // Khác
 }
 
 // Định nghĩa kiểu dữ liệu cho PineappleActivityTemplate

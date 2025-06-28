@@ -104,12 +104,12 @@ module Models::Labor
       # Tìm hoặc tạo labor_exchange giữa hai hộ
       exchange = Models::Labor::LaborExchange.find_or_create_between(
         home_household_id,
-        requesting_household.id
+        labor_request.requesting_household_id
       )
 
       # Sử dụng work_units thay vì hours_worked cho đổi công
       # Hoặc tiếp tục sử dụng hours_worked nếu muốn tính chính xác theo giờ
-      exchange.add_transaction(self, work_units || hours_worked)
+      exchange.add_transaction(self, work_units || hours_worked, labor_request.requesting_household_id)
 
       # Đánh dấu đã xử lý để tránh trùng lặp
       update_column(:exchange_processed, true)

@@ -531,6 +531,7 @@ const ConversationPage: React.FC = () => {
             ? selectedConversation.receiver.user_id
             : selectedConversation.sender.user_id
             }
+            productListing={selectedConversation.product_listing}
             onSuccess={() => {
           setShowScheduleModal(false);
           // Handle success logic if needed

@@ -83,7 +83,7 @@ module Controllers::Api
           if result[:success]
             render json: {
               message: "Đã áp dụng mẫu hoạt động thành công",
-              farm_activity: ::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
+              farm_activity: Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
             }, status: :created
           else
             render json: { error: result[:error] || result[:errors] }, status: :unprocessable_entity

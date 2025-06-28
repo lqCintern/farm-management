@@ -12,6 +12,7 @@ module UseCases::Marketplace
         return { success: false, errors: ["Không tìm thấy đơn thu hoạch"] } unless marketplace_harvest
 
         old_status = marketplace_harvest.status
+        old_actual_quantity = marketplace_harvest.actual_quantity
         
         # Cập nhật trạng thái
         result = @repository.update_status(id, attributes[:status], user_id)
@@ -25,6 +26,12 @@ module UseCases::Marketplace
             result[:message] = "#{result[:message]} - Đã đồng bộ với hệ thống thu hoạch"
           end
         end
+
+        # Cập nhật sản lượng mùa vụ nếu có thay đổi số lượng thực tế
+        if result[:success] && attributes[:actual_quantity].present? && 
+           attributes[:actual_quantity] != old_actual_quantity
+          update_crop_yield(result[:harvest], attributes[:actual_quantity] - (old_actual_quantity || 0))
+        end
         
         result
       end
@@ -32,41 +39,39 @@ module UseCases::Marketplace
       private
       
       def create_farmer_harvest(marketplace_harvest)
-        # Kiểm tra xem đã có harvest tương ứng chưa
-        if Models::Farming::Harvest.exists?(marketplace_harvest_id: marketplace_harvest.id)
-          return { success: true, message: "Đã có thu hoạch tương ứng" }
-        end
-        
-        # Lấy thông tin product listing
-        product = Models::Marketplace::ProductListing.find_by(id: marketplace_harvest.product_listing_id)
-        return { success: false, errors: ["Không tìm thấy thông tin sản phẩm"] } unless product
-        
-        # Tìm thông tin ruộng và cây trồng nếu có
-        field_id = nil
-        if product.respond_to?(:crop_animal_id) && product.crop_animal_id.present? && 
-           product.respond_to?(:crop_animal_type) && product.crop_animal_type == "PineappleCrop"
-          crop = Models::PineappleCrop.find_by(id: product.crop_animal_id)
-          field_id = crop&.field_id
-        end
-        
-        # Tạo bản ghi harvest mới
-        harvest = Models::Farming::Harvest.create(
-          user_id: product.user_id,
-          crop_id: product.respond_to?(:crop_animal_id) ? product.crop_animal_id : nil, 
-          field_id: field_id,
+        return { success: false, errors: ["Không tìm thấy thông tin mùa vụ"] } unless marketplace_harvest.product_listing&.crop_animal_id
+
+        # Tạo bản ghi thu hoạch trong hệ thống nông nghiệp
+        harvest_entity = Entities::Farming::Harvest.new(
+          user_id: marketplace_harvest.product_listing.user_id,
+          crop_id: marketplace_harvest.product_listing.crop_animal_id,
           quantity: marketplace_harvest.actual_quantity || marketplace_harvest.estimated_quantity,
-          harvest_date: marketplace_harvest.scheduled_date || Time.current,
-          notes: "Thu hoạch bán cho thương lái #{marketplace_harvest.trader&.fullname || marketplace_harvest.trader_id}",
-          marketplace_harvest_id: marketplace_harvest.id,
-          is_marketplace_sale: true,
-          sale_price: marketplace_harvest.final_price || marketplace_harvest.estimated_price
+          harvest_date: Time.current,
+          field_id: marketplace_harvest.product_listing.field_id,
+          notes: "Thu hoạch marketplace - #{marketplace_harvest.product_listing.title}"
         )
+
+        result = @harvest_repository.create(harvest_entity)
         
-        if harvest.persisted?
-          { success: true, harvest: harvest, message: "Tạo thu hoạch thành công" }
+        if result
+          { success: true, harvest: result }
         else
-          { success: false, errors: harvest.errors.full_messages }
+          { success: false, errors: ["Không thể tạo bản ghi thu hoạch"] }
         end
+      end
+
+      def update_crop_yield(marketplace_harvest, quantity)
+        return unless marketplace_harvest.product_listing&.crop_animal_id
+
+        # Tìm pineapple crop và cập nhật sản lượng thực tế
+        pineapple_crop = ::Models::Farming::PineappleCrop.find_by(id: marketplace_harvest.product_listing.crop_animal_id)
+        return unless pineapple_crop
+
+        # Cập nhật sản lượng thực tế
+        current_yield = pineapple_crop.actual_yield || 0
+        pineapple_crop.update(actual_yield: current_yield + quantity)
+
+        Rails.logger.info "Updated crop yield: #{pineapple_crop.title} - Added #{quantity}kg, Total: #{pineapple_crop.actual_yield}kg"
       end
     end
   end

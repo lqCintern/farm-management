@@ -53,6 +53,7 @@ module Presenters::Marketplace
       {
         product_listing: {
           id: @object.id,
+          user_id: @object.user_id,
           title: @object.title,
           description: @object.description,
           product_type: @object.product_type,

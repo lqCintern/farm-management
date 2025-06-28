@@ -10,16 +10,17 @@ module Services::Labor
         if params[:start_time].is_a?(String) && params[:start_time].match(/^\d{1,2}:\d{2}(:\d{2})?$/)
           hours, minutes, seconds = params[:start_time].split(":").map(&:to_i)
           seconds ||= 0
-          work_date.to_time.change(hour: hours, min: minutes, sec: seconds)
+          # Chỉ lưu thời gian, không có ngày
+          Time.new(2000, 1, 1, hours, minutes, seconds)
         else
-          # Nếu là datetime, chỉ lấy giờ phút và kết hợp với work_date
+          # Nếu là datetime, chỉ lấy giờ phút và tạo time object
           time = Time.parse(params[:start_time].to_s)
-          work_date.to_time.change(hour: time.hour, min: time.min, sec: time.sec)
+          Time.new(2000, 1, 1, time.hour, time.min, time.sec)
         end
       else
         # Sử dụng start_time từ labor_request nếu không có
         req_time = labor_request.start_time
-        work_date.to_time.change(hour: req_time.hour, min: req_time.min, sec: req_time.sec)
+        Time.new(2000, 1, 1, req_time.hour, req_time.min, req_time.sec)
       end
 
       end_time = if params[:end_time].present?
@@ -27,15 +28,16 @@ module Services::Labor
         if params[:end_time].is_a?(String) && params[:end_time].match(/^\d{1,2}:\d{2}(:\d{2})?$/)
           hours, minutes, seconds = params[:end_time].split(":").map(&:to_i)
           seconds ||= 0
-          work_date.to_time.change(hour: hours, min: minutes, sec: seconds)
+          # Chỉ lưu thời gian, không có ngày
+          Time.new(2000, 1, 1, hours, minutes, seconds)
         else
           time = Time.parse(params[:end_time].to_s)
-          work_date.to_time.change(hour: time.hour, min: time.min, sec: time.sec)
+          Time.new(2000, 1, 1, time.hour, time.min, time.sec)
         end
       else
         # Sử dụng end_time từ labor_request nếu không có
         req_time = labor_request.end_time
-        work_date.to_time.change(hour: req_time.hour, min: req_time.min, sec: req_time.sec)
+        Time.new(2000, 1, 1, req_time.hour, req_time.min, req_time.sec)
       end
 
       assignment = Labor::LaborAssignment.new(

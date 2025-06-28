@@ -11,7 +11,7 @@ module UseCases::Marketplace
       def execute(attributes, user_id)
         # Kiểm tra role
         user = Models::User.find_by(user_id: user_id)
-        unless user&.trader?
+        unless user&.user_type == 'trader'
           return { success: false, error: "Chỉ thương lái mới có thể đặt mua sản phẩm" }
         end
 
@@ -21,10 +21,8 @@ module UseCases::Marketplace
           return { success: false, error: "Không tìm thấy sản phẩm", status: :not_found }
         end
 
-        # Kiểm tra đã đặt hàng chưa
-        if @repository.order_exists?(attributes[:product_listing_id], user_id)
-          return { success: false, error: "Bạn đã đặt mua sản phẩm này rồi", status: :unprocessable_entity }
-        end
+        # Cho phép thương lái tạo nhiều đơn hàng trên 1 sản phẩm
+        # Không kiểm tra đơn hàng đã tồn tại nữa
 
         # Tạo đơn hàng entity
         order_entity = Entities::Marketplace::ProductOrder.new(

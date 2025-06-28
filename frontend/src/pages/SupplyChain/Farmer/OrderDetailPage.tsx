@@ -200,14 +200,6 @@ const OrderDetailPage: React.FC = () => {
           <Descriptions.Item label="Ngày đặt hàng">{formatDate(order.created_at)}</Descriptions.Item>
           <Descriptions.Item label="Nhà cung cấp">{order.supplier?.name || 'Không xác định'}</Descriptions.Item>
           <Descriptions.Item label="Liên hệ nhà cung cấp">{order.supplier?.phone || 'Không có thông tin'}</Descriptions.Item>
-          <Descriptions.Item label="Trạng thái thanh toán">
-            <Tag color={order.is_paid ? 'green' : 'orange'}>
-              {order.is_paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Phương thức thanh toán">
-            {order.payment_method === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}
-          </Descriptions.Item>
           {order.rejection_reason && (
             <Descriptions.Item label="Lý do từ chối" span={2}>
               <Text type="danger">{order.rejection_reason}</Text>

@@ -9,6 +9,7 @@ import {
   cancelRequest,
   joinRequest
 } from '@/services/labor/laborRequestService';
+import { getCurrentHousehold } from '@/services/labor/householdService';
 import { getFarmActivityById } from '@/services/farming/farmService';
 import { LaborRequest, GroupStatus } from '@/types/labor/laborRequest.types';
 import { FarmActivity } from '@/types/labor/types';
@@ -24,6 +25,7 @@ const LaborRequestDetail = () => {
   const [request, setRequest] = useState<LaborRequest | null>(null);
   const [farmActivity, setFarmActivity] = useState<FarmActivity | null>(null);
   const [groupStatus, setGroupStatus] = useState<GroupStatus | null>(null);
+  const [currentHousehold, setCurrentHousehold] = useState<{ id: number; name: string } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -38,6 +40,15 @@ const LaborRequestDetail = () => {
     const fetchRequestDetails = async () => {
       try {
         setLoading(true);
+        
+        // Lấy thông tin current household
+        try {
+          const householdResponse: any = await getCurrentHousehold();
+          setCurrentHousehold(householdResponse.data || householdResponse);
+        } catch (err) {
+          console.error('Error loading current household:', err);
+        }
+        
         const response = await getLaborRequestById(parseInt(id));
         
         // Cập nhật: Xử lý response mới với cấu trúc { success, data }
@@ -140,11 +151,11 @@ const LaborRequestDetail = () => {
         case 'join':
           response = await joinRequest(parseInt(id));
           
-          // Nếu tham gia thành công, điều hướng đến request mới được tạo
+          // Nếu tham gia thành công, điều hướng đến trang phân công lao động
           if (response.success) {
-            setActionSuccess('Bạn đã tham gia thành công vào yêu cầu này.');
+            setActionSuccess('Bạn đã tham gia thành công. Chuyển đến trang phân công lao động...');
             setTimeout(() => {
-              navigate(`/labor/requests/${response.data.id}`);
+              navigate(`/labor/requests/${response.data.id}/assign`);
             }, 1500);
           }
           return;
@@ -390,8 +401,11 @@ const LaborRequestDetail = () => {
           <h3 className="text-lg font-medium mb-4">Thao tác</h3>
 
           <div className="flex flex-wrap gap-3">
-            {/* Nút chấp nhận yêu cầu (cho provider) */}
-            {request.status === 'pending' && request.providing_household_id && (
+            {/* Nút chấp nhận yêu cầu (cho hộ được chỉ định) */}
+            {request.status === 'pending' && 
+             request.providing_household_id && 
+             currentHousehold && 
+             request.providing_household_id === currentHousehold.id && (
               <Button
                 buttonType="success"
                 onClick={() => handleAction('accept', 'chấp nhận')}
@@ -401,8 +415,11 @@ const LaborRequestDetail = () => {
               </Button>
             )}
 
-            {/* Nút từ chối yêu cầu (cho provider) */}
-            {request.status === 'pending' && request.providing_household_id && (
+            {/* Nút từ chối yêu cầu (cho hộ được chỉ định) */}
+            {request.status === 'pending' && 
+             request.providing_household_id && 
+             currentHousehold && 
+             request.providing_household_id === currentHousehold.id && (
               <Button
                 buttonType="danger"
                 onClick={() => handleAction('decline', 'từ chối')}
@@ -413,7 +430,9 @@ const LaborRequestDetail = () => {
             )}
 
             {/* Nút hoàn thành yêu cầu (cho requester khi đã được chấp nhận) */}
-            {request.status === 'accepted' && (
+            {request.status === 'accepted' && 
+             currentHousehold && 
+             request.requesting_household_id === currentHousehold.id && (
               <Button
                 buttonType="primary"
                 onClick={() => handleAction('complete', 'hoàn thành')}
@@ -424,7 +443,9 @@ const LaborRequestDetail = () => {
             )}
 
             {/* Nút hủy yêu cầu (cho requester) */}
-            {['pending', 'accepted'].includes(request.status) && (
+            {['pending', 'accepted'].includes(request.status) && 
+             currentHousehold && 
+             request.requesting_household_id === currentHousehold.id && (
               <Button
                 buttonType="secondary"
                 onClick={() => handleAction('cancel', 'hủy')}
@@ -434,8 +455,11 @@ const LaborRequestDetail = () => {
               </Button>
             )}
 
-            {/* Nút tham gia yêu cầu công khai */}
-            {request.is_public && request.status === 'pending' && !request.providing_household_id && (
+            {/* Nút tham gia yêu cầu công khai (cho các hộ khác) */}
+            {request.is_public && 
+             request.status === 'pending' && 
+             currentHousehold && 
+             (!request.providing_household_id || request.providing_household_id !== currentHousehold.id) && (
               <Button
                 buttonType="primary"
                 onClick={() => handleAction('join', 'tham gia')}

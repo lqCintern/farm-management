@@ -115,7 +115,12 @@ module Controllers::Api
                 by_crop: result[:by_crop],
                 by_field: result[:by_field],
                 total_quantity: result[:total_quantity],
-                harvest_count: result[:harvest_count]
+                harvest_count: result[:harvest_count],
+                farming_harvests: result[:farming_harvests],
+                marketplace_harvests: result[:marketplace_harvests],
+                total_revenue: result[:total_revenue],
+                farming_details: result[:farming_details],
+                marketplace_details: result[:marketplace_details]
               }
             }
           else

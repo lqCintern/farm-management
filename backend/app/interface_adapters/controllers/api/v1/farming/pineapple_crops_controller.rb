@@ -150,7 +150,11 @@ module Controllers::Api
 
         # POST /api/v1/farming/pineapple_crops/preview_plan
         def preview_plan
-          result = Services::CleanArch.farming_preview_plan.execute(pineapple_crop_params)
+          # Thêm user_id vào params
+          preview_params = pineapple_crop_params.to_h
+          preview_params[:user_id] = current_user.user_id
+          
+          result = Services::CleanArch.farming_preview_plan.execute(preview_params)
 
           response_data = ::Presenters::Farming::PineappleCropPresenter.format_preview_plan(result)
 
@@ -206,6 +210,39 @@ module Controllers::Api
           else
             render json: { error: result[:error] }, status: :unprocessable_entity
           end
+        end
+
+        # GET /api/v1/farming/pineapple_crops/:id/activities
+        def activities
+          crop = Models::Farming::PineappleCrop.find_by(id: params[:id])
+          
+          unless crop
+            render json: { error: "Không tìm thấy vụ trồng dứa" }, status: :not_found
+            return
+          end
+
+          # Lấy activities theo crop_animal_id của crop
+          activities = Models::Farming::FarmActivity.where(crop_animal_id: crop.id)
+                                                   .order(:start_date)
+                                                   .includes(:field)
+
+          render json: {
+            success: true,
+            data: activities.map do |activity|
+              {
+                id: activity.id,
+                activity_type: activity.activity_type,
+                description: activity.description,
+                start_date: activity.start_date,
+                end_date: activity.end_date,
+                status: activity.status,
+                field_id: activity.field_id,
+                crop_animal_id: activity.crop_animal_id,
+                created_at: activity.created_at,
+                updated_at: activity.updated_at
+              }
+            end
+          }, status: :ok
         end
 
         private

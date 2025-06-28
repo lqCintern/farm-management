@@ -80,11 +80,18 @@ module Services
           .select { |t| t.transaction_type == "purchase" }
           .sum(&:total_price)
           
-        # Tổng số lượng đã sử dụng
-        total_used = activities.sum { |a| a.actual_quantity || a.planned_quantity }
+        # Tổng số lượng đã sử dụng (chỉ tính actual_quantity cho completed activities)
+        total_used = activities.sum do |a| 
+          if a.farm_activity.status == "completed"
+            a.actual_quantity || 0
+          else
+            # Với pending activities, không tính vào total_used vì chưa thực sự sử dụng
+            0
+          end
+        end
         
-        # Số hoạt động đã sử dụng vật tư này
-        activities_count = activities.count
+        # Số hoạt động đã sử dụng vật tư này (chỉ tính completed)
+        activities_count = activities.count { |a| a.farm_activity.status == "completed" }
         
         # Tần suất sử dụng theo tháng (trong 6 tháng gần nhất)
         six_months_ago = Date.today - 6.months
@@ -95,23 +102,37 @@ module Services
           date = activity.farm_activity.start_date
           month_key = "#{date.month}/#{date.year}"
           
-          if usage_by_month[month_key]
-            usage_by_month[month_key] += activity.actual_quantity || activity.planned_quantity
+          # Chỉ tính actual_quantity cho completed activities
+          usage_amount = if activity.farm_activity.status == "completed"
+            activity.actual_quantity || 0
           else
-            usage_by_month[month_key] = activity.actual_quantity || activity.planned_quantity
+            0
+          end
+          
+          if usage_by_month[month_key]
+            usage_by_month[month_key] += usage_amount
+          else
+            usage_by_month[month_key] = usage_amount
           end
         end
         
         # Dự báo thời gian cạn kiệt (nếu có đủ dữ liệu)
         depletion_forecast = nil
         if recent_activities.any?
-          # Tính tốc độ tiêu thụ trung bình mỗi ngày
-          total_recent_usage = recent_activities.sum { |a| a.actual_quantity || a.planned_quantity }
+          # Tính tốc độ tiêu thụ trung bình mỗi ngày (chỉ tính completed activities)
+          total_recent_usage = recent_activities.sum do |a| 
+            if a.farm_activity.status == "completed"
+              a.actual_quantity || 0
+            else
+              0
+            end
+          end
+          
           days = [(Date.today - six_months_ago).to_i, 1].max
           daily_usage = total_recent_usage / days
           
           if daily_usage > 0
-            days_remaining = material.quantity / daily_usage
+            days_remaining = material.available_quantity / daily_usage
             depletion_forecast = {
               daily_usage: daily_usage,
               days_remaining: days_remaining.to_i,

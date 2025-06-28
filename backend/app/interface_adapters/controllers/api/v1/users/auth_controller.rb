@@ -21,7 +21,18 @@ module Controllers::Api
           user = Models::User.find_by(email: params[:email])
           if user&.authenticate(params[:password])
             token = encode_token({ user_id: user.id })
-            render json: { token: token }, status: :ok
+            render json: { 
+              token: token,
+              user: {
+                user_id: user.user_id,
+                email: user.email,
+                user_name: user.user_name,
+                user_type: user.user_type,
+                fullname: user.fullname,
+                phone: user.phone,
+                address: user.address
+              }
+            }, status: :ok
           else
             render json: { error: "Invalid email or password" }, status: :unauthorized
           end
@@ -77,7 +88,7 @@ module Controllers::Api
 
             if user
               render json: {
-                id: user.user_id,
+                user_id: user.user_id,
                 email: user.email,
                 user_name: user.user_name,
                 user_type: user.user_type,

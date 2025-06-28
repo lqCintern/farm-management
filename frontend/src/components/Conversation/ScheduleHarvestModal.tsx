@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Form, DatePicker, Input, InputNumber, Modal } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Form, DatePicker, Input, InputNumber, Modal, Alert } from 'antd';
 import { CalendarIcon } from '@heroicons/react/24/outline';
 import { createMarketplaceHarvest } from '@/services/marketplace/harvestService';
 import dayjs from 'dayjs'; // Thay moment bằng dayjs
@@ -9,6 +9,7 @@ interface ScheduleHarvestModalProps {
   onClose: () => void;
   productListingId: number;
   traderId: number;
+  productListing?: any; // Thêm prop để nhận thông tin sản phẩm
   onSuccess: () => void;
 }
 
@@ -17,10 +18,27 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
   onClose,
   productListingId,
   traderId,
+  productListing,
   onSuccess,
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  
+  // Tự động điền thông tin từ product_listing khi modal mở
+  useEffect(() => {
+    if (visible && productListing) {
+      const fieldName = productListing.pineapple_crop?.field?.name || 'Chưa xác định';
+      const estimatedQuantity = productListing.quantity || 0;
+      const estimatedPrice = productListing.price_expectation || 0;
+      
+      form.setFieldsValue({
+        location: fieldName,
+        estimated_quantity: estimatedQuantity,
+        estimated_price: estimatedPrice,
+        scheduled_date: defaultDate()
+      });
+    }
+  }, [visible, productListing, form]);
   
   const handleSubmit = async () => {
     try {
@@ -70,7 +88,28 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
       okText="Xác nhận"
       cancelText="Hủy"
       destroyOnClose
+      width={600}
     >
+      {/* Hiển thị thông tin sản phẩm */}
+      {productListing && (
+        <Alert
+          message="Thông tin sản phẩm"
+          description={
+            <div className="text-sm">
+              <p><strong>Sản phẩm:</strong> {productListing.title}</p>
+              <p><strong>Số lượng:</strong> {productListing.quantity} kg</p>
+              <p><strong>Giá mong muốn:</strong> {Number(productListing.price_expectation).toLocaleString('vi-VN')} ₫/kg</p>
+              {productListing.pineapple_crop?.field?.name && (
+                <p><strong>Địa điểm:</strong> {productListing.pineapple_crop.field.name}</p>
+              )}
+            </div>
+          }
+          type="info"
+          showIcon
+          className="mb-4"
+        />
+      )}
+      
       <Form
         form={form}
         layout="vertical"
@@ -80,7 +119,6 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
           name="scheduled_date"
           label="Thời gian thu hoạch"
           rules={[{ required: true, message: 'Vui lòng chọn thời gian' }]}
-          initialValue={defaultDate()}
         >
           <DatePicker
             showTime={{ format: 'HH:mm' }}
