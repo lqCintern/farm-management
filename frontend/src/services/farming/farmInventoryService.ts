@@ -11,6 +11,14 @@ export interface FarmMaterialInventory {
   total_cost: number;
   last_updated: string;
   user_id: number;
+  supply_listing?: {
+    id: number;
+    name: string;
+    main_image?: string;
+    images?: string[];
+    brand?: string;
+    manufacturer?: string;
+  };
 }
 
 export interface InventoryResponse {

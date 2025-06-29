@@ -44,7 +44,7 @@ module Repositories
         end
 
         query
-          .includes(labor_request: [ :requesting_household, :providing_household ])
+          .includes(:worker, labor_request: [ :requesting_household, :providing_household ])
           .map { |record| map_to_entity(record) }
       end
 

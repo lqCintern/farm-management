@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import { EventClickArg } from "@fullcalendar/core";
 import { DateClickArg } from "@fullcalendar/interaction";
@@ -14,7 +14,6 @@ import { format } from "date-fns";
 import CalendarHeader from "./CalendarHeader";
 import CalendarLegend from "./CalendarLegend";
 import EventContent from "./EventContent";
-import EventPopup from "./EventPopup";
 import BlocCalendar from "./BlocCalendar";
 import {
   transformActivitiesToEvents,
@@ -26,6 +25,7 @@ interface BigCalendarProps {
   setEvents: React.Dispatch<React.SetStateAction<any[]>>;
   farmActivities: FarmActivity[];
   laborRequests?: any[]; 
+  onEventClick?: (activity: FarmActivity) => void;
 }
 
 export default function BigCalendar({
@@ -33,23 +33,39 @@ export default function BigCalendar({
   setEvents,
   farmActivities,
   laborRequests = [],
+  onEventClick,
 }: BigCalendarProps) {
   const calendarRef = useRef<FullCalendar | null>(null);
   const blocCalendarRef = useRef<any>(null);
-  const [selectedEvent, setSelectedEvent] = useState<FarmActivity | null>(null);
-  const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
+  const currentViewRef = useRef<string>("dayGridMonth");
   const [view, setView] = useState<string>("dayGridMonth");
   const [calendarType, setCalendarType] = useState<"grid" | "bloc">("bloc");
 
-  // Áp dụng thay đổi view khi state thay đổi
-  useEffect(() => {
-    if (calendarType === "grid") {
-      const calendarApi = calendarRef.current?.getApi();
-      if (calendarApi && calendarApi.view.type !== view) {
-        calendarApi.changeView(view);
+  // Xử lý khi đổi chế độ xem
+  const handleViewChange = useCallback((viewName: string) => {
+    setView(viewName);
+    currentViewRef.current = viewName;
+    
+    // Chỉ thay đổi view nếu calendar đã được mount và đang ở chế độ grid
+    if (calendarType === "grid" && calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      if (calendarApi && calendarApi.view.type !== viewName) {
+        // Sử dụng setTimeout để đảm bảo không conflict với React rendering
+        setTimeout(() => {
+          try {
+            calendarApi.changeView(viewName);
+          } catch (error) {
+            console.warn("Failed to change view:", error);
+          }
+        }, 100);
       }
     }
-  }, [view, calendarType]);
+  }, [calendarType]);
+
+  // Xử lý khi đổi kiểu lịch
+  const handleCalendarTypeChange = useCallback((type: "grid" | "bloc") => {
+    setCalendarType(type);
+  }, []);
 
   // Tạo sự kiện từ hoạt động nông trại
   const events = transformActivitiesToEvents(farmActivities);
@@ -60,8 +76,10 @@ export default function BigCalendar({
     const eventDetails = farmActivities.find(
       (activity) => activity.id === eventId
     );
-    setSelectedEvent(eventDetails || null);
-    setIsPopupOpen(true);
+    
+    if (eventDetails && onEventClick) {
+      onEventClick(eventDetails);
+    }
   };
 
   // Xử lý khi click vào ngày
@@ -129,16 +147,6 @@ export default function BigCalendar({
     });
 
     setEvents(filteredEvents);
-  };
-
-  // Xử lý khi đổi chế độ xem
-  const handleViewChange = (viewName: string) => {
-    setView(viewName);
-  };
-
-  // Xử lý khi đổi kiểu lịch
-  const handleCalendarTypeChange = (type: "grid" | "bloc") => {
-    setCalendarType(type);
   };
 
   // Trong xử lý dữ liệu
@@ -272,12 +280,6 @@ export default function BigCalendar({
       <div className="mt-4">
         <CalendarLegend />
       </div>
-
-      <EventPopup
-        event={selectedEvent}
-        isOpen={isPopupOpen}
-        onClose={() => setIsPopupOpen(false)}
-      />
 
       {/* Thêm CSS tùy chỉnh */}
       <style>{`

@@ -130,7 +130,8 @@ module Services::Farming
           )
         end
       end
-      activities
+      # Sắp xếp activities theo start_date
+      activities.sort_by(&:start_date)
     end
 
     # Lưu danh sách công đoạn đã xác nhận vào DB
@@ -158,7 +159,8 @@ module Services::Farming
           created << activity
         end
       end
-      created
+      # Sắp xếp activities theo start_date
+      created.sort_by(&:start_date)
     end
 
     private

@@ -183,6 +183,35 @@ module Repositories
       def map_to_entity(record)
         return nil unless record
         
+        # Lấy thông tin ảnh từ supply_listing nếu có material_id
+        supply_listing_info = nil
+        if record.material_id.present?
+          supply_listing = ::Models::SupplyChain::SupplyListing.find_by(id: record.material_id)
+          if supply_listing
+            # Thử lấy ảnh từ Active Storage trước
+            main_image_url = supply_listing.main_image_url
+            additional_image_urls = supply_listing.additional_image_urls
+            
+            # Nếu không có ảnh từ Active Storage, thử lấy từ SupplyImage
+            if main_image_url.nil? && additional_image_urls.empty?
+              supply_images = supply_listing.supply_images.sorted
+              if supply_images.any?
+                main_image_url = supply_images.first.image_url
+                additional_image_urls = supply_images[1..-1].map(&:image_url).compact
+              end
+            end
+            
+            supply_listing_info = {
+              id: supply_listing.id,
+              name: supply_listing.name,
+              main_image: main_image_url,
+              images: additional_image_urls,
+              brand: supply_listing.brand,
+              manufacturer: supply_listing.manufacturer
+            }
+          end
+        end
+        
         Entities::Farming::FarmMaterial.new(
           id: record.id,
           name: record.name,
@@ -197,7 +226,8 @@ module Repositories
           available_quantity: record.available_quantity,
           activity_materials: record.activity_materials.map { |am| map_activity_material(am) },
           unit_cost: record.respond_to?(:unit_cost) ? record.unit_cost : 0,
-          total_cost: record.respond_to?(:total_cost) ? record.total_cost : 0
+          total_cost: record.respond_to?(:total_cost) ? record.total_cost : 0,
+          supply_listing: supply_listing_info
         )
       end
       

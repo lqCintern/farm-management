@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Package, Activity, Edit2, AlertTriangle, 
-  ChevronDown, ChevronUp, ShoppingBag
+  ChevronDown, ChevronUp, ShoppingBag, ExternalLink, Plus
 } from 'react-feather';
 import farmInventoryService from '@/services/farming/farmInventoryService';
+import supplyOrderService from '@/services/supply_chain/supplyOrderService';
+import supplyListingService from '@/services/supply_chain/supplyListingService';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import AdjustQuantityModal from '@/components/Farming/Inventory/AdjustQuantityModal';
 import LoadingSpinner from '@/components/common/Spinner';
@@ -23,10 +25,30 @@ const MaterialDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [material, setMaterial] = useState<any>(null);
+  const [material, setMaterial] = useState<{
+    id: number;
+    material_id: number;
+    name: string;
+    quantity: number;
+    unit: string;
+    category: string;
+    unit_cost: number;
+    total_cost: number;
+    last_updated: string;
+    user_id: number;
+    available_quantity: string;
+    supply_listing?: {
+      id: number;
+      name: string;
+      main_image?: string;
+      images?: string[];
+      brand?: string;
+      manufacturer?: string;
+    };
+  } | null>(null);
   type TransactionType = 'purchase' | 'adjustment' | 'consumption';
   
-  const [transactions, setTransactions] = useState<{ id: string; transaction_type: TransactionType; quantity: number; unit_price: number; total_price: number; created_at: string; source?: { supplier?: string }; notes?: string }[]>([]);
+  const [transactions, setTransactions] = useState<{ id: string; transaction_type: TransactionType; quantity: number; unit_price: number; total_price: number; created_at: string; source?: { supplier?: string; source_id?: number; source_type?: string }; notes?: string }[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +59,9 @@ const MaterialDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('overview');
   
   const [statistics, setStatistics] = useState<any>(null);
-  
+  const [orderDetails, setOrderDetails] = useState<{[key: number]: any}>({});
+  const [loadingOrders, setLoadingOrders] = useState<{[key: number]: boolean}>({});
+
   useEffect(() => {
     const fetchMaterialDetail = async () => {
       setLoading(true);
@@ -54,6 +78,14 @@ const MaterialDetailPage: React.FC = () => {
           setTransactions(response.transactions);
           setActivities(response.activities);
           setStatistics(response.statistics);
+          
+          // Fetch order details for purchase transactions
+          const purchaseTransactions = response.transactions.filter(t => t.transaction_type === 'purchase' && t.source?.source_id);
+          purchaseTransactions.forEach(transaction => {
+            if (transaction.source?.source_id) {
+              fetchOrderDetails(transaction.source.source_id);
+            }
+          });
         } else {
           setError('Không thể tải thông tin chi tiết vật tư');
         }
@@ -69,6 +101,22 @@ const MaterialDetailPage: React.FC = () => {
       fetchMaterialDetail();
     }
   }, [id]);
+
+  const fetchOrderDetails = async (orderId: number) => {
+    if (orderDetails[orderId]) return; // Already loaded
+    
+    setLoadingOrders(prev => ({ ...prev, [orderId]: true }));
+    try {
+      const response = await supplyOrderService.getFarmerOrderById(orderId);
+      if (response.status === 'success') {
+        setOrderDetails(prev => ({ ...prev, [orderId]: response.data }));
+      }
+    } catch (error) {
+      console.error(`Error fetching order ${orderId}:`, error);
+    } finally {
+      setLoadingOrders(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
   
   const handleAdjustQuantity = async (adjustmentData: any) => {
     try {
@@ -93,6 +141,72 @@ const MaterialDetailPage: React.FC = () => {
       setExpandedActivity(null);
     } else {
       setExpandedActivity(activityId);
+    }
+  };
+
+  const getOrderStatusColor = (status: string) => {
+    const colors: {[key: string]: string} = {
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'confirmed': 'bg-blue-100 text-blue-800',
+      'shipped': 'bg-purple-100 text-purple-800',
+      'delivered': 'bg-cyan-100 text-cyan-800',
+      'completed': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800',
+      'rejected': 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getOrderStatusLabel = (status: string) => {
+    const labels: {[key: string]: string} = {
+      'pending': 'Chờ xác nhận',
+      'confirmed': 'Đã xác nhận',
+      'shipped': 'Đang giao',
+      'delivered': 'Đã giao',
+      'completed': 'Hoàn thành',
+      'cancelled': 'Đã hủy',
+      'rejected': 'Từ chối'
+    };
+    return labels[status] || status;
+  };
+
+  const handleBuyMore = async () => {
+    if (!material) return;
+    
+    try {
+      // Tìm supply listing tương ứng với material hiện tại
+      const searchParams = new URLSearchParams();
+      if (material.name) {
+        searchParams.set('keyword', material.name);
+      }
+      if (material.category) {
+        searchParams.set('category', material.category);
+      }
+      
+      const response = await supplyListingService.getListings({
+        keyword: material.name,
+        category: material.category
+      });
+      
+      if (response && response.status === "success" && response.data && response.data.length > 0) {
+        // Nhảy đến trang chi tiết sản phẩm đầu tiên tìm được
+        const firstListing = response.data[0];
+        navigate(`/farmer/listings/${firstListing.id}`);
+      } else {
+        // Nếu không tìm thấy, mở trang danh sách với filter
+        navigate(`/farmer/listings?${searchParams.toString()}`);
+      }
+    } catch (error) {
+      console.error('Error finding similar listing:', error);
+      // Fallback: mở trang danh sách với filter
+      const searchParams = new URLSearchParams();
+      if (material.name) {
+        searchParams.set('keyword', material.name);
+      }
+      if (material.category) {
+        searchParams.set('category', material.category);
+      }
+      navigate(`/farmer/listings?${searchParams.toString()}`);
     }
   };
 
@@ -126,9 +240,28 @@ const MaterialDetailPage: React.FC = () => {
         <div className="p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
             <div className="flex items-center">
-              <div className="p-3 rounded-lg bg-green-50 mr-4">
-                <Package size={24} className="text-green-600" />
-              </div>
+              {(material.supply_listing?.main_image || (material.supply_listing?.images && material.supply_listing.images.length > 0)) ? (
+                <div className="w-16 h-16 rounded-lg mr-4 overflow-hidden bg-gray-100">
+                  <img 
+                    src={material.supply_listing?.main_image || material.supply_listing?.images?.[0]} 
+                    alt={material.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to icon if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="w-full h-full flex items-center justify-center bg-green-50 text-green-600 hidden">
+                    <Package size={24} />
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-lg bg-green-50 mr-4">
+                  <Package size={24} className="text-green-600" />
+                </div>
+              )}
               <div>
                 <h2 className="text-xl font-bold">{material.name}</h2>
                 <p className="text-gray-500">
@@ -138,6 +271,9 @@ const MaterialDetailPage: React.FC = () => {
                    material.category === 'tool' ? 'Dụng cụ' :
                    'Khác'}
                 </p>
+                {material.supply_listing?.brand && (
+                  <p className="text-sm text-gray-400">Thương hiệu: {material.supply_listing.brand}</p>
+                )}
               </div>
             </div>
             <div className="mt-4 md:mt-0 flex items-center space-x-2">
@@ -207,7 +343,7 @@ const MaterialDetailPage: React.FC = () => {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Lịch sử nhập/xuất ({transactions.length})
+            Lịch sử nhập/xuất kho ({transactions.length})
           </button>
           <button
             onClick={() => setActiveTab('activities')}
@@ -357,7 +493,16 @@ const MaterialDetailPage: React.FC = () => {
 
         {activeTab === 'transactions' && (
           <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Lịch sử nhập xuất kho</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Lịch sử nhập xuất kho</h3>
+              <button
+                onClick={handleBuyMore}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+              >
+                <Plus size={16} className="mr-2" />
+                Mua thêm
+              </button>
+            </div>
             {transactions.length === 0 ? (
               <p className="text-gray-500 text-center py-8">Chưa có giao dịch nào</p>
             ) : (
@@ -408,6 +553,77 @@ const MaterialDetailPage: React.FC = () => {
                             <div className="flex justify-between">
                               <span className="text-gray-500">Ghi chú:</span>
                               <span className="font-medium">{transaction.notes}</span>
+                            </div>
+                          )}
+                          
+                          {/* Hiển thị thông tin đơn hàng nếu là purchase transaction */}
+                          {transaction.transaction_type === 'purchase' && transaction.source?.source_id && (
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-gray-500 font-medium">Thông tin đơn hàng:</span>
+                                {loadingOrders[transaction.source.source_id] ? (
+                                  <div className="text-sm text-gray-500">Đang tải...</div>
+                                ) : orderDetails[transaction.source.source_id] ? (
+                                  <div className="flex items-center space-x-2">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getOrderStatusColor(orderDetails[transaction.source.source_id].status)}`}>
+                                      {getOrderStatusLabel(orderDetails[transaction.source.source_id].status)}
+                                    </span>
+                                    <Link 
+                                      to={`/farmer/orders/${transaction.source.source_id}`}
+                                      className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                                    >
+                                      <ExternalLink size={14} className="mr-1" />
+                                      Xem chi tiết
+                                    </Link>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => transaction.source?.source_id && fetchOrderDetails(transaction.source.source_id)}
+                                    className="text-blue-600 hover:text-blue-800 text-sm"
+                                  >
+                                    Tải thông tin đơn hàng
+                                  </button>
+                                )}
+                              </div>
+                              
+                              {orderDetails[transaction.source.source_id] && (
+                                <div className="bg-white rounded-lg p-3 border">
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                      <span className="text-gray-500">Mã đơn:</span>
+                                      <span className="font-medium ml-1">#{orderDetails[transaction.source.source_id].id}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Ngày đặt:</span>
+                                      <span className="font-medium ml-1">{formatDate(orderDetails[transaction.source.source_id].created_at)}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Số lượng:</span>
+                                      <span className="font-medium ml-1">{orderDetails[transaction.source.source_id].quantity} {orderDetails[transaction.source.source_id].supply_listing?.unit}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Tổng tiền:</span>
+                                      <span className="font-medium ml-1">{formatCurrency(orderDetails[transaction.source.source_id].total)}</span>
+                                    </div>
+                                    {orderDetails[transaction.source.source_id].supply_listing?.brand && (
+                                      <div>
+                                        <span className="text-gray-500">Thương hiệu:</span>
+                                        <span className="font-medium ml-1">{orderDetails[transaction.source.source_id].supply_listing.brand}</span>
+                                      </div>
+                                    )}
+                                    {orderDetails[transaction.source.source_id].payment_method && (
+                                      <div>
+                                        <span className="text-gray-500">Thanh toán:</span>
+                                        <span className="font-medium ml-1">
+                                          {orderDetails[transaction.source.source_id].payment_method === 'cod' ? 'Tiền mặt' : 
+                                           orderDetails[transaction.source.source_id].payment_method === 'bank_transfer' ? 'Chuyển khoản' : 
+                                           orderDetails[transaction.source.source_id].payment_method}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -516,8 +732,3 @@ const MaterialDetailPage: React.FC = () => {
 };
 
 export default MaterialDetailPage;
-function setStatistics(statistics: any) {
-    // Assuming statistics is an object containing key-value pairs of statistical data
-    console.log('Statistics updated:', statistics);
-    // You can add more logic here to handle the statistics data as needed
-}

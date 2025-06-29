@@ -51,6 +51,17 @@ export default function FarmActivityModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   
+  // Thêm state cho labor request
+  const [autoCreateLabor, setAutoCreateLabor] = useState<boolean>(false);
+  const [laborInfo, setLaborInfo] = useState<{
+    workers_needed: number;
+    estimated_duration: string;
+    labor_type: string;
+  } | null>(null);
+  
+  // Thêm state cho option tìm người làm
+  const [findWorkersAfterCreate, setFindWorkersAfterCreate] = useState<boolean>(false);
+  
   // Danh sách loại hoạt động
   const activityTypes = [
     { value: "soil_preparation", label: "Làm đất" },
@@ -68,6 +79,30 @@ export default function FarmActivityModal({
   const materialRequiredActivities = ["fertilizing", "pesticide", "planting"];
   
   const requiresMaterials = materialRequiredActivities.includes(formData.activity_type);
+  
+  // Tính toán thông tin labor dựa trên activity type
+  useEffect(() => {
+    if (formData.activity_type) {
+      const laborInfo = calculateLaborInfo(formData.activity_type);
+      setLaborInfo(laborInfo);
+    }
+  }, [formData.activity_type]);
+  
+  const calculateLaborInfo = (activityType: string) => {
+    const laborMap = {
+      "watering": { workers_needed: 1, estimated_duration: "2-3 giờ", labor_type: "Tưới nước" },
+      "fertilizing": { workers_needed: 2, estimated_duration: "4-6 giờ", labor_type: "Bón phân" },
+      "harvesting": { workers_needed: 3, estimated_duration: "6-8 giờ", labor_type: "Thu hoạch" },
+      "pesticide": { workers_needed: 2, estimated_duration: "3-4 giờ", labor_type: "Phun thuốc" },
+      "soil_preparation": { workers_needed: 1, estimated_duration: "4-5 giờ", labor_type: "Làm đất" },
+      "planting": { workers_needed: 2, estimated_duration: "5-6 giờ", labor_type: "Gieo trồng" },
+      "weeding": { workers_needed: 2, estimated_duration: "3-4 giờ", labor_type: "Làm cỏ" },
+      "pruning": { workers_needed: 1, estimated_duration: "2-3 giờ", labor_type: "Tỉa cây" },
+      "other": { workers_needed: 1, estimated_duration: "3-4 giờ", labor_type: "Hoạt động khác" }
+    };
+
+    return laborMap[activityType as keyof typeof laborMap] || null;
+  };
   
   useEffect(() => {
     // Load danh sách vật tư khi mở modal
@@ -193,7 +228,8 @@ export default function FarmActivityModal({
       // Chuẩn bị dữ liệu gửi đi
       const dataToSubmit = {
         ...formData,
-        materials: formattedMaterials
+        materials: formattedMaterials,
+        auto_create_labor: autoCreateLabor
       };
       
       // Log dữ liệu trước khi gửi
@@ -218,6 +254,12 @@ export default function FarmActivityModal({
       setMaterials({});
       
       onClose();
+
+      // Nếu chọn tìm người làm, nhảy tới page tạo labor request
+      if (findWorkersAfterCreate) {
+        // Sử dụng window.location để nhảy trang với state
+        window.location.href = `/labor/requests/create?fromActivity=${encodeURIComponent(JSON.stringify(response.data))}`;
+      }
     } catch (error: any) {
       console.error("Lỗi khi tạo hoạt động nông nghiệp:", error);
       
@@ -459,6 +501,71 @@ export default function FarmActivityModal({
                 rows={3}
                 required
               />
+            </div>
+
+            {/* Labor Request Section */}
+            {laborInfo && (
+              <div className="mb-4 md:col-span-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-blue-800">Tự động tạo yêu cầu đổi công</h3>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={autoCreateLabor}
+                        onChange={(e) => setAutoCreateLabor(e.target.checked)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-blue-700">Tạo yêu cầu đổi công</span>
+                    </label>
+                  </div>
+                  
+                  {autoCreateLabor && (
+                    <div className="bg-white rounded-lg p-3 border border-blue-300">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Loại công việc:</span>
+                          <div className="text-blue-600">{laborInfo.labor_type}</div>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Số người cần:</span>
+                          <div className="text-blue-600">{laborInfo.workers_needed} người</div>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Thời gian ước tính:</span>
+                          <div className="text-blue-600">{laborInfo.estimated_duration}</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-600">
+                        💡 Hệ thống sẽ tự động tạo yêu cầu đổi công công khai để tìm người hỗ trợ
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Option tìm người làm sau khi tạo activity */}
+            <div className="mb-4 md:col-span-2">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-green-800">Tìm người làm</h3>
+                    <p className="text-sm text-green-700 mt-1">
+                      Sau khi tạo hoạt động, chuyển tới trang tìm người làm với thông tin đã điền sẵn
+                    </p>
+                  </div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={findWorkersAfterCreate}
+                      onChange={(e) => setFindWorkersAfterCreate(e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-green-700">Tìm người làm</span>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
           

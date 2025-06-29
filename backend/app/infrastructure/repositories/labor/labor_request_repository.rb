@@ -18,16 +18,27 @@ module Repositories
       def find_for_household(household_id, filters = {})
         requests = ::Models::Labor::LaborRequest.includes(:requesting_household, :providing_household)
 
-        # Áp dụng bộ lọc
+        # Áp dụng bộ lọc status
         if filters[:status].present?
           requests = requests.where(status: filters[:status])
         end
 
-        # Tìm các yêu cầu:
-        base_query = requests.where(
-          "requesting_household_id = :id OR providing_household_id = :id OR is_public = true",
-          id: household_id
-        )
+        # Xây dựng query cơ bản
+        base_query = requests
+
+        # Nếu có filter requesting_household_id, chỉ lấy yêu cầu do household đó tạo
+        if filters[:requesting_household_id].present?
+          base_query = base_query.where(requesting_household_id: filters[:requesting_household_id])
+        # Nếu có filter providing_household_id, chỉ lấy yêu cầu dành cho household đó
+        elsif filters[:providing_household_id].present?
+          base_query = base_query.where(providing_household_id: filters[:providing_household_id])
+        # Nếu không có filter cụ thể, lấy tất cả yêu cầu liên quan đến household
+        else
+          base_query = base_query.where(
+            "requesting_household_id = :id OR providing_household_id = :id OR is_public = true",
+            id: household_id
+          )
+        end
 
         # Loại bỏ child requests trừ khi được yêu cầu cụ thể
         if filters[:include_children] != true

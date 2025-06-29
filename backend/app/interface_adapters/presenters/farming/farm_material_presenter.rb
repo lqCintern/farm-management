@@ -3,7 +3,7 @@ module Presenters::Farming
     def self.as_json(farm_material)
       return {} unless farm_material
 
-      {
+      result = {
         id: farm_material.id,
         name: farm_material.name,
         material_id: farm_material.material_id,
@@ -13,8 +13,17 @@ module Presenters::Farming
         last_updated: farm_material.last_updated,
         created_at: farm_material.created_at,
         updated_at: farm_material.updated_at,
-        available_quantity: farm_material.available_quantity
+        available_quantity: farm_material.available_quantity,
+        unit_cost: farm_material.unit_cost,
+        total_cost: farm_material.total_cost
       }
+
+      # Thêm thông tin supply_listing nếu có
+      if farm_material.supply_listing
+        result[:supply_listing] = farm_material.supply_listing
+      end
+
+      result
     end
 
     def self.collection_as_json(farm_materials, pagination = nil)

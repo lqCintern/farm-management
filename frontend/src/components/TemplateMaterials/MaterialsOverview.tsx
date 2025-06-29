@@ -30,6 +30,7 @@ interface TemplateMaterialSummary {
   insufficient_materials_count: number;
   activity_type?: number;
   materials?: Array<{
+    id: number;
     material_name: string;
     quantity: number;
     unit: string;
@@ -88,7 +89,7 @@ export default function MaterialsOverview({
             : 0;
 
           // Lấy thông tin materials từ stats.by_category nếu có
-          const materials: Array<{material_name: string; quantity: number; unit: string}> = [];
+          const materials: Array<{id: number; material_name: string; quantity: number; unit: string}> = [];
           if (stats.by_category) {
             Object.values(stats.by_category).forEach((categoryData: any) => {
               if (categoryData.materials) {
@@ -171,7 +172,15 @@ export default function MaterialsOverview({
             <div style={{ fontSize: '12px', color: '#666' }}>
               {record.materials.slice(0, 2).map((material, index) => (
                 <div key={index}>
-                  • {material.material_name} ({material.quantity} {material.unit})
+                  • <Tooltip title={`Xem chi tiết ${material.material_name} trong kho`}>
+                      <Link 
+                        to={`/farmer/inventory/${material.id}`} 
+                        style={{ color: '#1890ff', textDecoration: 'none' }}
+                        target="_blank"
+                      >
+                        {material.material_name}
+                      </Link>
+                    </Tooltip> ({material.quantity} {material.unit})
                 </div>
               ))}
               {record.materials.length > 2 && (
@@ -222,11 +231,35 @@ export default function MaterialsOverview({
         if (record.insufficient_materials_count === 0) {
           return <Tag color="success">Đầy đủ</Tag>;
         }
-        let msg = '';
-        if (record.insufficient_materials_count > 0) {
-          msg = `${record.insufficient_materials_count} vật tư không đủ`;
-        }
-        return <Tag color="error">{msg}</Tag>;
+        
+        // Hiển thị danh sách vật tư thiếu với link
+        return (
+          <div>
+            <Tag color="error">{record.insufficient_materials_count} vật tư không đủ</Tag>
+            {record.materials && record.materials.length > 0 && (
+              <div style={{ marginTop: '4px', fontSize: '12px' }}>
+                {record.materials.slice(0, 3).map((material, index) => (
+                  <div key={index} style={{ marginBottom: '2px' }}>
+                    <Tooltip title={`Xem chi tiết ${material.material_name} trong kho`}>
+                      <Link 
+                        to={`/farmer/inventory/${material.id}`} 
+                        style={{ color: '#ff4d4f', textDecoration: 'none' }}
+                        target="_blank"
+                      >
+                        • {material.material_name}
+                      </Link>
+                    </Tooltip>
+                  </div>
+                ))}
+                {record.materials.length > 3 && (
+                  <div style={{ color: '#999', fontSize: '11px' }}>
+                    +{record.materials.length - 3} vật tư khác
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
       }
     }
   ];

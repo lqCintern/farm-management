@@ -398,7 +398,7 @@ module Repositories
 
           {
             success: true,
-            activities: created_activities,
+            activities: created_activities.sort_by(&:start_date),
             message: "Đã tạo kế hoạch công việc thành công"
           }
         rescue => e
@@ -440,7 +440,8 @@ module Repositories
 
         activities = []
         if include_activities && record.farm_activities.present?
-          activities = record.farm_activities.map { |activity| map_activity_to_entity(activity) }
+          # Sắp xếp activities theo start_date thay vì theo ID
+          activities = record.farm_activities.order(:start_date).map { |activity| map_activity_to_entity(activity) }
         end
 
         Entities::Farming::PineappleCrop.new(

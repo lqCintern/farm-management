@@ -34,15 +34,20 @@ module Controllers::Api
         end
 
         def create
-          result = Services::CleanArch.farming_create_farm_activity.execute(
-            farm_activity_params.to_h,
-            current_user.user_id
-          )
+          # Kiểm tra xem có muốn tạo labor request tự động không
+          if params[:auto_create_labor] == "true"
+            result = Services::CleanArch.farming_create_activity_with_labor.execute(
+              farm_activity_params,
+              current_user.user_id
+            )
+          else
+            result = Services::CleanArch.farming_create_farm_activity.execute(farm_activity_params, current_user.user_id)
+          end
 
           if result[:success]
             render json: {
-              message: "Lịch chăm sóc đã được tạo thành công",
-              data: ::Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
+              message: "Đã tạo hoạt động thành công",
+              activity: ::Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
             }, status: :created
           else
             render json: { errors: result[:errors] }, status: :unprocessable_entity
@@ -57,6 +62,9 @@ module Controllers::Api
           )
 
           if result[:success]
+            # Đồng bộ labor request status nếu có
+            Services::CleanArch.farming_sync_labor_request_status.execute(params[:id])
+            
             render json: {
               message: "Lịch chăm sóc đã được cập nhật thành công",
               data: ::Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
@@ -87,6 +95,9 @@ module Controllers::Api
           )
 
           if result[:success]
+            # Đồng bộ labor request status nếu có
+            Services::CleanArch.farming_sync_labor_request_status.execute(params[:id])
+            
             response_data = {
               success: true,
               message: "Hoạt động đã hoàn thành",

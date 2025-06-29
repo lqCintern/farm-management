@@ -18,6 +18,7 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { formatDate } from '@/utils/formatters';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import LaborNavigation from '@/components/Labor/LaborNavigation';
 
 const LaborRequestDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -233,254 +234,257 @@ const LaborRequestDetail = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      {actionSuccess && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-          {actionSuccess}
-        </div>
-      )}
-
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{request?.title}</h1>
-          <div className="flex items-center mt-2">
-            <StatusBadge status={request?.status || 'pending'} />
-            {request?.is_public && (
-              <span className="ml-2 bg-blue-100 text-blue-800 px-3 py-1 text-sm rounded-full">
-                Yêu cầu công khai
-              </span>
-            )}
+    <div>
+      <LaborNavigation />
+      <div className="container mx-auto p-4">
+        {actionSuccess && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            {actionSuccess}
           </div>
-        </div>
-        <Button buttonType="text" onClick={() => navigate('/labor/requests')}>
-          ← Quay lại danh sách
-        </Button>
-      </div>
+        )}
 
-      {/* Thông tin chi tiết */}
-      <Card className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-lg font-medium mb-2">Thông tin yêu cầu</h3>
-            <div className="space-y-2">
-              <p><span className="text-gray-500">Mô tả:</span> {request?.description}</p>
-              <p><span className="text-gray-500">Số người cần:</span> {request?.workers_needed}</p>
-              <p>
-                <span className="text-gray-500">Loại yêu cầu:</span> {
-                  request?.request_type === 'exchange' ? 'Đổi công' :
-                  request?.request_type === 'paid' ? 'Trả công' : 'Kết hợp'
-                }
-              </p>
-              {request?.rate && (
-                <p><span className="text-gray-500">Giá công:</span> {request.rate.toLocaleString()} VND</p>
-              )}
-              <p>
-                <span className="text-gray-500">Hộ yêu cầu:</span> {request?.requesting_household_name || `ID: ${request.requesting_household_id}`}
-              </p>
-              {request?.providing_household_id && (
-                <p>
-                  <span className="text-gray-500">Hộ thực hiện:</span> {request?.providing_household_name || `ID: ${request.providing_household_id}`}
-                </p>
+            <h1 className="text-2xl font-bold">{request?.title}</h1>
+            <div className="flex items-center mt-2">
+              <StatusBadge status={request?.status || 'pending'} />
+              {request?.is_public && (
+                <span className="ml-2 bg-blue-100 text-blue-800 px-3 py-1 text-sm rounded-full">
+                  Yêu cầu công khai
+                </span>
               )}
             </div>
           </div>
-
-          <div>
-            <h3 className="text-lg font-medium mb-2">Thời gian</h3>
-            <div className="space-y-2">
-              <p>
-                <span className="text-gray-500">Thời gian:</span> {formatDate(request?.start_date || '')} - {formatDate(request?.end_date || '')}
-              </p>
-              {request?.start_time && request?.end_time && (
-                <p>
-                  <span className="text-gray-500">Giờ làm việc:</span> {String(request.start_time).substring(11, 16)} - {String(request.end_time).substring(11, 16)}
-                </p>
-              )}
-              {request?.created_at && (
-                <p>
-                  <span className="text-gray-500">Ngày tạo:</span> {formatDate(request.created_at)}
-                </p>
-              )}
-            </div>
-          </div>
+          <Button buttonType="text" onClick={() => navigate('/labor/requests')}>
+            ← Quay lại danh sách
+          </Button>
         </div>
-      </Card>
 
-      {/* Thêm card thông tin công việc nếu có farm_activity */}
-      {farmActivity && (
+        {/* Thông tin chi tiết */}
         <Card className="mb-6">
-          <div className="p-6">
-            <h3 className="text-lg font-medium mb-4">
-              Thông tin công việc nông nghiệp
-              <span className="bg-purple-100 text-purple-800 px-3 py-1 text-sm rounded-full ml-2">
-                {typeof farmActivity.activity_type === 'string' 
-                  ? farmActivity.activity_type 
-                  : `Hoạt động #${farmActivity.activity_type}`}
-              </span>
-            </h3>
-
-            <div className="space-y-3">
-              <p><span className="text-gray-500">Mô tả hoạt động:</span> {farmActivity.description}</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <p><span className="text-gray-500">Ngày bắt đầu:</span> {formatDate(farmActivity.start_date)}</p>
-                <p><span className="text-gray-500">Ngày kết thúc:</span> {formatDate(farmActivity.end_date)}</p>
-                <p><span className="text-gray-500">Tần suất:</span> {farmActivity.frequency}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2">Thông tin yêu cầu</h3>
+              <div className="space-y-2">
+                <p><span className="text-gray-500">Mô tả:</span> {request?.description}</p>
+                <p><span className="text-gray-500">Số người cần:</span> {request?.workers_needed}</p>
                 <p>
-                  <span className="text-gray-500">Trạng thái:</span> {
-                    typeof farmActivity.status === 'string' ? 
-                      farmActivity.status : 
-                      farmActivity.status === 0 ? 'Chưa hoàn thành' : 'Đã hoàn thành'
+                  <span className="text-gray-500">Loại yêu cầu:</span> {
+                    request?.request_type === 'exchange' ? 'Đổi công' :
+                    request?.request_type === 'paid' ? 'Trả công' : 'Kết hợp'
                   }
                 </p>
+                {request?.rate && (
+                  <p><span className="text-gray-500">Giá công:</span> {request.rate.toLocaleString()} VND</p>
+                )}
+                <p>
+                  <span className="text-gray-500">Hộ yêu cầu:</span> {request?.requesting_household_name || `ID: ${request.requesting_household_id}`}
+                </p>
+                {request?.providing_household_id && (
+                  <p>
+                    <span className="text-gray-500">Hộ thực hiện:</span> {request?.providing_household_name || `ID: ${request.providing_household_id}`}
+                  </p>
+                )}
               </div>
+            </div>
 
-              {/* Cập nhật: Hiển thị materials dưới dạng mảng thay vì object */}
-              {farmActivity.materials && farmActivity.materials.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-md mt-2 mb-1">Vật tư sử dụng:</h4>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <ul className="list-disc pl-4">
-                      {farmActivity.materials.map((material: { id: number; name: string; quantity: number; unit: string }) => (
-                        <li key={material.id}>
-                          {material.name}: {material.quantity} {material.unit}
-                        </li>
-                      ))}
-                    </ul>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Thời gian</h3>
+              <div className="space-y-2">
+                <p>
+                  <span className="text-gray-500">Thời gian:</span> {formatDate(request?.start_date || '')} - {formatDate(request?.end_date || '')}
+                </p>
+                {request?.start_time && request?.end_time && (
+                  <p>
+                    <span className="text-gray-500">Giờ làm việc:</span> {String(request.start_time).substring(11, 16)} - {String(request.end_time).substring(11, 16)}
+                  </p>
+                )}
+                {request?.created_at && (
+                  <p>
+                    <span className="text-gray-500">Ngày tạo:</span> {formatDate(request.created_at)}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Thêm card thông tin công việc nếu có farm_activity */}
+        {farmActivity && (
+          <Card className="mb-6">
+            <div className="p-6">
+              <h3 className="text-lg font-medium mb-4">
+                Thông tin công việc nông nghiệp
+                <span className="bg-purple-100 text-purple-800 px-3 py-1 text-sm rounded-full ml-2">
+                  {typeof farmActivity.activity_type === 'string' 
+                    ? farmActivity.activity_type 
+                    : `Hoạt động #${farmActivity.activity_type}`}
+                </span>
+              </h3>
+
+              <div className="space-y-3">
+                <p><span className="text-gray-500">Mô tả hoạt động:</span> {farmActivity.description}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <p><span className="text-gray-500">Ngày bắt đầu:</span> {formatDate(farmActivity.start_date)}</p>
+                  <p><span className="text-gray-500">Ngày kết thúc:</span> {formatDate(farmActivity.end_date)}</p>
+                  <p><span className="text-gray-500">Tần suất:</span> {farmActivity.frequency}</p>
+                  <p>
+                    <span className="text-gray-500">Trạng thái:</span> {
+                      typeof farmActivity.status === 'string' ? 
+                        farmActivity.status : 
+                        farmActivity.status === 0 ? 'Chưa hoàn thành' : 'Đã hoàn thành'
+                    }
+                  </p>
+                </div>
+
+                {/* Cập nhật: Hiển thị materials dưới dạng mảng thay vì object */}
+                {farmActivity.materials && farmActivity.materials.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-md mt-2 mb-1">Vật tư sử dụng:</h4>
+                    <div className="bg-gray-50 p-3 rounded">
+                      <ul className="list-disc pl-4">
+                        {farmActivity.materials.map((material: { id: number; name: string; quantity: number; unit: string }) => (
+                          <li key={material.id}>
+                            {material.name}: {material.quantity} {material.unit}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+                
+                <p className="text-blue-600">
+                  <a href={`/farm-activities/${farmActivity.id}`} target="_blank" rel="noopener noreferrer">
+                    Xem chi tiết hoạt động →
+                  </a>
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Thông tin nhóm - giữ nguyên */}
+        {groupStatus && (
+          <Card className="mb-6">
+            <div className="p-6">
+              <h3 className="text-lg font-medium mb-4">Thông tin nhóm yêu cầu</h3>
               
-              <p className="text-blue-600">
-                <a href={`/farm-activities/${farmActivity.id}`} target="_blank" rel="noopener noreferrer">
-                  Xem chi tiết hoạt động →
-                </a>
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Thông tin nhóm - giữ nguyên */}
-      {groupStatus && (
-        <Card className="mb-6">
-          <div className="p-6">
-            <h3 className="text-lg font-medium mb-4">Thông tin nhóm yêu cầu</h3>
-            
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-              <div className="border rounded-lg p-3">
-                <div className="text-2xl font-bold">{groupStatus.total}</div>
-                <div className="text-sm text-gray-500">Tổng số</div>
-              </div>
-              <div className="border rounded-lg p-3 bg-yellow-50">
-                <div className="text-2xl font-bold text-yellow-700">{groupStatus.pending}</div>
-                <div className="text-sm text-gray-500">Đang chờ</div>
-              </div>
-              <div className="border rounded-lg p-3 bg-green-50">
-                <div className="text-2xl font-bold text-green-700">{groupStatus.accepted}</div>
-                <div className="text-sm text-gray-500">Đã chấp nhận</div>
-              </div>
-              <div className="border rounded-lg p-3 bg-red-50">
-                <div className="text-2xl font-bold text-red-700">{groupStatus.declined}</div>
-                <div className="text-sm text-gray-500">Đã từ chối</div>
-              </div>
-              {groupStatus.completed !== undefined && (
-                <div className="border rounded-lg p-3 bg-blue-50">
-                  <div className="text-2xl font-bold text-blue-700">{groupStatus.completed}</div>
-                  <div className="text-sm text-gray-500">Đã hoàn thành</div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                <div className="border rounded-lg p-3">
+                  <div className="text-2xl font-bold">{groupStatus.total}</div>
+                  <div className="text-sm text-gray-500">Tổng số</div>
                 </div>
+                <div className="border rounded-lg p-3 bg-yellow-50">
+                  <div className="text-2xl font-bold text-yellow-700">{groupStatus.pending}</div>
+                  <div className="text-sm text-gray-500">Đang chờ</div>
+                </div>
+                <div className="border rounded-lg p-3 bg-green-50">
+                  <div className="text-2xl font-bold text-green-700">{groupStatus.accepted}</div>
+                  <div className="text-sm text-gray-500">Đã chấp nhận</div>
+                </div>
+                <div className="border rounded-lg p-3 bg-red-50">
+                  <div className="text-2xl font-bold text-red-700">{groupStatus.declined}</div>
+                  <div className="text-sm text-gray-500">Đã từ chối</div>
+                </div>
+                {groupStatus.completed !== undefined && (
+                  <div className="border rounded-lg p-3 bg-blue-50">
+                    <div className="text-2xl font-bold text-blue-700">{groupStatus.completed}</div>
+                    <div className="text-sm text-gray-500">Đã hoàn thành</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Các thao tác */}
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-medium mb-4">Thao tác</h3>
+
+            <div className="flex flex-wrap gap-3">
+              {/* Nút chấp nhận yêu cầu (cho hộ được chỉ định) */}
+              {request.status === 'pending' && 
+               request.providing_household_id && 
+               currentHousehold && 
+               request.providing_household_id === currentHousehold.id && (
+                <Button
+                  buttonType="success"
+                  onClick={() => handleAction('accept', 'chấp nhận')}
+                  disabled={processingAction}
+                >
+                  Chấp nhận
+                </Button>
+              )}
+
+              {/* Nút từ chối yêu cầu (cho hộ được chỉ định) */}
+              {request.status === 'pending' && 
+               request.providing_household_id && 
+               currentHousehold && 
+               request.providing_household_id === currentHousehold.id && (
+                <Button
+                  buttonType="danger"
+                  onClick={() => handleAction('decline', 'từ chối')}
+                  disabled={processingAction}
+                >
+                  Từ chối
+                </Button>
+              )}
+
+              {/* Nút hoàn thành yêu cầu (cho requester khi đã được chấp nhận) */}
+              {request.status === 'accepted' && 
+               currentHousehold && 
+               request.requesting_household_id === currentHousehold.id && (
+                <Button
+                  buttonType="primary"
+                  onClick={() => handleAction('complete', 'hoàn thành')}
+                  disabled={processingAction}
+                >
+                  Hoàn thành
+                </Button>
+              )}
+
+              {/* Nút hủy yêu cầu (cho requester) */}
+              {['pending', 'accepted'].includes(request.status) && 
+               currentHousehold && 
+               request.requesting_household_id === currentHousehold.id && (
+                <Button
+                  buttonType="secondary"
+                  onClick={() => handleAction('cancel', 'hủy')}
+                  disabled={processingAction}
+                >
+                  Hủy yêu cầu
+                </Button>
+              )}
+
+              {/* Nút tham gia yêu cầu công khai (cho các hộ khác) */}
+              {request.is_public && 
+               request.status === 'pending' && 
+               currentHousehold && 
+               (!request.providing_household_id || request.providing_household_id !== currentHousehold.id) && (
+                <Button
+                  buttonType="primary"
+                  onClick={() => handleAction('join', 'tham gia')}
+                  disabled={processingAction}
+                >
+                  Tham gia
+                </Button>
               )}
             </div>
           </div>
         </Card>
-      )}
 
-      {/* Các thao tác */}
-      <Card>
-        <div className="p-6">
-          <h3 className="text-lg font-medium mb-4">Thao tác</h3>
-
-          <div className="flex flex-wrap gap-3">
-            {/* Nút chấp nhận yêu cầu (cho hộ được chỉ định) */}
-            {request.status === 'pending' && 
-             request.providing_household_id && 
-             currentHousehold && 
-             request.providing_household_id === currentHousehold.id && (
-              <Button
-                buttonType="success"
-                onClick={() => handleAction('accept', 'chấp nhận')}
-                disabled={processingAction}
-              >
-                Chấp nhận
-              </Button>
-            )}
-
-            {/* Nút từ chối yêu cầu (cho hộ được chỉ định) */}
-            {request.status === 'pending' && 
-             request.providing_household_id && 
-             currentHousehold && 
-             request.providing_household_id === currentHousehold.id && (
-              <Button
-                buttonType="danger"
-                onClick={() => handleAction('decline', 'từ chối')}
-                disabled={processingAction}
-              >
-                Từ chối
-              </Button>
-            )}
-
-            {/* Nút hoàn thành yêu cầu (cho requester khi đã được chấp nhận) */}
-            {request.status === 'accepted' && 
-             currentHousehold && 
-             request.requesting_household_id === currentHousehold.id && (
-              <Button
-                buttonType="primary"
-                onClick={() => handleAction('complete', 'hoàn thành')}
-                disabled={processingAction}
-              >
-                Hoàn thành
-              </Button>
-            )}
-
-            {/* Nút hủy yêu cầu (cho requester) */}
-            {['pending', 'accepted'].includes(request.status) && 
-             currentHousehold && 
-             request.requesting_household_id === currentHousehold.id && (
-              <Button
-                buttonType="secondary"
-                onClick={() => handleAction('cancel', 'hủy')}
-                disabled={processingAction}
-              >
-                Hủy yêu cầu
-              </Button>
-            )}
-
-            {/* Nút tham gia yêu cầu công khai (cho các hộ khác) */}
-            {request.is_public && 
-             request.status === 'pending' && 
-             currentHousehold && 
-             (!request.providing_household_id || request.providing_household_id !== currentHousehold.id) && (
-              <Button
-                buttonType="primary"
-                onClick={() => handleAction('join', 'tham gia')}
-                disabled={processingAction}
-              >
-                Tham gia
-              </Button>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      <ConfirmModal
-        isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={executeAction}
-        title={`Xác nhận ${currentActionTitle}`}
-        message={`Bạn có chắc chắn muốn ${currentActionTitle} yêu cầu này không?`}
-        confirmText={currentActionTitle}
-        loading={processingAction}
-      />
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={executeAction}
+          title={`Xác nhận ${currentActionTitle}`}
+          message={`Bạn có chắc chắn muốn ${currentActionTitle} yêu cầu này không?`}
+          confirmText={currentActionTitle}
+          loading={processingAction}
+        />
+      </div>
     </div>
   );
 };

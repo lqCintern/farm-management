@@ -16,6 +16,11 @@ const MaterialInventoryCard: React.FC<MaterialInventoryCardProps> = ({
   onAdjust, 
   onDelete 
 }) => {
+  // Lấy ảnh từ supply_listing hoặc sử dụng icon mặc định
+  const hasImage = material.supply_listing?.main_image || 
+                   (material.supply_listing?.images && material.supply_listing.images.length > 0);
+  const imageUrl = material.supply_listing?.main_image || material.supply_listing?.images?.[0];
+
   return (
     <div className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       {/* Thêm Link để bọc nội dung thẻ, dẫn đến trang chi tiết */}
@@ -23,18 +28,46 @@ const MaterialInventoryCard: React.FC<MaterialInventoryCardProps> = ({
         <div className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg mr-3 ${
-                material.category === 'fertilizer' ? 'bg-green-50 text-green-600' :
-                material.category === 'pesticide' ? 'bg-red-50 text-red-600' :
-                material.category === 'seed' ? 'bg-yellow-50 text-yellow-600' :
-                material.category === 'tool' ? 'bg-blue-50 text-blue-600' :
-                'bg-gray-50 text-gray-600'
-              }`}>
-                <Package size={20} />
-              </div>
+              {hasImage ? (
+                <div className="w-12 h-12 rounded-lg mr-3 overflow-hidden bg-gray-100">
+                  <img 
+                    src={imageUrl} 
+                    alt={material.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to icon if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <div className={`w-full h-full flex items-center justify-center ${
+                    material.category === 'fertilizer' ? 'bg-green-50 text-green-600' :
+                    material.category === 'pesticide' ? 'bg-red-50 text-red-600' :
+                    material.category === 'seed' ? 'bg-yellow-50 text-yellow-600' :
+                    material.category === 'tool' ? 'bg-blue-50 text-blue-600' :
+                    'bg-gray-50 text-gray-600'
+                  } hidden`}>
+                    <Package size={20} />
+                  </div>
+                </div>
+              ) : (
+                <div className={`p-2 rounded-lg mr-3 ${
+                  material.category === 'fertilizer' ? 'bg-green-50 text-green-600' :
+                  material.category === 'pesticide' ? 'bg-red-50 text-red-600' :
+                  material.category === 'seed' ? 'bg-yellow-50 text-yellow-600' :
+                  material.category === 'tool' ? 'bg-blue-50 text-blue-600' :
+                  'bg-gray-50 text-gray-600'
+                }`}>
+                  <Package size={20} />
+                </div>
+              )}
               <div className="truncate">
                 <h3 className="font-medium text-gray-900 truncate">{material.name}</h3>
                 <p className="text-sm text-gray-500">{material.category || "Không phân loại"}</p>
+                {material.supply_listing?.brand && (
+                  <p className="text-xs text-gray-400">{material.supply_listing.brand}</p>
+                )}
               </div>
             </div>
             

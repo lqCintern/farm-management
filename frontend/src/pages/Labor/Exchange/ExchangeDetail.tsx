@@ -12,6 +12,7 @@ import Button from '@/components/common/Button';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
+import LaborNavigation from '@/components/Labor/LaborNavigation';
 
 interface Assignment {
   id: number;
@@ -357,362 +358,365 @@ const ExchangeDetail = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      {loading ? (
-        <div className="flex justify-center my-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-        </div>
-      ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      ) : exchangeDetail ? (
-        <>
-          <div className="mb-6 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold">Chi tiết đổi công với {getPartnerName()}</h1>
-              <p className="text-gray-500">Quản lý số dư và giao dịch đổi công</p>
-            </div>
-            <div>
-              <Button onClick={() => navigate(`/labor/exchanges/${householdId}/history`)}>
-                Xem lịch sử
-              </Button>
-            </div>
+    <>
+      <LaborNavigation />
+      <div className="container mx-auto p-4">
+        {loading ? (
+          <div className="flex justify-center my-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
           </div>
-
-          <Card className="mb-6">
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row justify-between">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Thông tin số dư</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-gray-500">Số dư hiện tại:</p>
-                      <p className={`text-3xl font-bold ${
-                        exchangeDetail.balance > 0 
-                          ? 'text-green-600' 
-                          : exchangeDetail.balance < 0 
-                            ? 'text-red-600' 
-                            : 'text-gray-600'
-                      }`}>
-                        {exchangeDetail.balance > 0 
-                          ? `+${exchangeDetail.balance}` 
-                          : exchangeDetail.balance} giờ công
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-gray-500">Trạng thái:</p>
-                      <p className="font-medium">
-                        {exchangeDetail.direction === 'positive' 
-                          ? 'Họ đang nợ bạn công' 
-                          : exchangeDetail.direction === 'negative' 
-                            ? 'Bạn đang nợ họ công' 
-                            : 'Cân bằng'}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-gray-500">Giao dịch gần nhất:</p>
-                      <p>{exchangeDetail.exchange.last_transaction_date 
-                        ? new Date(exchangeDetail.exchange.last_transaction_date).toLocaleDateString('vi-VN') 
-                        : 'Chưa có'}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 md:mt-0">
-                  <h3 className="text-lg font-medium mb-4">Thao tác</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Button 
-                      buttonType="primary" 
-                      onClick={() => setShowAdjustModal(true)}
-                      title="Điều chỉnh số dư giờ công"
-                    >
-                      Điều chỉnh số dư
-                    </Button>
-                    
-                    <Button 
-                      buttonType="secondary"
-                      onClick={handleRecalculate}
-                      disabled={processingAction}
-                      title="Tính lại số dư từ lịch sử giao dịch"
-                    >
-                      Tính lại số dư
-                    </Button>
-                    
-                    <Button 
-                      buttonType="danger"
-                      onClick={() => setShowResetConfirm(true)}
-                      disabled={exchangeDetail.balance === 0}
-                      title="Xóa toàn bộ số dư hiện tại"
-                    >
-                      Xóa số dư
-                    </Button>
-
-                    <Button 
-                      buttonType="primary"
-                      onClick={recalculateHoursWorked}
-                      title="Tính lại giờ công từ thời gian làm việc đã ghi nhận"
-                    >
-                      Tính lại giờ công
-                    </Button>
-                  </div>
-                </div>
+        ) : error ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        ) : exchangeDetail ? (
+          <>
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold">Chi tiết đổi công với {getPartnerName()}</h1>
+                <p className="text-gray-500">Quản lý số dư và giao dịch đổi công</p>
+              </div>
+              <div>
+                <Button onClick={() => navigate(`/labor/exchanges/${householdId}/history`)}>
+                  Xem lịch sử
+                </Button>
               </div>
             </div>
-          </Card>
 
-          {/* Thêm hiển thị lịch sử chi tiết */}
-          {exchangeDetail && exchangeDetail.detailed_history && exchangeDetail.detailed_history.length > 0 ? (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Lịch sử chi tiết theo yêu cầu</h3>
-              <div className="space-y-4">
-                {exchangeDetail.detailed_history.map((item) => (
-                  <div key={item.request_id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium">{item.title}</h4>
-                      <div className="text-sm text-gray-500">
-                        {item.work_dates.map(date => new Date(date).toLocaleDateString('vi-VN')).join(', ')}
+            <Card className="mb-6">
+              <div className="p-6">
+                <div className="flex flex-col md:flex-row justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Thông tin số dư</h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-gray-500">Số dư hiện tại:</p>
+                        <p className={`text-3xl font-bold ${
+                          exchangeDetail.balance > 0 
+                            ? 'text-green-600' 
+                            : exchangeDetail.balance < 0 
+                              ? 'text-red-600' 
+                              : 'text-gray-600'
+                        }`}>
+                          {exchangeDetail.balance > 0 
+                            ? `+${exchangeDetail.balance}` 
+                            : exchangeDetail.balance} giờ công
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-gray-500">Trạng thái:</p>
+                        <p className="font-medium">
+                          {exchangeDetail.direction === 'positive' 
+                            ? 'Họ đang nợ bạn công' 
+                            : exchangeDetail.direction === 'negative' 
+                              ? 'Bạn đang nợ họ công' 
+                              : 'Cân bằng'}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-gray-500">Giao dịch gần nhất:</p>
+                        <p>{exchangeDetail.exchange.last_transaction_date 
+                          ? new Date(exchangeDetail.exchange.last_transaction_date).toLocaleDateString('vi-VN') 
+                          : 'Chưa có'}</p>
                       </div>
                     </div>
-                    
-                    <div className="text-sm mb-3">
-                      <span className="font-medium">Yêu cầu:</span> {item.requesting_household} → 
-                      <span className="font-medium">Cung cấp:</span> {item.providing_household}
-                    </div>
-                    
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Người lao động</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Ngày làm việc</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Giờ làm việc</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Đơn vị công</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {item.completed_assignments.map((assignment) => (
-                          <tr key={assignment.id}>
-                            <td className="px-4 py-2">{assignment.worker_name}</td>
-                            <td className="px-4 py-2">{new Date(assignment.work_date).toLocaleDateString('vi-VN')}</td>
-                            <td className="px-4 py-2">
-                              {assignment.hours_worked > 0 ? (
-                                // Nếu đã có hours_worked
-                                `${assignment.hours_worked} giờ`
-                              ) : assignment.start_time && assignment.end_time ? (
-                                // Nếu chỉ có start_time và end_time
-                                <>
-                                  <div>{formatTime(assignment.start_time)} - {formatTime(assignment.end_time)}</div>
-                                  <div className="text-sm text-red-500">(Chưa tính giờ công)</div>
-                                </>
-                              ) : (
-                                'Không có thông tin'
-                              )}
-                            </td>
-                            <td className="px-4 py-2">
-                              {assignment.work_units && assignment.work_units > 0 ? 
-                                assignment.work_units : 
-                                assignment.start_time && assignment.end_time ? 
-                                  <span className="text-yellow-600">Cần tính lại</span> : 
-                                  '-'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
                   </div>
-                ))}
+                  
+                  <div className="mt-6 md:mt-0">
+                    <h3 className="text-lg font-medium mb-4">Thao tác</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Button 
+                        buttonType="primary" 
+                        onClick={() => setShowAdjustModal(true)}
+                        title="Điều chỉnh số dư giờ công"
+                      >
+                        Điều chỉnh số dư
+                      </Button>
+                      
+                      <Button 
+                        buttonType="secondary"
+                        onClick={handleRecalculate}
+                        disabled={processingAction}
+                        title="Tính lại số dư từ lịch sử giao dịch"
+                      >
+                        Tính lại số dư
+                      </Button>
+                      
+                      <Button 
+                        buttonType="danger"
+                        onClick={() => setShowResetConfirm(true)}
+                        disabled={exchangeDetail.balance === 0}
+                        title="Xóa toàn bộ số dư hiện tại"
+                      >
+                        Xóa số dư
+                      </Button>
+
+                      <Button 
+                        buttonType="primary"
+                        onClick={recalculateHoursWorked}
+                        title="Tính lại giờ công từ thời gian làm việc đã ghi nhận"
+                      >
+                        Tính lại giờ công
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : (
-            // Hiển thị thông báo hoặc tạo detailed history từ transactions
-            <div className="mt-6">
-              <Card>
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-3">Chi tiết yêu cầu đổi công</h3>
-                  {exchangeDetail && exchangeDetail.transactions && exchangeDetail.transactions.length > 0 ? (
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-3">
-                        {exchangeDetail.transactions[0].assignment_details?.request_title || 'Giao dịch đổi công'}
-                      </h4>
+            </Card>
+
+            {/* Thêm hiển thị lịch sử chi tiết */}
+            {exchangeDetail && exchangeDetail.detailed_history && exchangeDetail.detailed_history.length > 0 ? (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-3">Lịch sử chi tiết theo yêu cầu</h3>
+                <div className="space-y-4">
+                  {exchangeDetail.detailed_history.map((item) => (
+                    <div key={item.request_id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-medium">{item.title}</h4>
+                        <div className="text-sm text-gray-500">
+                          {item.work_dates.map(date => new Date(date).toLocaleDateString('vi-VN')).join(', ')}
+                        </div>
+                      </div>
+                      
                       <div className="text-sm mb-3">
-                        <span className="font-medium">Yêu cầu:</span> {
-                          (() => {
-                            const tx = exchangeDetail.transactions[0];
-                            if (!tx.direction_info || !currentHousehold) return 'Không xác định';
-                            return tx.direction_info.requesting_household_id === currentHousehold.id
-                              ? 'Nhà mình'
-                              : tx.direction_info.requesting_household_name;
-                          })()
-                        } → 
-                        <span className="font-medium">Cung cấp:</span> {
-                          (() => {
-                            const tx = exchangeDetail.transactions[0];
-                            if (!tx.direction_info || !currentHousehold) return 'Không xác định';
-                            return tx.direction_info.providing_household_id === currentHousehold.id
-                              ? 'Nhà mình'
-                              : tx.direction_info.providing_household_name;
-                          })()
-                        }
+                        <span className="font-medium">Yêu cầu:</span> {item.requesting_household} → 
+                        <span className="font-medium">Cung cấp:</span> {item.providing_household}
                       </div>
+                      
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Người lao động</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Ngày làm việc</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Giờ công</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Mô tả</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Giờ làm việc</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Đơn vị công</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {exchangeDetail.transactions.map((tx) => (
-                            <tr key={tx.id}>
-                              <td className="px-4 py-2">{tx.worker_name || tx.assignment_details?.worker_name || 'Không xác định'}</td>
+                          {item.completed_assignments.map((assignment) => (
+                            <tr key={assignment.id}>
+                              <td className="px-4 py-2">{assignment.worker_name}</td>
+                              <td className="px-4 py-2">{new Date(assignment.work_date).toLocaleDateString('vi-VN')}</td>
                               <td className="px-4 py-2">
-                                {tx.work_date || tx.assignment_details?.work_date ? 
-                                  new Date(tx.work_date || tx.assignment_details?.work_date || '').toLocaleDateString('vi-VN') : 
-                                  'Không xác định'}
+                                {assignment.hours_worked > 0 ? (
+                                  // Nếu đã có hours_worked
+                                  `${assignment.hours_worked} giờ`
+                                ) : assignment.start_time && assignment.end_time ? (
+                                  // Nếu chỉ có start_time và end_time
+                                  <>
+                                    <div>{formatTime(assignment.start_time)} - {formatTime(assignment.end_time)}</div>
+                                    <div className="text-sm text-red-500">(Chưa tính giờ công)</div>
+                                  </>
+                                ) : (
+                                  'Không có thông tin'
+                                )}
                               </td>
-                              <td className="px-4 py-2">{tx.hours} giờ</td>
-                              <td className="px-4 py-2">{tx.description}</td>
+                              <td className="px-4 py-2">
+                                {assignment.work_units && assignment.work_units > 0 ? 
+                                  assignment.work_units : 
+                                  assignment.start_time && assignment.end_time ? 
+                                    <span className="text-yellow-600">Cần tính lại</span> : 
+                                    '-'}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      Chưa có thông tin chi tiết về các yêu cầu đổi công giữa hai hộ.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* Cập nhật phần hiển thị transactions */}
-          {exchangeDetail && exchangeDetail.transactions && exchangeDetail.transactions.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Các giao dịch gần đây</h3>
-              <Card>
-                <div className="p-4">
-                  {exchangeDetail.transactions.map(transaction => (
-                    <TransactionCard key={transaction.id} transaction={transaction} />
                   ))}
-                  
-                  <div className="text-center mt-4">
-                    <Button 
-                      buttonType="text"
-                      onClick={() => navigate(`/labor/exchanges/${householdId}/history`)}
-                    >
-                      Xem tất cả giao dịch
-                    </Button>
-                  </div>
                 </div>
-              </Card>
-            </div>
-          )}
-        </>
-      ) : null}
+              </div>
+            ) : (
+              // Hiển thị thông báo hoặc tạo detailed history từ transactions
+              <div className="mt-6">
+                <Card>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold mb-3">Chi tiết yêu cầu đổi công</h3>
+                    {exchangeDetail && exchangeDetail.transactions && exchangeDetail.transactions.length > 0 ? (
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-medium mb-3">
+                          {exchangeDetail.transactions[0].assignment_details?.request_title || 'Giao dịch đổi công'}
+                        </h4>
+                        <div className="text-sm mb-3">
+                          <span className="font-medium">Yêu cầu:</span> {
+                            (() => {
+                              const tx = exchangeDetail.transactions[0];
+                              if (!tx.direction_info || !currentHousehold) return 'Không xác định';
+                              return tx.direction_info.requesting_household_id === currentHousehold.id
+                                ? 'Nhà mình'
+                                : tx.direction_info.requesting_household_name;
+                            })()
+                          } → 
+                          <span className="font-medium">Cung cấp:</span> {
+                            (() => {
+                              const tx = exchangeDetail.transactions[0];
+                              if (!tx.direction_info || !currentHousehold) return 'Không xác định';
+                              return tx.direction_info.providing_household_id === currentHousehold.id
+                                ? 'Nhà mình'
+                                : tx.direction_info.providing_household_name;
+                            })()
+                          }
+                        </div>
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Người lao động</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Ngày làm việc</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Giờ công</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Mô tả</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {exchangeDetail.transactions.map((tx) => (
+                              <tr key={tx.id}>
+                                <td className="px-4 py-2">{tx.worker_name || tx.assignment_details?.worker_name || 'Không xác định'}</td>
+                                <td className="px-4 py-2">
+                                  {tx.work_date || tx.assignment_details?.work_date ? 
+                                    new Date(tx.work_date || tx.assignment_details?.work_date || '').toLocaleDateString('vi-VN') : 
+                                    'Không xác định'}
+                                </td>
+                                <td className="px-4 py-2">{tx.hours} giờ</td>
+                                <td className="px-4 py-2">{tx.description}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        Chưa có thông tin chi tiết về các yêu cầu đổi công giữa hai hộ.
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            )}
 
-      {/* Reset Balance Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showResetConfirm}
-        onClose={() => setShowResetConfirm(false)}
-        onConfirm={handleResetBalance}
-        title="Xác nhận xóa số dư"
-        message="Bạn có chắc chắn muốn xóa số dư đổi công với hộ này không? Hành động này không thể hoàn tác."
-        confirmText="Xóa số dư"
-        loading={processingAction}
-      />
-      
-      {/* Adjust Balance Modal */}
-      <div className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center ${showAdjustModal ? '' : 'hidden'}`}>
-        <div className="bg-white rounded-lg max-w-md w-full p-6">
-          <h3 className="text-xl font-medium mb-4">Điều chỉnh số dư công</h3>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Số giờ điều chỉnh</label>
-            <input
-              type="number"
-              value={adjustHours}
-              onChange={(e) => setAdjustHours(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="Nhập số dương để tăng, âm để giảm"
-            />
-            <p className="text-sm text-gray-500 mt-1">Số dương: Họ nợ bạn thêm giờ. Số âm: Bạn nợ họ thêm giờ.</p>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-            <textarea
-              value={adjustNotes}
-              onChange={(e) => setAdjustNotes(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              rows={3}
-              placeholder="Lý do điều chỉnh"
-            ></textarea>
-          </div>
-          
-          <div className="flex justify-end space-x-3">
-            <Button buttonType="text" onClick={() => setShowAdjustModal(false)} disabled={processingAction}>
-              Hủy
-            </Button>
-            <Button onClick={handleAdjustBalance} disabled={processingAction || adjustHours === 0}>
-              {processingAction ? 'Đang xử lý...' : 'Điều chỉnh'}
-            </Button>
-          </div>
-        </div>
-      </div>
+            {/* Cập nhật phần hiển thị transactions */}
+            {exchangeDetail && exchangeDetail.transactions && exchangeDetail.transactions.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-3">Các giao dịch gần đây</h3>
+                <Card>
+                  <div className="p-4">
+                    {exchangeDetail.transactions.map(transaction => (
+                      <TransactionCard key={transaction.id} transaction={transaction} />
+                    ))}
+                    
+                    <div className="text-center mt-4">
+                      <Button 
+                        buttonType="text"
+                        onClick={() => navigate(`/labor/exchanges/${householdId}/history`)}
+                      >
+                        Xem tất cả giao dịch
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+          </>
+        ) : null}
 
-      {/* Recalculation Result Modal */}
-      {showRecalculateModal && recalculationResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Kết quả tính lại số dư công</h2>
+        {/* Reset Balance Confirmation Modal */}
+        <ConfirmModal
+          isOpen={showResetConfirm}
+          onClose={() => setShowResetConfirm(false)}
+          onConfirm={handleResetBalance}
+          title="Xác nhận xóa số dư"
+          message="Bạn có chắc chắn muốn xóa số dư đổi công với hộ này không? Hành động này không thể hoàn tác."
+          confirmText="Xóa số dư"
+          loading={processingAction}
+        />
+        
+        {/* Adjust Balance Modal */}
+        <div className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center ${showAdjustModal ? '' : 'hidden'}`}>
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-xl font-medium mb-4">Điều chỉnh số dư công</h3>
             
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Số dư cũ:</span>
-                <span className="font-medium">{recalculationResult.old_balance} giờ</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Số dư mới:</span>
-                <span className="font-medium">{recalculationResult.new_balance} giờ</span>
-              </div>
-              
-              <div className="flex justify-between items-center border-t pt-2">
-                <span className="text-gray-600 font-medium">Chênh lệch:</span>
-                <span className={`font-bold ${
-                  recalculationResult.difference > 0 
-                    ? 'text-green-600' 
-                    : recalculationResult.difference < 0 
-                      ? 'text-red-600' 
-                      : 'text-gray-600'
-                }`}>
-                  {recalculationResult.difference > 0 ? '+' : ''}{recalculationResult.difference} giờ
-                </span>
-              </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Số giờ điều chỉnh</label>
+              <input
+                type="number"
+                value={adjustHours}
+                onChange={(e) => setAdjustHours(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                placeholder="Nhập số dương để tăng, âm để giảm"
+              />
+              <p className="text-sm text-gray-500 mt-1">Số dương: Họ nợ bạn thêm giờ. Số âm: Bạn nợ họ thêm giờ.</p>
             </div>
             
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button buttonType="text" onClick={() => setShowRecalculateModal(false)}>
-                Đóng
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+              <textarea
+                value={adjustNotes}
+                onChange={(e) => setAdjustNotes(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                rows={3}
+                placeholder="Lý do điều chỉnh"
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <Button buttonType="text" onClick={() => setShowAdjustModal(false)} disabled={processingAction}>
+                Hủy
               </Button>
-              {recalculationResult.difference !== 0 && (
-                <Button onClick={handleConfirmRecalculation}>
-                  Cập nhật số dư
-                </Button>
-              )}
+              <Button onClick={handleAdjustBalance} disabled={processingAction || adjustHours === 0}>
+                {processingAction ? 'Đang xử lý...' : 'Điều chỉnh'}
+              </Button>
             </div>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Recalculation Result Modal */}
+        {showRecalculateModal && recalculationResult && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h2 className="text-xl font-bold mb-4">Kết quả tính lại số dư công</h2>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Số dư cũ:</span>
+                  <span className="font-medium">{recalculationResult.old_balance} giờ</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Số dư mới:</span>
+                  <span className="font-medium">{recalculationResult.new_balance} giờ</span>
+                </div>
+                
+                <div className="flex justify-between items-center border-t pt-2">
+                  <span className="text-gray-600 font-medium">Chênh lệch:</span>
+                  <span className={`font-bold ${
+                    recalculationResult.difference > 0 
+                      ? 'text-green-600' 
+                      : recalculationResult.difference < 0 
+                        ? 'text-red-600' 
+                        : 'text-gray-600'
+                  }`}>
+                    {recalculationResult.difference > 0 ? '+' : ''}{recalculationResult.difference} giờ
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button buttonType="text" onClick={() => setShowRecalculateModal(false)}>
+                  Đóng
+                </Button>
+                {recalculationResult.difference !== 0 && (
+                  <Button onClick={handleConfirmRecalculation}>
+                    Cập nhật số dư
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

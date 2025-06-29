@@ -66,7 +66,7 @@ export default function ActivityTemplateDetail() {
         setTemplate(response.data);
       } catch (error) {
         message.error("Không thể tải thông tin mẫu hoạt động");
-        navigate("/pineapple-activity-templates");
+        navigate("/activity-templates");
       } finally {
         setLoading(false);
       }
@@ -90,7 +90,7 @@ export default function ActivityTemplateDetail() {
           }
           await pineappleActivityTemplateService.deleteTemplate(numericId);
           message.success("Đã xóa mẫu hoạt động");
-          navigate("/pineapple-activity-templates");
+          navigate("/activity-templates");
         } catch (error) {
           message.error("Không thể xóa mẫu hoạt động");
         }
@@ -115,7 +115,7 @@ export default function ActivityTemplateDetail() {
       <div className="flex justify-between items-center mb-4">
         <Button 
           icon={<ArrowLeftOutlined />} 
-          onClick={() => navigate("/pineapple-activity-templates")}
+          onClick={() => navigate("/activity-templates")}
         >
           Quay lại
         </Button>
@@ -125,7 +125,7 @@ export default function ActivityTemplateDetail() {
             <>
               <Button 
                 icon={<EditOutlined />} 
-                onClick={() => navigate(`/pineapple-activity-templates/${id}/edit`)}
+                onClick={() => navigate(`/activity-templates/${id}/edit`)}
                 className="mr-2"
               >
                 Sửa

@@ -173,8 +173,8 @@ const FarmActivityDetail = () => {
         id: material.id,
         name: material.name,
         unit: material.unit,
-        planned_quantity: material.quantity || material.planned_quantity || 0,
-        actual_quantity: actualMap[material.id] ?? (material.actual_quantity || material.quantity || 0)
+        planned_quantity: material.quantity || 0, // Sử dụng quantity từ response
+        actual_quantity: actualMap[material.id] ?? 0 // Sử dụng từ actual_materials
       }));
     }
 

@@ -98,3 +98,64 @@ export const getGroupStatus = async (requestId: number) => {
   );
   return response.data;
 };
+
+// Cập nhật yêu cầu
+export const updateLaborRequest = async (requestId: number, requestData: any) => {
+  const response = await axiosInstance.put<LaborRequestResponse>(
+    `/labor/labor_requests/${requestId}`,
+    { labor_request: requestData }
+  );
+  return response.data;
+};
+
+// Xóa yêu cầu
+export const deleteLaborRequest = async (requestId: number) => {
+  const response = await axiosInstance.delete(`/labor/labor_requests/${requestId}`);
+  return response.data;
+};
+
+// Gợi ý người lao động
+export const suggestWorkers = async (requestId: number, limit: number = 5) => {
+  const response = await axiosInstance.get(
+    `/labor/labor_requests/${requestId}/suggest_workers`,
+    { params: { limit } }
+  );
+  return response.data;
+};
+
+// Lấy yêu cầu theo hoạt động nông nghiệp
+export const getRequestsForActivity = async (farmActivityId: number) => {
+  const response = await axiosInstance.get<LaborRequestsResponse>(
+    `/labor/labor_requests/for_activity`,
+    { params: { farm_activity_id: farmActivityId } }
+  );
+  return response.data;
+};
+
+// Lấy yêu cầu của tôi (tôi tạo)
+export const getMyRequests = async (params: any = {}) => {
+  const response = await axiosInstance.get<LaborRequestsResponse>(
+    "/labor/labor_requests",
+    { 
+      params: {
+        ...params,
+        requesting_household_id: 'current' // Backend sẽ xử lý để lấy current household
+      }
+    }
+  );
+  return response.data;
+};
+
+// Lấy yêu cầu tôi tham gia (tôi được yêu cầu)
+export const getParticipatedRequests = async (params: any = {}) => {
+  const response = await axiosInstance.get<LaborRequestsResponse>(
+    "/labor/labor_requests",
+    { 
+      params: {
+        ...params,
+        providing_household_id: 'current' // Backend sẽ xử lý để lấy current household
+      }
+    }
+  );
+  return response.data;
+};

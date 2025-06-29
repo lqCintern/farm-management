@@ -22,7 +22,8 @@ module Services::Farming
         }
       end
       
-      activities
+      # Sắp xếp activities theo start_date
+      activities.sort_by { |activity| activity[:start_date] }
     end
 
     def preview_activities_for_params(crop_params)
@@ -49,7 +50,8 @@ module Services::Farming
         }
       end
       
-      activities
+      # Sắp xếp activities theo start_date
+      activities.sort_by { |activity| activity[:start_date] }
     end
 
     private

@@ -210,13 +210,8 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
       icon: <TeamOutlined />,
       children: [
         { title: 'Tổng quan', path: '/labor' },
-        { title: 'Yêu cầu đổi công', path: '/labor/requests' },
-        { title: 'Tạo yêu cầu đổi công', path: '/labor/requests/create' },
-        { title: 'Yêu cầu công khai', path: '/labor/public-requests' },
-        { title: 'Đổi công với hộ khác', path: '/labor/exchanges' },
-        { title: 'Phân công lao động', path: '/labor/assignments' },
-        { title: 'Phân công nông trại', path: '/labor/farm-assignments' },
-        { title: 'Thống kê đổi công', path: '/labor/assignment-stats' },
+        { title: 'Dư nợ đổi công', path: '/labor/exchanges' },
+        { title: 'Tạo yêu cầu', path: '/labor/requests/create' },
       ],
       category: 'labor'
     },

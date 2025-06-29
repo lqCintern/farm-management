@@ -151,37 +151,17 @@ module Controllers::Api
 
         # Chấp nhận yêu cầu
         def accept
-          request_result = Services::CleanArch.labor_get_request.execute(params[:id])
-          return render_error_response(request_result[:errors], :not_found) unless request_result[:success]
-          
-          request = request_result[:request]
-          
-          # Kiểm tra nếu public và chưa được chỉ định cho household hiện tại
-          if request.is_public && request.providing_household_id != current_household.id
-            return render_error_response("Đây là yêu cầu công khai, vui lòng sử dụng tính năng tham gia", :unprocessable_entity)
-          end
-          
-          # Kiểm tra quyền - household phải là providing_household
-          unless request.providing_household_id == current_household.id
-            return render_error_response("Bạn không có quyền chấp nhận yêu cầu này", :unprocessable_entity)
-          end
-          
-          result = Services::CleanArch.labor_process_request.execute(
-            params[:id],
-            :accept,
-            current_user.id
-          )
-          
+          result = Services::CleanArch.labor_process_request.execute(params[:id], :accept, current_user.id)
+
           if result[:success]
-            # Thông báo cho người tạo yêu cầu
-            Services::CleanArch.notification_service.labor_request_response(
-              result[:request],
-              "accepted"
-            )
+            # Đồng bộ status với farm activity
+            if result[:request].farm_activity_id.present?
+              Services::CleanArch.labor_sync_activity_status.execute(result[:request].farm_activity_id)
+            end
             
             render_success_response({
-              request: result[:request],
-              group_status: result[:group_status]
+              message: "Đã chấp nhận yêu cầu",
+              request: result[:request]
             })
           else
             render_error_response(result[:errors], :unprocessable_entity)
@@ -190,22 +170,17 @@ module Controllers::Api
 
         # Từ chối yêu cầu
         def decline
-          result = Services::CleanArch.labor_process_request.execute(
-            params[:id],
-            :decline,
-            current_user.id
-          )
+          result = Services::CleanArch.labor_process_request.execute(params[:id], :decline, current_user.id)
 
           if result[:success]
-            # Thông báo cho người tạo yêu cầu
-            Services::CleanArch.notification_service.labor_request_response(
-              result[:request],
-              "rejected"
-            )
-
+            # Đồng bộ status với farm activity
+            if result[:request].farm_activity_id.present?
+              Services::CleanArch.labor_sync_activity_status.execute(result[:request].farm_activity_id)
+            end
+            
             render_success_response({
-              request: result[:request],
-              group_status: result[:group_status]
+              message: "Đã từ chối yêu cầu",
+              request: result[:request]
             })
           else
             render_error_response(result[:errors], :unprocessable_entity)
@@ -214,16 +189,17 @@ module Controllers::Api
 
         # Hủy yêu cầu
         def cancel
-          result = Services::CleanArch.labor_process_request.execute(
-            params[:id],
-            :cancel,
-            current_user.id
-          )
+          result = Services::CleanArch.labor_process_request.execute(params[:id], :cancel, current_user.id)
 
           if result[:success]
+            # Đồng bộ status với farm activity
+            if result[:request].farm_activity_id.present?
+              Services::CleanArch.labor_sync_activity_status.execute(result[:request].farm_activity_id)
+            end
+            
             render_success_response({
-              request: result[:request],
-              group_status: result[:group_status]
+              message: "Đã hủy yêu cầu",
+              request: result[:request]
             })
           else
             render_error_response(result[:errors], :unprocessable_entity)
@@ -232,22 +208,17 @@ module Controllers::Api
 
         # Hoàn thành yêu cầu
         def complete
-          result = Services::CleanArch.labor_process_request.execute(
-            params[:id],
-            :complete,
-            current_user.id
-          )
+          result = Services::CleanArch.labor_process_request.execute(params[:id], :complete, current_user.id)
 
           if result[:success]
-            # Thông báo cho các bên liên quan
-            Services::CleanArch.notification_service.labor_request_response(
-              result[:request],
-              "completed"
-            )
-
+            # Đồng bộ status với farm activity
+            if result[:request].farm_activity_id.present?
+              Services::CleanArch.labor_sync_activity_status.execute(result[:request].farm_activity_id)
+            end
+            
             render_success_response({
-              request: result[:request],
-              group_status: result[:group_status]
+              message: "Đã hoàn thành yêu cầu",
+              request: result[:request]
             })
           else
             render_error_response(result[:errors], :unprocessable_entity)
@@ -310,11 +281,31 @@ module Controllers::Api
         end
 
         def filters_from_params
-          {
+          filters = {
             status: params[:status],
             include_children: params[:include_children] == "true",
             exclude_joined: params[:exclude_joined] == "true"
           }
+
+          # Hỗ trợ lọc theo requesting_household_id
+          if params[:requesting_household_id].present?
+            if params[:requesting_household_id] == 'current'
+              filters[:requesting_household_id] = current_household&.id
+            else
+              filters[:requesting_household_id] = params[:requesting_household_id]
+            end
+          end
+
+          # Hỗ trợ lọc theo providing_household_id
+          if params[:providing_household_id].present?
+            if params[:providing_household_id] == 'current'
+              filters[:providing_household_id] = current_household&.id
+            else
+              filters[:providing_household_id] = params[:providing_household_id]
+            end
+          end
+
+          filters
         end
 
         def public_request_filters_from_params

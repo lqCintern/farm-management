@@ -7,7 +7,7 @@ import { getFarmActivities } from "@/services/farming/farmService";
 import { getLaborRequests } from "@/services/labor/laborRequestService";
 import { FarmActivity } from "@/types/labor/types";
 import { LaborRequest } from "@/types/labor/laborRequest.types";
-
+import EventPopup from "@/components/Calendar/EventPopup";
 
 export default function Calendar() {
   const [clickedDate, setClickedDate] = useState<string>(
@@ -18,6 +18,8 @@ export default function Calendar() {
   const [laborRequests, setLaborRequests] = useState<LaborRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<FarmActivity | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
 
   // Fetch dữ liệu hoạt động
   useEffect(() => {
@@ -43,6 +45,24 @@ export default function Calendar() {
 
     fetchData();
   }, []);
+
+  // Xử lý click vào hoạt động trong sidebar
+  const handleEventClick = (event: any) => {
+    if (event.extendedProps?.type === "farm_activity") {
+      const activityId = parseInt(event.id.replace("activity-", ""));
+      const activity = farmActivities.find(a => a.id === activityId);
+      if (activity) {
+        setSelectedEvent(activity);
+        setIsPopupOpen(true);
+      }
+    }
+  };
+
+  // Xử lý click vào event từ BigCalendar
+  const handleBigCalendarEventClick = (activity: FarmActivity) => {
+    setSelectedEvent(activity);
+    setIsPopupOpen(true);
+  };
 
   return (
     <div className="p-6">
@@ -72,6 +92,7 @@ export default function Calendar() {
               setEvents={setEvents}
               farmActivities={farmActivities}
               laborRequests={laborRequests}
+              onEventClick={handleBigCalendarEventClick}
             />
           )}
         </div>
@@ -116,12 +137,13 @@ export default function Calendar() {
                   return (
                     <div
                       key={event.id}
-                      className="p-3 rounded-md border border-gray-100 hover:shadow-md transition-shadow"
+                      className="p-3 rounded-md border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                       style={{
                         borderLeft: `4px solid ${
                           event.borderColor || "#1E88E5"
                         }`,
                       }}
+                      onClick={() => handleEventClick(event)}
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -182,6 +204,16 @@ export default function Calendar() {
           </div>
         </div>
       </div>
+
+      {/* Event Popup */}
+      <EventPopup
+        event={selectedEvent}
+        isOpen={isPopupOpen}
+        onClose={() => {
+          setIsPopupOpen(false);
+          setSelectedEvent(null);
+        }}
+      />
     </div>
   );
 }

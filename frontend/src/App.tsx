@@ -42,6 +42,8 @@ import LaborRequestList from "./pages/Labor/LaborRequestList";
 import LaborRequestCreate from "./pages/Labor/LaborRequestCreate";
 import LaborRequestDetail from "./pages/Labor/LaborRequestDetail";
 import PublicRequestsList from "./pages/Labor/PublicRequestsList";
+import MyRequests from "./pages/Labor/MyRequests";
+import ParticipatedRequests from "./pages/Labor/ParticipatedRequests";
 
 import Dashboard from '@/pages/Labor/Dashboard';
 import FarmActivityDetail from '@/pages/FarmActivity/FarmActivityDetail';
@@ -52,11 +54,10 @@ import ExchangeDetail from "./pages/Labor/Exchange/ExchangeDetail";
 import TransactionHistory from "./pages/Labor/Exchange/TransactionHistory";
 
 // Import Labor Assignment components
-import WorkerAssignments from "./pages/Labor/Assignment/WorkerAssignments";
-import FarmAssignments from "./pages/Labor/Assignment/FarmAssignments"; // Thêm import này
 import LaborAssignment from "./pages/Labor/Assignment/LaborAssignment";
 import CreateAssignment from "./pages/Labor/Assignment/CreateAssignment";
 import AssignmentStats from "./pages/Labor/Assignment/AssignmentStats";
+import Assignments from './pages/Labor/Assignment/Assignments';
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import NotificationSettingsPage from "./pages/Notifications/NotificationSettingsPage";
 import NotificationDetailPage from "./pages/Notifications/NotificationDetailPage";
@@ -77,6 +78,7 @@ import WeatherDashboardPage from './pages/climate/WeatherDashboardPage';
 import InventoryPage from './pages/Farming/InventoryPage';
 import HarvestStatisticsPage from './pages/Farming/HarvestStatisticsPage';
 import MaterialDetailPage from './pages/Farming/MaterialDetailPage';
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path={routes.index} element={<MainLayout />}>
@@ -120,9 +122,17 @@ const router = createBrowserRouter(
       {/* Labor Management */}
       <Route path="labor">
         <Route index element={<Dashboard />} />
-        <Route path="requests" element={<LaborRequestList />} />
-        <Route path="requests/create" element={<LaborRequestCreate />} />
-        <Route path="requests/:id" element={<LaborRequestDetail />} />
+        
+        {/* Labor Requests */}
+        <Route path="requests">
+          <Route index element={<LaborRequestList />} />
+          <Route path="create" element={<LaborRequestCreate />} />
+          <Route path=":id" element={<LaborRequestDetail />} />
+        </Route>
+        
+        {/* My Requests */}
+        <Route path="my-requests" element={<MyRequests />} />
+        <Route path="participated-requests" element={<ParticipatedRequests />} />
         <Route path="public-requests" element={<PublicRequestsList />} />
         
         {/* Labor Exchange Routes */}
@@ -131,8 +141,7 @@ const router = createBrowserRouter(
         <Route path="exchanges/:householdId/history" element={<TransactionHistory />} />
         
         {/* Labor Assignment Routes */}
-        <Route path="assignments" element={<WorkerAssignments />} />
-        <Route path="farm-assignments" element={<FarmAssignments />} /> {/* Thêm route này */}
+        <Route path="assignments" element={<Assignments />} />
         <Route path="requests/:requestId/assign" element={<LaborAssignment />} />
         <Route path="requests/:requestId/create-assignment" element={<CreateAssignment />} />
         <Route path="assignment-stats" element={<AssignmentStats />} />

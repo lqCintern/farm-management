@@ -15,13 +15,23 @@ export interface FarmActivity {
   description: string;
   start_date: string;
   end_date: string;
-  frequency: number;
+  frequency: string;
   status?: number | string;
   field_id: number;
   crop_animal_id?: number;
   stage?: number | string;
-  materials?: Record<string, any> | any[];
-  actual_materials?: any[];
+  materials?: Array<{
+    id: number;
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
+  actual_materials?: Array<{
+    id: number;
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
   labor_requests?: {
     id: number;
     title: string;
@@ -32,8 +42,17 @@ export interface FarmActivity {
   actual_notes?: string;
   status_details?: {
     starting_soon?: boolean;
+    ending_soon?: boolean;
+    overdue?: boolean;
+    overdue_days?: number;
   };
   actual_completion_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: number;
+  parent_activity_id?: number | null;
+  coordinates?: string | null;
+  requires_materials?: boolean;
 }
 
 export interface Pagination {
