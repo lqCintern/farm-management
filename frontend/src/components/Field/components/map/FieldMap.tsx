@@ -42,7 +42,7 @@ const FieldMap: React.FC<FieldMapProps> = ({
         <CustomPane name="overlay" zIndex={400} />
         <CustomPane name="labels" zIndex={650} />
 
-        {/* Map Layers */}
+        {/* Custom Map Layers */}
         <CustomMapLayers labelOpacity={labelOpacity} />
 
         {/* Field Polygons */}

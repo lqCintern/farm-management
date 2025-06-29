@@ -153,131 +153,154 @@ const FieldForm: React.FC = () => {
 
   if (loading && isEditMode) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải dữ liệu cánh đồng...</p>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-lg text-center card-hover border border-green-100">
+          <div className="animate-spin w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-6 pulse-glow"></div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Đang tải dữ liệu cánh đồng...</h3>
+          <p className="text-gray-600">Vui lòng chờ trong giây lát</p>
+          <div className="mt-4 flex justify-center">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Header with back button */}
-          <div className="mb-6 flex items-center">
+          <div className="mb-8 flex items-center">
             <button
               onClick={() => navigate("/fields")}
-              className="text-gray-600 hover:text-gray-900 mr-4 flex items-center"
+              className="text-gray-600 hover:text-green-600 mr-4 flex items-center transition-all duration-200 hover:scale-105 group"
             >
-              <FaArrowLeft className="mr-2" />
+              <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
               <span>Quay lại</span>
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-3xl font-bold gradient-text">
               {isEditMode ? "Chỉnh sửa cánh đồng" : "Tạo cánh đồng mới"}
             </h1>
           </div>
 
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg animate-pulse">
               {error}
             </div>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-green-100">
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left column - Form inputs */}
-                <div className="p-6 lg:col-span-1 border-b lg:border-b-0 lg:border-r border-gray-200">
-                  <div className="space-y-5">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tên cánh đồng <span className="text-red-500">*</span>
+                <div className="p-6 lg:col-span-1 border-b lg:border-b-0 lg:border-r border-gray-200 bg-gradient-to-br from-gray-50 to-white">
+                  <div className="space-y-6">
+                    <div className="form-section form-input-group">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 group">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2 group-hover:scale-125 transition-transform duration-200"></span>
+                          Tên cánh đồng <span className="text-red-500">*</span>
+                        </span>
                       </label>
                       <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 hover:border-green-300 search-input"
                         placeholder="Nhập tên cánh đồng"
                         required
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Vị trí
+                    <div className="form-section form-input-group">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 group">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 group-hover:scale-125 transition-transform duration-200"></span>
+                          Vị trí
+                        </span>
                       </label>
                       <input
                         type="text"
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-300 search-input"
                         placeholder="Nhập vị trí cánh đồng"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mô tả
+                    <div className="form-section form-input-group">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 group">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-purple-500 rounded-full mr-2 group-hover:scale-125 transition-transform duration-200"></span>
+                          Mô tả
+                        </span>
                       </label>
                       <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-purple-300 min-h-[120px] resize-none"
                         placeholder="Mô tả chi tiết về cánh đồng"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Diện tích
+                    <div className="form-section form-input-group">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 group">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-orange-500 rounded-full mr-2 group-hover:scale-125 transition-transform duration-200"></span>
+                          Diện tích
+                        </span>
                       </label>
                       <div className="flex items-center">
-                        <FaRuler className="text-gray-400 mr-2" />
+                        <FaRuler className="text-orange-500 mr-2 floating-icon" />
                         <input
                           type="text"
                           value={area.toLocaleString()}
                           readOnly
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gradient-to-r from-orange-50 to-yellow-50 text-gray-700 font-medium area-display"
                         />
-                        <span className="ml-2 text-gray-600">m²</span>
+                        <span className="ml-2 text-gray-600 font-medium">m²</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Diện tích được tính tự động khi bạn vẽ khu vực trên bản
-                        đồ
+                      <p className="text-xs text-gray-500 mt-2 flex items-center">
+                        <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                        Diện tích được tính tự động khi bạn vẽ khu vực trên bản đồ
                       </p>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nhập tọa độ thủ công
+                    <div className="form-section form-input-group">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 group">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-indigo-500 rounded-full mr-2 group-hover:scale-125 transition-transform duration-200"></span>
+                          Nhập tọa độ thủ công
+                        </span>
                       </label>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-3">
                         {manualCoords.map((coord, idx) => (
-                          <div key={idx} className="flex gap-2 items-center">
+                          <div key={idx} className="flex gap-2 items-center group/coord">
                             <input
                               type="number"
                               step="any"
-                              className="w-28 px-2 py-1 border rounded"
+                              className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 hover:border-indigo-300 coordinate-input"
                               placeholder="Vĩ độ"
                               value={coord.lat}
                               onChange={e => handleChangeManualCoord(idx, "lat", e.target.value)}
                             />
-                            <span className="text-gray-500">,</span>
+                            <span className="text-gray-500 font-medium">,</span>
                             <input
                               type="number"
                               step="any"
-                              className="w-28 px-2 py-1 border rounded"
+                              className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 hover:border-indigo-300 coordinate-input"
                               placeholder="Kinh độ"
                               value={coord.lng}
                               onChange={e => handleChangeManualCoord(idx, "lng", e.target.value)}
                             />
                             <button
                               type="button"
-                              className="ml-1 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                              className="ml-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs transition-all duration-200 hover:scale-105 action-btn"
                               onClick={() => handleRemoveManualCoord(idx)}
                               tabIndex={-1}
                             >
@@ -285,23 +308,27 @@ const FieldForm: React.FC = () => {
                             </button>
                           </div>
                         ))}
-                        <button
-                          type="button"
-                          className="mt-2 px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 text-sm w-fit"
-                          onClick={handleAddManualCoord}
-                        >
-                          Thêm điểm
-                        </button>
-                        <button
-                          type="button"
-                          className="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm w-fit"
-                          onClick={handleManualInput}
-                          disabled={manualCoords.length < 3}
-                        >
-                          Vẽ đa giác
-                        </button>
+                        <div className="button-group">
+                          <button
+                            type="button"
+                            className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm transition-all duration-200 hover:scale-105 action-btn"
+                            onClick={handleAddManualCoord}
+                          >
+                            Thêm điểm
+                          </button>
+                          <button
+                            type="button"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition-all duration-200 hover:scale-105 action-btn disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleManualInput}
+                            disabled={manualCoords.length < 3}
+                          >
+                            Vẽ đa giác
+                          </button>
+                        </div>
                         {manualInputError && (
-                          <div className="text-red-600 text-xs mt-1">{manualInputError}</div>
+                          <div className="text-red-600 text-xs mt-2 p-2 bg-red-50 rounded-lg border border-red-200 animate-pulse">
+                            {manualInputError}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -311,35 +338,46 @@ const FieldForm: React.FC = () => {
                 {/* Right column - Map */}
                 <div className="lg:col-span-2 relative">
                   <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-2 bg-white rounded-lg shadow-md px-3 py-2">
-                      <FaMapMarkedAlt className="text-blue-500 mr-2" />
+                    <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md px-4 py-3 border border-blue-200">
+                      <FaMapMarkedAlt className="text-blue-500 mr-2 floating-icon" />
                       <span className="font-medium text-gray-700">
                         {isEditMode ? "Chỉnh sửa khu vực" : "Vẽ khu vực cánh đồng"}
                       </span>
                     </div>
-                    <FieldMap onPolygonComplete={handlePolygonComplete} coordinates={coordinates} />
+                    <div className="map-container">
+                      <FieldMap onPolygonComplete={handlePolygonComplete} coordinates={coordinates} />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Footer with action buttons */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+              <div className="px-6 py-6 bg-gradient-to-r from-gray-50 to-green-50 border-t border-gray-200 flex flex-col lg:flex-row justify-between gap-4">
                 <div className="flex-1">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Quy trình:</span>
-                    <span className="ml-2">1. Vẽ đa giác trên bản đồ</span>
-                    <span className="mx-2">→</span>
-                    <span>2. Điều chỉnh vị trí các điểm nếu cần</span>
-                    <span className="mx-2">→</span>
-                    <span>3. Nhập thông tin và lưu cánh đồng</span>
+                  <p className="text-sm text-gray-600 flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-green-700">Quy trình:</span>
+                    <span className="flex items-center process-step">
+                      <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2 process-step-number">1</span>
+                      Vẽ đa giác trên bản đồ
+                    </span>
+                    <span className="text-green-500">→</span>
+                    <span className="flex items-center process-step">
+                      <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2 process-step-number">2</span>
+                      Điều chỉnh vị trí các điểm
+                    </span>
+                    <span className="text-blue-500">→</span>
+                    <span className="flex items-center process-step">
+                      <span className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2 process-step-number">3</span>
+                      Nhập thông tin và lưu
+                    </span>
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => navigate("/fields")}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 flex items-center hover:bg-gray-100"
+                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 flex items-center hover:bg-gray-100 transition-all duration-200 hover:scale-105 action-btn"
                   >
                     <FaTimes className="mr-2" />
                     Hủy
@@ -347,15 +385,15 @@ const FieldForm: React.FC = () => {
                   <button
                     type="submit"
                     disabled={loading || coordinates.length < 3}
-                    className={`px-6 py-2 rounded-lg text-white flex items-center ${
+                    className={`px-8 py-3 rounded-lg text-white flex items-center transition-all duration-200 hover:scale-105 action-btn ${
                       loading || coordinates.length < 3
-                        ? "bg-blue-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700"
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
                     }`}
                   >
                     {loading ? (
                       <>
-                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                         Đang xử lý...
                       </>
                     ) : (

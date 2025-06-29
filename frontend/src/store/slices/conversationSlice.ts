@@ -27,15 +27,19 @@ export const sendMessage = createAsyncThunk<
 interface ConversationState {
   conversations: Conversation[];
   currentConversation: Conversation | null;
+  messages: { [conversationId: number]: Message[] };
   loading: boolean;
   error: string | null;
+  lastMessageTimestamp: { [conversationId: number]: number };
 }
 
 const initialState: ConversationState = {
   conversations: [],
   currentConversation: null,
+  messages: {},
   loading: false,
   error: null,
+  lastMessageTimestamp: {},
 };
 
 const conversationSlice = createSlice({
@@ -47,9 +51,65 @@ const conversationSlice = createSlice({
     },
     addMessage(state, action) {
       const { conversationId, message } = action.payload;
-      const conversation = state.conversations.find(c => c.id === conversationId);
-      if (conversation) {
-        conversation.messages.push(message);
+      
+      if (!state.messages[conversationId]) {
+        state.messages[conversationId] = [];
+      }
+      
+      const existingMessage = state.messages[conversationId].find(
+        msg => msg.id === message.id
+      );
+      
+      if (!existingMessage) {
+        state.messages[conversationId].push(message);
+        
+        const messageTimestamp = new Date(message.created_at).getTime();
+        state.lastMessageTimestamp[conversationId] = Math.max(
+          state.lastMessageTimestamp[conversationId] || 0,
+          messageTimestamp
+        );
+      }
+    },
+    setMessages(state, action) {
+      const { conversationId, messages } = action.payload;
+      state.messages[conversationId] = messages;
+      
+      if (messages.length > 0) {
+        const timestamps = messages.map((msg: Message) => new Date(msg.created_at).getTime());
+        state.lastMessageTimestamp[conversationId] = Math.max(...timestamps);
+      }
+    },
+    addMessages(state, action) {
+      const { conversationId, messages } = action.payload;
+      
+      if (!state.messages[conversationId]) {
+        state.messages[conversationId] = [];
+      }
+      
+      const existingIds = new Set(state.messages[conversationId].map((msg: Message) => msg.id));
+      const newMessages = messages.filter((msg: Message) => !existingIds.has(msg.id));
+      
+      if (newMessages.length > 0) {
+        state.messages[conversationId].push(...newMessages);
+        
+        const timestamps = newMessages.map((msg: Message) => new Date(msg.created_at).getTime());
+        state.lastMessageTimestamp[conversationId] = Math.max(
+          state.lastMessageTimestamp[conversationId] || 0,
+          ...timestamps
+        );
+      }
+    },
+    clearMessages(state, action) {
+      const conversationId = action.payload;
+      delete state.messages[conversationId];
+      delete state.lastMessageTimestamp[conversationId];
+    },
+    markMessageAsRead(state, action) {
+      const { conversationId, messageId } = action.payload;
+      const message = state.messages[conversationId]?.find(msg => msg.id === messageId);
+      if (message) {
+        message.read = true;
+        message.read_at = new Date().toISOString();
       }
     },
   },
@@ -78,11 +138,21 @@ const conversationSlice = createSlice({
           c => c.id === action.payload.conversation_id
         );
         if (conversation) {
-          conversation.messages.push(action.payload);
+          conversation.last_message = {
+            content: action.payload.content,
+            created_at: action.payload.created_at,
+          };
         }
       });
   },
 });
 
-export const { setCurrentConversation, addMessage } = conversationSlice.actions;
+export const { 
+  setCurrentConversation, 
+  addMessage, 
+  setMessages, 
+  addMessages, 
+  clearMessages,
+  markMessageAsRead 
+} = conversationSlice.actions;
 export default conversationSlice.reducer; 

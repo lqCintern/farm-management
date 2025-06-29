@@ -1,14 +1,15 @@
 module UseCases::Labor
   module FarmHouseholds
     class UpdateFarmHousehold
-      def initialize(repositor)
+      def initialize(repository)
         @repository = repository
       end
 
       def execute(id, params)
-        household_entity = @repository.find(id)
-        return { success: false, errors: [ "Không tìm thấy hộ sản xuất" ] } unless household_entity
-
+        result = @repository.find(id)
+        return { success: false, errors: [ "Không tìm thấy hộ sản xuất" ] } unless result[:success]
+        
+        household_entity = result[:household]
         household_entity.name = params[:name] || household_entity.name
         household_entity.description = params[:description] || household_entity.description
         household_entity.province = params[:province] || household_entity.province

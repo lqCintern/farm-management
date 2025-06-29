@@ -1,0 +1,790 @@
+/* Pineapple Activity Templates Styles */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Fade in animation for table rows */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ant-table-tbody > tr {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.ant-table-tbody > tr:nth-child(1) { animation-delay: 0.1s; }
+.ant-table-tbody > tr:nth-child(2) { animation-delay: 0.2s; }
+.ant-table-tbody > tr:nth-child(3) { animation-delay: 0.3s; }
+.ant-table-tbody > tr:nth-child(4) { animation-delay: 0.4s; }
+.ant-table-tbody > tr:nth-child(5) { animation-delay: 0.5s; }
+
+/* Hover lift effect for cards */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient text animation */
+.gradient-text {
+  background: linear-gradient(135deg, #10b981, #059669, #047857);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Pulse effect for badges */
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+  from {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  }
+}
+
+/* Floating icons */
+.floating-icon {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Shimmer loading effect */
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Tag animations */
+.ant-tag {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ant-tag::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.ant-tag:hover::before {
+  left: 100%;
+}
+
+.ant-tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Button hover effects */
+.action-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.action-btn:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Table row hover effects */
+.ant-table-tbody > tr {
+  transition: all 0.2s ease;
+}
+
+.ant-table-tbody > tr:hover {
+  background-color: #f8fafc !important;
+  transform: scale(1.01);
+}
+
+/* Search input focus effect */
+.search-input:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+}
+
+/* Primary button effects */
+.btn-primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+}
+
+/* Modal animations */
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.modal-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-exit-active {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+  .ant-table-tbody > tr {
+    animation-delay: 0.1s !important;
+  }
+  
+  .hover-lift:hover {
+    transform: none;
+  }
+  
+  .action-btn:hover {
+    transform: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .shimmer {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Form section transitions */
+.form-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.form-section:nth-child(1) { animation-delay: 0.1s; }
+.form-section:nth-child(2) { animation-delay: 0.2s; }
+.form-section:nth-child(3) { animation-delay: 0.3s; }
+.form-section:nth-child(4) { animation-delay: 0.4s; }
+.form-section:nth-child(5) { animation-delay: 0.5s; }
+
+/* Button group styles */
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.button-group button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button-group button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Table header effects */
+.ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-bottom: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ant-table-thead > tr > th:hover {
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+}
+
+/* Table cell hover effects */
+.ant-table-tbody > tr > td {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: #f8fafc;
+}
+
+/* Pagination styling */
+.ant-pagination {
+  margin-top: 16px;
+}
+
+.ant-pagination-item {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.ant-pagination-item:hover {
+  border-color: #10b981;
+  transform: translateY(-1px);
+}
+
+.ant-pagination-item-active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+}
+
+.ant-pagination-item-active a {
+  color: white;
+}
+
+/* Select dropdown styling */
+.ant-select-dropdown {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.ant-select-item {
+  transition: all 0.2s ease;
+}
+
+.ant-select-item:hover {
+  background-color: #f0fdf4;
+}
+
+.ant-select-item-option-selected {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Tabs styling */
+.ant-tabs-tab {
+  transition: all 0.2s ease;
+  border-radius: 8px 8px 0 0;
+}
+
+.ant-tabs-tab:hover {
+  color: #10b981;
+}
+
+.ant-tabs-tab-active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: white;
+}
+
+/* Badge styling */
+.ant-badge-count {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Tooltip styling */
+.ant-tooltip-inner {
+  background: linear-gradient(135deg, #374151, #4b5563);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Empty state styling */
+.empty-state {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Card hover effects */
+.info-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.info-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.info-card:hover::before {
+  left: 100%;
+}
+
+.info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Status indicator */
+.status-indicator {
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+}
+
+/* Material stats styling */
+.material-stats {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 2px solid #bbf7d0;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.material-stats:hover {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.2);
+}
+
+/* Template info styling */
+.template-info {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 2px solid #bfdbfe;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.template-info:hover {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+}
+
+/* Template form modal specific styles */
+.template-form-modal .ant-modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+.template-form-modal .ant-modal-header {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-bottom: 2px solid #e2e8f0;
+  padding: 24px 32px;
+}
+
+.template-form-modal .ant-modal-body {
+  padding: 0;
+}
+
+.template-form-modal .ant-modal-footer {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-top: 2px solid #e2e8f0;
+  padding: 16px 32px;
+}
+
+/* Form input styling */
+.template-form-modal .ant-input,
+.template-form-modal .ant-input-number,
+.template-form-modal .ant-select-selector {
+  border-radius: 8px !important;
+  border: 2px solid #e5e7eb !important;
+  transition: all 0.3s ease !important;
+  font-size: 14px;
+}
+
+.template-form-modal .ant-input:hover,
+.template-form-modal .ant-input-number:hover,
+.template-form-modal .ant-select:hover .ant-select-selector {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
+
+.template-form-modal .ant-input:focus,
+.template-form-modal .ant-input-number:focus,
+.template-form-modal .ant-select-focused .ant-select-selector {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Form label styling */
+.template-form-modal .ant-form-item-label > label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+/* Card hover effects for form */
+.template-form-modal .ant-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.template-form-modal .ant-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.05), transparent);
+  transition: left 0.5s;
+}
+
+.template-form-modal .ant-card:hover::before {
+  left: 100%;
+}
+
+.template-form-modal .ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Switch styling */
+.template-form-modal .ant-switch {
+  background-color: #e5e7eb !important;
+  transition: all 0.3s ease;
+}
+
+.template-form-modal .ant-switch:hover {
+  transform: scale(1.1);
+}
+
+.template-form-modal .ant-switch-checked {
+  background-color: #10b981 !important;
+}
+
+/* Badge styling in form */
+.template-form-modal .ant-badge-count {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+}
+
+/* Tooltip styling */
+.template-form-modal .ant-tooltip-inner {
+  background: linear-gradient(135deg, #374151, #4b5563);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+}
+
+/* Tabs styling in form */
+.template-form-modal .ant-tabs-tab {
+  transition: all 0.2s ease;
+  border-radius: 8px 8px 0 0;
+  padding: 12px 20px;
+  font-weight: 500;
+}
+
+.template-form-modal .ant-tabs-tab:hover {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.template-form-modal .ant-tabs-tab-active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.template-form-modal .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: white;
+}
+
+.template-form-modal .ant-tabs-content-holder {
+  padding: 20px 0;
+}
+
+/* Empty state styling */
+.template-form-modal .empty-state {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.template-form-modal .empty-state .anticon {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Grid layout improvements */
+.template-form-modal .grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.template-form-modal .grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.template-form-modal .grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1024px) {
+  .template-form-modal .grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+/* Form section animations */
+.template-form-modal .form-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.template-form-modal .form-section:nth-child(1) { animation-delay: 0.1s; }
+.template-form-modal .form-section:nth-child(2) { animation-delay: 0.2s; }
+.template-form-modal .form-section:nth-child(3) { animation-delay: 0.3s; }
+.template-form-modal .form-section:nth-child(4) { animation-delay: 0.4s; }
+
+/* Icon animations in form */
+.template-form-modal .anticon {
+  transition: all 0.3s ease;
+}
+
+.template-form-modal .ant-card:hover .anticon {
+  transform: scale(1.1);
+}
+
+/* TextArea specific styling */
+.template-form-modal .ant-input[type="textarea"] {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Select dropdown styling in form */
+.template-form-modal .ant-select-dropdown {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.template-form-modal .ant-select-item {
+  transition: all 0.2s ease;
+  padding: 8px 12px;
+}
+
+.template-form-modal .ant-select-item:hover {
+  background-color: #f0fdf4;
+}
+
+.template-form-modal .ant-select-item-option-selected {
+  background-color: #dcfce7;
+  color: #166534;
+  font-weight: 600;
+}
+
+/* InputNumber specific styling */
+.template-form-modal .ant-input-number {
+  width: 100%;
+}
+
+.template-form-modal .ant-input-number-handler-wrap {
+  border-radius: 0 6px 6px 0;
+}
+
+/* Responsive improvements for form */
+@media (max-width: 768px) {
+  .template-form-modal .ant-modal {
+    margin: 10px;
+    max-width: calc(100vw - 20px);
+  }
+  
+  .template-form-modal .ant-modal-content {
+    border-radius: 12px;
+  }
+  
+  .template-form-modal .ant-card {
+    margin-bottom: 1rem;
+  }
+  
+  .template-form-modal .ant-card:hover {
+    transform: none;
+  }
+}
+
+/* Loading states for form */
+.template-form-modal .ant-form-item-has-error .ant-input,
+.template-form-modal .ant-form-item-has-error .ant-input-number,
+.template-form-modal .ant-form-item-has-error .ant-select-selector {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.template-form-modal .ant-form-item-explain-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Success states for form */
+.template-form-modal .ant-form-item-has-success .ant-input,
+.template-form-modal .ant-form-item-has-success .ant-input-number,
+.template-form-modal .ant-form-item-has-success .ant-select-selector {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Form validation animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.template-form-modal .ant-form-item-has-error .ant-input,
+.template-form-modal .ant-form-item-has-error .ant-input-number,
+.template-form-modal .ant-form-item-has-error .ant-select-selector {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Focus ring for accessibility */
+.template-form-modal .ant-input:focus,
+.template-form-modal .ant-input-number:focus,
+.template-form-modal .ant-select-focused .ant-select-selector {
+  outline: none;
+}
+
+/* Custom scrollbar for form content */
+.template-form-modal .ant-modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.template-form-modal .ant-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.template-form-modal .ant-modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.template-form-modal .ant-modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.template-form-modal .ant-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+} 

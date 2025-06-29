@@ -127,24 +127,24 @@ module Repositories
         # Thống kê theo vụ trồng dứa
         crops_by_field = ::Models::Farming::Field.where(user_id: user_id)
                                       .joins(:pineapple_crops)
-                                      .group("farming_fields.id")
-                                      .count("farming_pineapple_crops.id")
+                                      .group("fields.id")
+                                      .count("pineapple_crops.id")
 
         # Thống kê hoạt động
         activities_by_field = ::Models::Farming::Field.where(user_id: user_id)
                                           .joins(:farm_activities)
-                                          .group("farming_fields.id")
-                                          .count("farming_farm_activities.id")
+                                          .group("fields.id")
+                                          .count("farm_activities.id")
 
         # Thống kê thu hoạch
         harvests_by_field = ::Models::Farming::Field.where(user_id: user_id)
                                         .joins(:harvests)
-                                        .group("farming_fields.id")
-                                        .sum("farming_harvests.quantity")
+                                        .group("fields.id")
+                                        .sum("harvests.quantity")
 
         {
           success: true,
-          total_fields: ::Farming::Field.where(user_id: user_id).count,
+          total_fields: ::Models::Farming::Field.where(user_id: user_id).count,
           total_area: total_area,
           crops_by_field: crops_by_field,
           activities_by_field: activities_by_field,

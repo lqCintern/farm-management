@@ -39,8 +39,8 @@ export interface PineappleActivityTemplate {
   id?: number;
   name: string;
   description?: string;
-  activity_type: number;  // Sửa thành number để khớp với enum
-  stage: number;          // Sửa thành number để khớp với enum
+  activity_type: string;  // Changed from number to string to match API response
+  stage: string;          // Changed from number to string to match API response
   day_offset: number;
   duration_days: number;
   season_specific?: string;

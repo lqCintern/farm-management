@@ -1,0 +1,210 @@
+/* Smooth scrolling */
+html {
+	scroll-behavior: smooth;
+}
+
+/* Fade in animation */
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeInLeft {
+	from {
+		opacity: 0;
+		transform: translateX(-30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes fadeInRight {
+	from {
+		opacity: 0;
+		transform: translateX(30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* Apply animations to sections */
+.hero-section {
+	animation: fadeInUp 0.8s ease-out;
+}
+
+.categories-section {
+	animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.dashboard-section {
+	animation: fadeInUp 0.8s ease-out 0.4s both;
+}
+
+.features-section {
+	animation: fadeInUp 0.8s ease-out 0.6s both;
+}
+
+.testimonials-section {
+	animation: fadeInUp 0.8s ease-out 0.8s both;
+}
+
+.stories-section {
+	animation: fadeInUp 0.8s ease-out 1s both;
+}
+
+.contact-section {
+	animation: fadeInUp 0.8s ease-out 1.2s both;
+}
+
+/* Hover effects */
+.hover-lift {
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient text animation */
+.gradient-text {
+	background: linear-gradient(45deg, #059669, #10b981, #059669);
+	background-size: 200% 200%;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	animation: gradientShift 3s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+	0%, 100% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+}
+
+/* Pulse animation for CTA buttons */
+.pulse-button {
+	animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+	}
+	70% {
+		box-shadow: 0 0 0 10px rgba(5, 150, 105, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(5, 150, 105, 0);
+	}
+}
+
+/* Floating animation for icons */
+.floating {
+	animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+	0%, 100% {
+		transform: translateY(0px);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+
+/* Shimmer effect for loading states */
+.shimmer {
+	background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+
+/* Card hover effects */
+.card-hover {
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+	transform: translateY(-8px) scale(1.02);
+	box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+/* Progress bar animation */
+.progress-animate {
+	transition: width 1s ease-in-out;
+}
+
+/* Responsive animations */
+@media (max-width: 768px) {
+	.hero-section,
+	.categories-section,
+	.dashboard-section,
+	.features-section,
+	.testimonials-section,
+	.stories-section,
+	.contact-section {
+		animation: fadeInUp 0.6s ease-out;
+	}
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+	width: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+	background: #10b981;
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: #059669;
+}
+
+/* Focus states for accessibility */
+.focus-ring:focus {
+	outline: 2px solid #10b981;
+	outline-offset: 2px;
+}
+
+/* Loading spinner */
+.spinner {
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #10b981;
+	border-radius: 50%;
+	width: 24px;
+	height: 24px;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+} 

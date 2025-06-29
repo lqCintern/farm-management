@@ -90,101 +90,73 @@ const PineappleCropActivities: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-green-50 py-10 font-[Quicksand,Inter,Roboto,sans-serif] animate-fadeIn">
       <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Danh sách hoạt động vụ dứa</h1>
-
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-8 flex items-center gap-4">
+            <h1 className="text-3xl font-extrabold text-green-700 drop-shadow-sm tracking-wide">Danh sách hoạt động vụ dứa</h1>
+            <button
+              className="rounded-full bg-gradient-to-r from-green-500 to-lime-400 text-white shadow-md px-6 py-2 font-semibold text-base hover:scale-105 transition-all flex items-center gap-2"
+              onClick={() => {/* Mở form thêm hoạt động */}}
+            >
+              <FaPlus /> Thêm hoạt động mới
+            </button>
+          </div>
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-2xl shadow animate-fadeIn">
               {error}
             </div>
           )}
-
-          <div className="mb-6 flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              Tổng số: <span className="font-medium">{activities.length}</span> hoạt động
-            </div>
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center hover:bg-blue-700"
-              onClick={() => {/* Mở form thêm hoạt động */}}
-            >
-              <FaPlus className="mr-2" />
-              Thêm hoạt động mới
-            </button>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden animate-fadeIn">
             {activities.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 text-lg">
                 Chưa có hoạt động nào cho vụ dứa này.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-green-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Hoạt động
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Thời gian
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Trạng thái
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Hành động
-                      </th>
+                      <th className="px-6 py-4 text-left text-base font-bold text-green-700 uppercase tracking-wider">Hoạt động</th>
+                      <th className="px-6 py-4 text-left text-base font-bold text-green-700 uppercase tracking-wider">Thời gian</th>
+                      <th className="px-6 py-4 text-left text-base font-bold text-green-700 uppercase tracking-wider">Trạng thái</th>
+                      <th className="px-6 py-4 text-left text-base font-bold text-green-700 uppercase tracking-wider">Hành động</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {activities.map((activity) => (
-                      <tr key={activity.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {activity.description}
-                          </div>
+                      <tr key={activity.id} className="hover:bg-green-50 transition-all duration-200">
+                        <td className="px-6 py-4 whitespace-nowrap text-lg font-semibold text-gray-900">{activity.description}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-base text-gray-700 flex items-center gap-2">
+                          <FaCalendarAlt className="text-green-400" />
+                          <span>{new Date(activity.start_date).toLocaleDateString('vi-VN')} - {new Date(activity.end_date).toLocaleDateString('vi-VN')}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center text-sm text-gray-700">
-                            <FaCalendarAlt className="mr-2 text-gray-400" />
-                            <span>
-                              {new Date(activity.start_date).toLocaleDateString('vi-VN')} 
-                              {' - '}
-                              {new Date(activity.end_date).toLocaleDateString('vi-VN')}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${STATUS_BADGES[activity.status as keyof typeof STATUS_BADGES]?.class}`}>
+                          <span className={`px-4 py-2 inline-flex text-base leading-5 font-bold rounded-full ${STATUS_BADGES[activity.status as keyof typeof STATUS_BADGES]?.class}`}>
                             {STATUS_BADGES[activity.status as keyof typeof STATUS_BADGES]?.text}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-3">
+                        <td className="px-6 py-4 whitespace-nowrap text-base font-medium">
+                          <div className="flex gap-3">
                             {activity.status !== 'completed' && (
                               <button
                                 onClick={() => openCompletionModal(activity.id as number)}
-                                className="text-green-600 hover:text-green-900 flex items-center"
+                                className="rounded-full bg-gradient-to-r from-green-500 to-lime-400 text-white shadow px-4 py-2 font-semibold hover:scale-105 transition-all flex items-center gap-2"
                               >
-                                <FaCheckCircle className="mr-1" />
-                                Hoàn thành
+                                <FaCheckCircle /> Hoàn thành
                               </button>
                             )}
                             <button
                               onClick={() => {/* Mở form sửa */}}
-                              className="text-blue-600 hover:text-blue-900 flex items-center"
+                              className="rounded-full bg-gradient-to-r from-blue-400 to-cyan-300 text-white shadow px-4 py-2 font-semibold hover:scale-105 transition-all flex items-center gap-2"
                             >
-                              <FaEdit className="mr-1" />
-                              Sửa
+                              <FaEdit /> Sửa
                             </button>
                             <button
                               onClick={() => {/* Xác nhận xóa */}}
-                              className="text-red-600 hover:text-red-900 flex items-center"
+                              className="rounded-full bg-gradient-to-r from-red-400 to-orange-300 text-white shadow px-4 py-2 font-semibold hover:scale-105 transition-all flex items-center gap-2"
                             >
-                              <FaTrash className="mr-1" />
-                              Xóa
+                              <FaTrash /> Xóa
                             </button>
                           </div>
                         </td>

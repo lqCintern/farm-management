@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import supplyListingService from '@/services/supply_chain/supplyListingService';
 import SupplyListingCard from '@/components/SupplyChain/Listings/SupplyListingCard';
 import SupplyListingFilter from '@/components/SupplyChain/Listings/SupplyListingFilter';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 const ListingsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +21,12 @@ const ListingsPage: React.FC = () => {
     keyword: searchParams.get('keyword') || '',
     page: Number(searchParams.get('page') || 1),
   });
+
+  const breadcrumbItems = [
+    { label: "Trang chủ", path: "/" },
+    { label: "Vật tư nông nghiệp" },
+    { label: "Tìm mua vật tư" }
+  ];
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -110,6 +117,8 @@ const ListingsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Breadcrumb items={breadcrumbItems} />
+      
       <h1 className="text-2xl font-bold mb-6">Vật Tư Nông Nghiệp</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

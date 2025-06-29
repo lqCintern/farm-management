@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Typography, Alert,
-  Table, Tag, Tooltip, Button, Space, Empty
+  Table, Tag, Tooltip, Button, Space, Empty, Badge
 } from 'antd';
 import {
   ShoppingCartOutlined, DollarOutlined, ExclamationCircleOutlined,
-  CheckCircleOutlined, WarningOutlined, ReloadOutlined
+  CheckCircleOutlined, WarningOutlined, ReloadOutlined,
+  BarChartOutlined, InboxOutlined, SafetyOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import templateMaterialService, {
   TemplateMaterialStats
 } from '@/services/farming/templateMaterialService';
 import { formatCurrency } from '@/utils/formatters';
+import './template-materials.css';
 
 const { Title, Text } = Typography;
 
@@ -144,120 +146,266 @@ export default function MaterialsOverview({
 
   const columns = [
     {
-      title: 'Template',
+      title: (
+        <div className="flex items-center gap-2">
+          <FileTextOutlined className="text-blue-600" />
+          <span>Template</span>
+        </div>
+      ),
       dataIndex: 'template_name',
       key: 'template_name',
       render: (name: string, record: TemplateMaterialSummary) => (
-        <div>
-          <Link to={`/activity-templates/${record.template_id}`} style={{ textDecoration: 'none' }}>
-            <Text strong style={{ color: '#1890ff' }}>{name}</Text>
-          </Link>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            ID: {record.template_id}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <FileTextOutlined className="text-white text-sm" />
+          </div>
+          <div>
+            <Link to={`/activity-templates/${record.template_id}`} style={{ textDecoration: 'none' }}>
+              <Text strong className="text-blue-600 hover:text-blue-800 transition-colors">{name}</Text>
+            </Link>
+            <div className="text-xs text-gray-500 mt-1">
+              ID: {record.template_id}
+            </div>
           </div>
         </div>
       )
     },
     {
-      title: 'Vật tư',
+      title: (
+        <div className="flex items-center gap-2">
+          <InboxOutlined className="text-green-600" />
+          <span>Vật tư</span>
+        </div>
+      ),
       dataIndex: 'total_materials',
       key: 'total_materials',
       render: (count: number, record: TemplateMaterialSummary) => (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-            <ShoppingCartOutlined style={{ color: '#1890ff' }} />
-            <span>{count}</span>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+            <InboxOutlined className="text-white text-sm" />
           </div>
-          {record.materials && record.materials.length > 0 && (
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              {record.materials.slice(0, 2).map((material, index) => (
-                <div key={index}>
-                  • <Tooltip title={`Xem chi tiết ${material.material_name} trong kho`}>
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Text strong className="text-lg text-gray-800">{count}</Text>
+              <Text className="text-sm text-gray-500">vật tư</Text>
+            </div>
+            {record.materials && record.materials.length > 0 && (
+              <div className="space-y-1">
+                {record.materials.slice(0, 2).map((material, index) => (
+                  <div key={index} className="flex items-center gap-1 text-xs">
+                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                    <Tooltip title={`Xem chi tiết ${material.material_name} trong kho`}>
                       <Link 
                         to={`/farmer/inventory/${material.id}`} 
-                        style={{ color: '#1890ff', textDecoration: 'none' }}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
                         target="_blank"
                       >
                         {material.material_name}
                       </Link>
-                    </Tooltip> ({material.quantity} {material.unit})
-                </div>
-              ))}
-              {record.materials.length > 2 && (
-                <div style={{ color: '#999' }}>
-                  +{record.materials.length - 2} vật tư khác
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )
-    },
-    {
-      title: 'Chi phí ước tính',
-      dataIndex: 'total_estimated_cost',
-      key: 'total_estimated_cost',
-      render: (cost: number) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <DollarOutlined style={{ color: '#52c41a' }} />
-          <span>{formatCurrency(cost || 0)}</span>
-        </div>
-      )
-    },
-    {
-      title: 'Tính khả thi',
-      key: 'feasibility',
-      render: (_: any, record: TemplateMaterialSummary & { activity_type?: number }) => {
-        if (record.total_materials === 0) {
-          if (record.activity_type === undefined || !MATERIAL_REQUIRED_ACTIVITIES.includes(record.activity_type)) {
-            return <Tag color="success">Không yêu cầu vật tư</Tag>;
-          }
-          return <Tag color="error" icon={<ExclamationCircleOutlined />}>Thiếu vật tư</Tag>;
-        }
-        return record.is_feasible ? (
-          <Tag color="success" icon={<CheckCircleOutlined />}>Khả thi</Tag>
-        ) : (
-          <Tag color="error" icon={<ExclamationCircleOutlined />}>Không khả thi</Tag>
-        );
-      }
-    },
-    {
-      title: 'Vật tư thiếu',
-      key: 'missing_materials',
-      render: (_: any, record: TemplateMaterialSummary & { activity_type?: number }) => {
-        if (record.total_materials === 0 && (record.activity_type === undefined || !MATERIAL_REQUIRED_ACTIVITIES.includes(record.activity_type))) {
-          return <span style={{ color: '#888' }}>Không áp dụng</span>;
-        }
-        if (record.insufficient_materials_count === 0) {
-          return <Tag color="success">Đầy đủ</Tag>;
-        }
-        
-        // Hiển thị danh sách vật tư thiếu với link
-        return (
-          <div>
-            <Tag color="error">{record.insufficient_materials_count} vật tư không đủ</Tag>
-            {record.materials && record.materials.length > 0 && (
-              <div style={{ marginTop: '4px', fontSize: '12px' }}>
-                {record.materials.slice(0, 3).map((material, index) => (
-                  <div key={index} style={{ marginBottom: '2px' }}>
-                    <Tooltip title={`Xem chi tiết ${material.material_name} trong kho`}>
-                      <Link 
-                        to={`/farmer/inventory/${material.id}`} 
-                        style={{ color: '#ff4d4f', textDecoration: 'none' }}
-                        target="_blank"
-                      >
-                        • {material.material_name}
-                      </Link>
                     </Tooltip>
+                    <Text className="text-gray-500">({material.quantity} {material.unit})</Text>
                   </div>
                 ))}
-                {record.materials.length > 3 && (
-                  <div style={{ color: '#999', fontSize: '11px' }}>
-                    +{record.materials.length - 3} vật tư khác
+                {record.materials.length > 2 && (
+                  <div className="text-xs text-gray-400">
+                    +{record.materials.length - 2} vật tư khác
                   </div>
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )
+    },
+    {
+      title: (
+        <div className="flex items-center gap-2">
+          <DollarOutlined className="text-orange-600" />
+          <span>Chi phí ước tính</span>
+        </div>
+      ),
+      dataIndex: 'total_estimated_cost',
+      key: 'total_estimated_cost',
+      render: (cost: number) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+            <DollarOutlined className="text-white text-sm" />
+          </div>
+          <Text strong className="text-lg text-gray-800">
+            {formatCurrency(cost || 0)}
+          </Text>
+        </div>
+      )
+    },
+    {
+      title: (
+        <div className="flex items-center gap-2">
+          <SafetyOutlined className="text-purple-600" />
+          <span>Tính khả thi</span>
+        </div>
+      ),
+      key: 'feasibility',
+      render: (_: any, record: TemplateMaterialSummary & { activity_type?: number }) => {
+        if (record.total_materials === 0) {
+          if (record.activity_type === undefined || !MATERIAL_REQUIRED_ACTIVITIES.includes(record.activity_type)) {
+            return (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
+                  <CheckCircleOutlined className="text-white text-sm" />
+                </div>
+                <Tag 
+                  style={{ 
+                    border: '2px solid #52c41a',
+                    color: '#52c41a',
+                    backgroundColor: 'transparent',
+                    borderRadius: '8px',
+                    fontWeight: 500
+                  }}
+                >
+                  Không yêu cầu vật tư
+                </Tag>
+              </div>
+            );
+          }
+          return (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                <ExclamationCircleOutlined className="text-white text-sm" />
+              </div>
+              <Tag 
+                style={{ 
+                  border: '2px solid #ff4d4f',
+                  color: '#ff4d4f',
+                  backgroundColor: 'transparent',
+                  borderRadius: '8px',
+                  fontWeight: 500
+                }}
+              >
+                Thiếu vật tư
+              </Tag>
+            </div>
+          );
+        }
+        return record.is_feasible ? (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+              <CheckCircleOutlined className="text-white text-sm" />
+            </div>
+            <Tag 
+              style={{ 
+                border: '2px solid #52c41a',
+                color: '#52c41a',
+                backgroundColor: 'transparent',
+                borderRadius: '8px',
+                fontWeight: 500
+              }}
+            >
+              Khả thi
+            </Tag>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+              <ExclamationCircleOutlined className="text-white text-sm" />
+            </div>
+            <Tag 
+              style={{ 
+                border: '2px solid #ff4d4f',
+                color: '#ff4d4f',
+                backgroundColor: 'transparent',
+                borderRadius: '8px',
+                fontWeight: 500
+              }}
+            >
+              Không khả thi
+            </Tag>
+          </div>
+        );
+      }
+    },
+    {
+      title: (
+        <div className="flex items-center gap-2">
+          <WarningOutlined className="text-red-600" />
+          <span>Vật tư thiếu</span>
+        </div>
+      ),
+      key: 'missing_materials',
+      render: (_: any, record: TemplateMaterialSummary & { activity_type?: number }) => {
+        if (record.total_materials === 0 && (record.activity_type === undefined || !MATERIAL_REQUIRED_ACTIVITIES.includes(record.activity_type))) {
+          return (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
+                <CheckCircleOutlined className="text-white text-sm" />
+              </div>
+              <Text className="text-gray-500">Không áp dụng</Text>
+            </div>
+          );
+        }
+        if (record.insufficient_materials_count === 0) {
+          return (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                <CheckCircleOutlined className="text-white text-sm" />
+              </div>
+              <Tag 
+                style={{ 
+                  border: '2px solid #52c41a',
+                  color: '#52c41a',
+                  backgroundColor: 'transparent',
+                  borderRadius: '8px',
+                  fontWeight: 500
+                }}
+              >
+                Đầy đủ
+              </Tag>
+            </div>
+          );
+        }
+        
+        // Hiển thị danh sách vật tư thiếu với link
+        return (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+              <WarningOutlined className="text-white text-sm" />
+            </div>
+            <div>
+              <Tag 
+                style={{ 
+                  border: '2px solid #ff4d4f',
+                  color: '#ff4d4f',
+                  backgroundColor: 'transparent',
+                  borderRadius: '8px',
+                  fontWeight: 500,
+                  marginBottom: '8px'
+                }}
+              >
+                {record.insufficient_materials_count} vật tư không đủ
+              </Tag>
+              {record.materials && record.materials.length > 0 && (
+                <div className="space-y-1">
+                  {record.materials.slice(0, 3).map((material, index) => (
+                    <div key={index} className="flex items-center gap-1 text-xs">
+                      <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                      <Tooltip title={`Xem chi tiết ${material.material_name} trong kho`}>
+                        <Link 
+                          to={`/farmer/inventory/${material.id}`} 
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                          target="_blank"
+                        >
+                          {material.material_name}
+                        </Link>
+                      </Tooltip>
+                    </div>
+                  ))}
+                  {record.materials.length > 3 && (
+                    <div className="text-xs text-gray-400">
+                      +{record.materials.length - 3} vật tư khác
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         );
       }
@@ -265,80 +413,155 @@ export default function MaterialsOverview({
   ];
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Overall Statistics */}
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={16}>
-          <Col span={6}>
-            <Statistic
-              title="Tổng số mẫu hoạt động"
-              value={overallStats.totalTemplates}
-              suffix={<span style={{ color: '#888', fontSize: 13 }}>(Có vật tư: {overallStats.templatesWithMaterials})</span>}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Tổng số vật tư"
-              value={overallStats.totalMaterials}
-              prefix={<ShoppingCartOutlined />}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Tổng chi phí ước tính"
-              value={overallStats.totalEstimatedCost || 0}
-              formatter={(value) => formatCurrency(Number(value || 0))}
-              prefix={<DollarOutlined />}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Số mẫu khả thi"
-              value={overallStats.feasibleTemplates}
-              suffix={<span style={{ color: '#888', fontSize: 13 }}>/ {overallStats.templatesWithMaterials} mẫu có vật tư</span>}
-              valueStyle={{ color: overallStats.feasibleTemplates === overallStats.templatesWithMaterials ? '#52c41a' : '#faad14' }}
-            />
-          </Col>
-        </Row>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="hover-lift" style={{
+          background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+          border: 'none',
+          borderRadius: '12px'
+        }}>
+          <div className="flex items-center justify-between text-white">
+            <div>
+              <Text className="text-blue-100 text-sm font-medium">Tổng số mẫu</Text>
+              <div className="text-2xl font-bold">{overallStats.totalTemplates}</div>
+              <Text className="text-blue-100 text-xs">
+                Có vật tư: {overallStats.templatesWithMaterials}
+              </Text>
+            </div>
+            <FileTextOutlined className="text-3xl text-blue-200 floating-icon" />
+          </div>
+        </Card>
+
+        <Card className="hover-lift" style={{
+          background: 'linear-gradient(135deg, #10b981, #059669)',
+          border: 'none',
+          borderRadius: '12px'
+        }}>
+          <div className="flex items-center justify-between text-white">
+            <div>
+              <Text className="text-green-100 text-sm font-medium">Tổng số vật tư</Text>
+              <div className="text-2xl font-bold">{overallStats.totalMaterials}</div>
+            </div>
+            <InboxOutlined className="text-3xl text-green-200 floating-icon" />
+          </div>
+        </Card>
+
+        <Card className="hover-lift" style={{
+          background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+          border: 'none',
+          borderRadius: '12px'
+        }}>
+          <div className="flex items-center justify-between text-white">
+            <div>
+              <Text className="text-orange-100 text-sm font-medium">Tổng chi phí</Text>
+              <div className="text-2xl font-bold">{formatCurrency(overallStats.totalEstimatedCost || 0)}</div>
+            </div>
+            <DollarOutlined className="text-3xl text-orange-200 floating-icon" />
+          </div>
+        </Card>
+
+        <Card className="hover-lift" style={{
+          background: overallStats.feasibleTemplates === overallStats.templatesWithMaterials 
+            ? 'linear-gradient(135deg, #10b981, #059669)'
+            : 'linear-gradient(135deg, #f59e0b, #d97706)',
+          border: 'none',
+          borderRadius: '12px'
+        }}>
+          <div className="flex items-center justify-between text-white">
+            <div>
+              <Text className="text-white text-sm font-medium">Số mẫu khả thi</Text>
+              <div className="text-2xl font-bold">{overallStats.feasibleTemplates}</div>
+              <Text className="text-white text-xs">
+                / {overallStats.templatesWithMaterials} mẫu có vật tư
+              </Text>
+            </div>
+            <SafetyOutlined className="text-3xl text-white floating-icon" />
+          </div>
+        </Card>
+      </div>
 
       {/* Alerts */}
       {overallStats.totalMissingMaterials > 0 && (
         <Alert
-          message="Có vật tư thiếu"
-          description={`${overallStats.totalMissingMaterials} vật tư thiếu hoàn toàn và ${overallStats.totalInsufficientMaterials} vật tư không đủ số lượng trong ${overallStats.templatesWithMaterials - overallStats.feasibleTemplates} templates.`}
+          message={
+            <div className="flex items-center gap-2">
+              <WarningOutlined className="text-orange-500" />
+              <span className="font-semibold">Có vật tư thiếu</span>
+            </div>
+          }
+          description={
+            <div className="mt-3">
+              <Text className="text-gray-700">
+                {overallStats.totalMissingMaterials} vật tư thiếu hoàn toàn và {overallStats.totalInsufficientMaterials} vật tư không đủ số lượng trong {overallStats.templatesWithMaterials - overallStats.feasibleTemplates} templates.
+              </Text>
+            </div>
+          }
           type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
+          showIcon={false}
+          style={{ 
+            marginBottom: 16,
+            borderRadius: '12px',
+            border: '2px solid #f59e0b'
+          }}
+          className="hover-lift"
         />
       )}
 
       {/* Toolbar */}
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={4}>Chi tiết vật tư theo template</Title>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={() => {
-            fetchMaterialsSummary();
-            onRefresh?.();
-          }}
-          loading={loading}
-        >
-          Làm mới
-        </Button>
-      </div>
+      <Card className="hover-lift" style={{
+        border: '2px solid #e5e7eb',
+        borderRadius: '12px',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <BarChartOutlined className="text-purple-600 text-xl" />
+            <Title level={4} className="mb-0 text-gray-800">Chi tiết vật tư theo template</Title>
+          </div>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              fetchMaterialsSummary();
+              onRefresh?.();
+            }}
+            loading={loading}
+            style={{
+              borderRadius: '8px',
+              border: '2px solid #e5e7eb',
+              transition: 'all 0.3s ease'
+            }}
+            className="hover:border-green-300 hover:text-green-600 hover:scale-105"
+          >
+            Làm mới
+          </Button>
+        </div>
+      </Card>
 
       {/* Summary Table */}
-      <Table
-        columns={columns}
-        dataSource={summary}
-        rowKey="template_id"
-        loading={loading}
-        pagination={false}
-        locale={{
-          emptyText: "Không có dữ liệu vật tư"
-        }}
-      />
+      <Card className="hover-lift" style={{
+        border: '2px solid #e5e7eb',
+        borderRadius: '12px',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+      }}>
+        <Table
+          columns={columns}
+          dataSource={summary}
+          rowKey="template_id"
+          loading={loading}
+          pagination={false}
+          rowClassName={(record) => 'hover:bg-gray-50 transition-all duration-200'}
+          locale={{
+            emptyText: (
+              <div className="py-12 text-center text-gray-400">
+                <BarChartOutlined className="text-6xl mb-4" />
+                <div className="text-lg font-medium">Không có dữ liệu vật tư</div>
+                <div className="mt-2">Chưa có thông tin vật tư cho các template</div>
+              </div>
+            )
+          }}
+        />
+      </Card>
     </div>
   );
 } 

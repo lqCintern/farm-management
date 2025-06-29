@@ -8,6 +8,7 @@ import Button from '@/components/common/Button';
 import StatusBadge from '@/components/common/StatusBadge';
 import { formatDate } from '@/utils/formatters';
 import LaborNavigation from '@/components/Labor/LaborNavigation';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 import { LaborRequest } from '@/types/labor/laborRequest.types';
 import { FarmActivity } from '@/types/labor/types';
@@ -28,6 +29,12 @@ const LaborDashboard = () => {
   const [exchanges, setExchanges] = useState<ExchangeSummaryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const breadcrumbItems = [
+    { label: "Trang chủ", path: "/" },
+    { label: "Đổi công" },
+    { label: "Tổng quan" }
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -105,6 +112,8 @@ const LaborDashboard = () => {
     <div>
       <LaborNavigation />
       <div className="container mx-auto p-4">
+        <Breadcrumb items={breadcrumbItems} />
+        
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Tổng quan đổi công</h1>
           <p className="text-gray-500">Quản lý các yêu cầu đổi công và hoạt động liên quan</p>

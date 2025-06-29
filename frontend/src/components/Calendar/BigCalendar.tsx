@@ -212,7 +212,7 @@ export default function BigCalendar({
   }, [calendarType]);
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-5 w-full font-sans">
+    <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6 w-full font-sans calendar-container">
       <CalendarHeader
         view={view}
         onViewChange={handleViewChange}
@@ -222,7 +222,7 @@ export default function BigCalendar({
 
       {calendarType === "grid" ? (
         // Hiển thị dạng lịch lưới
-        <div className="rounded-lg overflow-hidden border border-gray-200 calendar-container">
+        <div className="rounded-xl overflow-hidden border border-gray-200 calendar-grid animate-slideIn">
           <FullCalendar
             plugins={[
               dayGridPlugin,
@@ -269,15 +269,17 @@ export default function BigCalendar({
         </div>
       ) : (
         // Hiển thị dạng lịch bloc
-        <BlocCalendar
-          ref={blocCalendarRef}
-          farmActivities={farmActivities}
-          laborRequests={laborRequests}
-          onDateClick={handleBlocDateClick}
-        />
+        <div className="animate-slideIn">
+          <BlocCalendar
+            ref={blocCalendarRef}
+            farmActivities={farmActivities}
+            laborRequests={laborRequests}
+            onDateClick={handleBlocDateClick}
+          />
+        </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-6 animate-fadeIn">
         <CalendarLegend />
       </div>
 

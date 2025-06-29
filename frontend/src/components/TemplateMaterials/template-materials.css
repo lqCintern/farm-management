@@ -1,0 +1,309 @@
+/* Template Materials Components Styles */
+
+/* Hover lift effect for cards */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Floating icon animation */
+.floating-icon {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Button hover effects */
+.btn-primary {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+/* Action button hover effects */
+.action-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Table row hover effects */
+.ant-table-tbody > tr:hover > td {
+  background-color: #f8fafc !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Modal form styles */
+.template-form-modal .ant-modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.template-form-modal .ant-modal-header {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-bottom: 2px solid #e5e7eb;
+  padding: 24px;
+}
+
+.template-form-modal .ant-modal-body {
+  padding: 0;
+}
+
+.template-form-modal .ant-modal-footer {
+  background: #f8fafc;
+  border-top: 2px solid #e5e7eb;
+  padding: 16px 24px;
+}
+
+/* Form section styles */
+.form-section .ant-form-item {
+  margin-bottom: 24px;
+}
+
+.form-section .ant-form-item-label > label {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Input focus effects */
+.form-section .ant-input:focus,
+.form-section .ant-input-number:focus,
+.form-section .ant-select:focus .ant-select-selector {
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+/* Card styles */
+.form-section .ant-card {
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.form-section .ant-card:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+}
+
+/* Badge styles */
+.form-section .ant-badge-count {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Tag styles */
+.form-section .ant-tag {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.form-section .ant-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Select option styles */
+.form-section .ant-select-item {
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+}
+
+.form-section .ant-select-item:hover {
+  background-color: #f0fdf4;
+}
+
+.form-section .ant-select-item-option-selected {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Progress bar styles */
+.ant-progress-bg {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* Alert styles */
+.ant-alert {
+  border-radius: 12px;
+  border: 2px solid;
+  transition: all 0.3s ease;
+}
+
+.ant-alert:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Table styles */
+.ant-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 16px;
+}
+
+/* Pagination styles */
+.ant-pagination-item {
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.ant-pagination-item:hover {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.ant-pagination-item-active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+}
+
+.ant-pagination-item-active a {
+  color: white;
+}
+
+/* Empty state styles */
+.ant-empty {
+  padding: 48px 0;
+}
+
+.ant-empty-image {
+  height: 120px;
+  margin-bottom: 16px;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+  
+  .floating-icon {
+    animation: float 2s ease-in-out infinite;
+  }
+  
+  .form-section .ant-card {
+    margin-bottom: 16px;
+  }
+  
+  .ant-table-tbody > tr > td {
+    padding: 12px;
+  }
+}
+
+/* Loading states */
+.ant-spin-dot-item {
+  background-color: #10b981;
+}
+
+/* Tooltip styles */
+.ant-tooltip-inner {
+  background: linear-gradient(135deg, #374151, #1f2937);
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.ant-tooltip-arrow::before {
+  background: linear-gradient(135deg, #374151, #1f2937);
+}
+
+/* Popconfirm styles */
+.ant-popover-inner {
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.ant-popover-arrow::before {
+  background: white;
+  border: 2px solid #e5e7eb;
+}
+
+/* Animation for new items */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.5s ease-out;
+}
+
+/* Pulse animation for important elements */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #10b981, #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Custom scrollbar */
+.ant-table-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ant-table-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+} 

@@ -2,10 +2,17 @@ import { useEffect, useState } from 'react';
 import { getUserProfile } from '@/services/users/authService';
 import TraderProductListingList from '@/components/ProductListing/TraderProductListingList';
 import FarmerProductListingList from '@/components/ProductListing/FarmerProductListingList';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 export default function ProductListingsPage() {
   const [userType, setUserType] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const breadcrumbItems = [
+    { label: "Trang chủ", path: "/" },
+    { label: "Cửa hàng" },
+    { label: "Danh sách sản phẩm" }
+  ];
 
   useEffect(() => {
     async function fetchUserType() {
@@ -31,18 +38,18 @@ export default function ProductListingsPage() {
   }
 
   return (
-    <>
+    <div className="container mx-auto p-4">
+      <Breadcrumb items={breadcrumbItems} />
+      
       {userType === 'trader' ? (
         <TraderProductListingList />
       ) : userType === 'farmer' ? (
         <FarmerProductListingList />
       ) : (
-        <div className="container mx-auto p-4">
-          <div className="bg-red-100 text-red-700 p-4 rounded-md">
-            Không thể xác định loại người dùng. Vui lòng đăng nhập lại.
-          </div>
+        <div className="bg-red-100 text-red-700 p-4 rounded-md">
+          Không thể xác định loại người dùng. Vui lòng đăng nhập lại.
         </div>
       )}
-    </>
+    </div>
   );
 }

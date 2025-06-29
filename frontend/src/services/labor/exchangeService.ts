@@ -1,6 +1,11 @@
 import axiosInstance from "@/utils/axiosConfig";
 
-// Lấy tổng quan số dư đổi công
+// Lấy danh sách các mối liên hệ đổi công
+export const getHouseholdExchanges = async () => {
+  const response = await axiosInstance.get("/labor/exchanges");
+  return response.data;
+};
+
 export const getExchangeSummary = async () => {
   const response = await axiosInstance.get("/labor/exchanges");
   return response.data as RecalculationResponse;
@@ -46,6 +51,24 @@ export const adjustExchangeBalance = async (
     hours,
     notes
   });
+  return response.data;
+};
+
+// Tính lại số dư
+export const recalculateBalance = async (householdId: number) => {
+  const response = await axiosInstance.post(`/labor/exchanges/households/${householdId}/recalculate`);
+  return response.data;
+};
+
+// Tính lại tất cả số dư
+export const recalculateAllBalances = async () => {
+  const response = await axiosInstance.post("/labor/exchanges/recalculate_all");
+  return response.data;
+};
+
+// Reset số dư
+export const resetBalance = async (exchangeId: number) => {
+  const response = await axiosInstance.post(`/labor/exchanges/${exchangeId}/reset_balance`);
   return response.data;
 };
 

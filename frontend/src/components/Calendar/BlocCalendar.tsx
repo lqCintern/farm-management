@@ -5,7 +5,7 @@ import { FarmActivity } from "@/types/labor/types";
 import FlipPage from 'react-flip-page';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css'; // Import styles
+import 'react-datepicker/dist/react-datepicker.css';
 import { Typography, Tooltip, Modal, Spin } from 'antd';
 import { EnvironmentOutlined, CloudOutlined, DownOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import CurrentWeather from '@/components/Weather/CurrentWeather';
@@ -67,31 +67,10 @@ const BlocCalendar = forwardRef<BlocCalendarHandle, BlocCalendarProps>(
     // Tạo danh sách các ngày để hiển thị
     useEffect(() => {
       const startDate = startOfMonth(currentDate);
-      const endDate = endOfMonth(addDays(currentDate, 60)); // Hiển thị 2 tháng
-      
+      const endDate = endOfMonth(addDays(currentDate, 60));
       const daysArray = getDatesBetween(startDate, endDate);
       setPages(daysArray);
-      
-      // Chỉ nhảy tới ngày hiện tại khi lần đầu khởi tạo
-      if (!initialized) {
-        const today = new Date();
-        const todayIndex = daysArray.findIndex(date => isSameDay(date, today));
-        
-        if (todayIndex !== -1 && flipPageRef.current) {
-          setTimeout(() => {
-            try {
-              flipPageRef.current.gotoPage(todayIndex);
-              setCurrentPage(todayIndex);
-              setInitialized(true); // Đánh dấu đã khởi tạo
-            } catch (error) {
-              console.error("Error navigating to today's page", error);
-            }
-          }, 500);
-        } else {
-          setInitialized(true); // Vẫn đánh dấu đã khởi tạo nếu không tìm thấy hôm nay
-        }
-      }
-    }, [currentDate, initialized]);
+    }, [currentDate]);
 
     // Kết hợp tất cả các sự kiện
     useEffect(() => {
@@ -219,32 +198,55 @@ const BlocCalendar = forwardRef<BlocCalendarHandle, BlocCalendarProps>(
 
     // Đi đến trang trước
     const handlePrevPage = () => {
-      if (flipPageRef.current && currentPage > 0) {
-        try {
-          flipPageRef.current.gotoPreviousPage();
-        } catch (error) {
-          console.error("Error navigating to previous page:", error);
-        }
+      if (currentPage > 0 && flipPageRef.current) {
+        flipPageRef.current.gotoPage(currentPage - 1);
       }
     };
 
     // Đi đến trang tiếp theo
     const handleNextPage = () => {
-      if (flipPageRef.current && currentPage < pages.length - 1) {
-        try {
-          flipPageRef.current.gotoNextPage();
-        } catch (error) {
-          console.error("Error navigating to next page:", error);
-        }
+      if (currentPage < pages.length - 1 && flipPageRef.current) {
+        flipPageRef.current.gotoPage(currentPage + 1);
       }
     };
 
     // Xử lý khi lật trang
     const handlePageFlip = (pageIndex: number) => {
-      setCurrentPage(pageIndex);
-      if (pageIndex < pages.length) {
-        setCurrentDate(pages[pageIndex]);
+      const newDate = pages[pageIndex];
+      const prevDate = pages[currentPage];
+
+      // Tiến: Nếu từ ngày cuối tháng sang ngày không phải 1 của tháng mới, tự động sang 1 của tháng mới
+      const isEndOfMonth = newDate && prevDate &&
+        prevDate.getMonth() !== newDate.getMonth() &&
+        prevDate.getDate() === new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 0).getDate() &&
+        newDate.getDate() !== 1;
+      if (isEndOfMonth) {
+        const firstOfMonthIdx = pages.findIndex(d => d.getMonth() === newDate.getMonth() && d.getDate() === 1);
+        if (firstOfMonthIdx !== -1 && flipPageRef.current) {
+          flipPageRef.current.gotoPage(firstOfMonthIdx);
+          setCurrentPage(firstOfMonthIdx);
+          setCurrentDate(pages[firstOfMonthIdx]);
+          return;
+        }
       }
+
+      // Lùi: Nếu từ ngày 1 của tháng về ngày không phải cuối tháng trước, tự động về cuối tháng trước
+      const isStartOfMonth = newDate && prevDate &&
+        prevDate.getMonth() !== newDate.getMonth() &&
+        prevDate.getDate() === 1 &&
+        newDate.getDate() !== new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate();
+      if (isStartOfMonth) {
+        const lastOfPrevMonthIdx = pages.findIndex(d => d.getMonth() === prevDate.getMonth() && d.getDate() === new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 0).getDate());
+        if (lastOfPrevMonthIdx !== -1 && flipPageRef.current) {
+          flipPageRef.current.gotoPage(lastOfPrevMonthIdx);
+          setCurrentPage(lastOfPrevMonthIdx);
+          setCurrentDate(pages[lastOfPrevMonthIdx]);
+          return;
+        }
+      }
+
+      setCurrentPage(pageIndex);
+      setCurrentDate(newDate);
     };
 
     // Xử lý khi click vào sự kiện cụ thể
@@ -269,36 +271,22 @@ const BlocCalendar = forwardRef<BlocCalendarHandle, BlocCalendarProps>(
     // Thêm hàm để nhảy tới ngày hôm nay
     const goToToday = () => {
       const today = new Date();
-      const todayIndex = pages.findIndex(date => isSameDay(date, today));
-      
-      if (todayIndex !== -1 && flipPageRef.current) {
-        try {
-          flipPageRef.current.gotoPage(todayIndex);
-          setCurrentPage(todayIndex);
-          setCurrentDate(today);
-        } catch (error) {
-          console.error("Error navigating to today's page", error);
-        }
+      const idx = pages.findIndex(date => isSameDay(date, today));
+      if (idx !== -1 && flipPageRef.current) {
+        flipPageRef.current.gotoPage(idx);
+      } else {
+        setCurrentDate(today); // sẽ trigger useEffect tạo lại pages
       }
     };
     
     // Thêm hàm xử lý chọn ngày từ DatePicker
     const handleDateSelect = (date: Date | null) => {
       if (!date) return;
-      
-      const selectedIndex = pages.findIndex(pageDate => isSameDay(pageDate, date));
-      
-      if (selectedIndex !== -1 && flipPageRef.current) {
-        try {
-          flipPageRef.current.gotoPage(selectedIndex);
-          setCurrentPage(selectedIndex);
-          // Không gọi setCurrentDate ở đây để tránh trigger useEffect
-        } catch (error) {
-          console.error("Error navigating to selected date", error);
-        }
+      const idx = pages.findIndex(pageDate => isSameDay(pageDate, date));
+      if (idx !== -1 && flipPageRef.current) {
+        flipPageRef.current.gotoPage(idx);
       } else {
-        // Nếu ngày không nằm trong phạm vi hiện tại, mới cập nhật currentDate
-        setCurrentDate(date);
+        setCurrentDate(date); // sẽ trigger useEffect tạo lại pages
       }
     };
     
@@ -316,149 +304,120 @@ const BlocCalendar = forwardRef<BlocCalendarHandle, BlocCalendarProps>(
 
     // Render nội dung trang
     const renderPageContent = (date: Date) => {
-      if (!date) return null;
-      
       const events = getEventsForDate(date);
-      const isToday = date.toDateString() === new Date().toDateString();
-      const weather = weatherEnabled ? getWeatherForDate(date) : null;
-      
-      // Format date with locale
-      const weekdayName = formatVN(date, 'EEEE');
+      const weather = getWeatherForDate(date);
+      const isToday = isSameDay(date, new Date());
       const dayNumber = format(date, 'd');
       const monthYear = formatVN(date, 'MMMM yyyy');
+
+      // Ngày âm lịch đơn giản (placeholder)
+      const lunarDayStr = `${date.getDate()}/${date.getMonth() + 1}`;
+      const lunarInfo = `Ngày ${date.getDate()} tháng ${date.getMonth() + 1}`;
 
       // Phân loại sự kiện theo loại
       const farmActivities = events.filter(event => event.extendedProps?.type === 'farm_activity');
       const laborRequests = events.filter(event => event.extendedProps?.type === 'labor_request');
-      
-      // Cập nhật bảng màu gradient thời tiết
+
       const getWeatherBackground = () => {
-        if (!weather || !weather.daily) return 'from-blue-500 to-blue-400';
+        if (!weather || !weather.daily) return 'bg-gradient-to-br from-blue-500 to-purple-600';
         
-        const weatherCondition = weather.daily.weather_condition || '';
+        const condition = weather.daily.weather_condition?.toLowerCase();
         const temp = weather.daily.temp_max || 0;
         
-        if (weatherCondition.includes('Rain')) return 'from-indigo-600 to-blue-500';
-        if (weatherCondition.includes('Cloud')) return 'from-blue-300 to-gray-400';
-        if (weatherCondition.includes('Clear') && temp > 30) return 'from-amber-400 to-orange-300';
-        if (weatherCondition.includes('Clear')) return 'from-sky-400 to-blue-300';
-        if (weatherCondition.includes('Snow')) return 'from-blue-100 to-gray-200';
-        
-        return 'from-blue-500 to-blue-400';
+        if (condition?.includes('rain')) return 'bg-gradient-to-br from-blue-600 to-cyan-500';
+        if (condition?.includes('cloud')) return 'bg-gradient-to-br from-gray-600 to-blue-500';
+        if (temp > 32) return 'bg-gradient-to-br from-orange-500 to-red-500';
+        if (temp > 25) return 'bg-gradient-to-br from-yellow-500 to-orange-500';
+        if (temp < 15) return 'bg-gradient-to-br from-blue-500 to-indigo-600';
+        return 'bg-gradient-to-br from-green-500 to-emerald-600';
       };
-      
-      // Biểu tượng thời tiết tùy chỉnh
+
       const getWeatherIcon = () => {
-        if (!weather || !weather.daily) return null;
-        return weather.daily.weather_icon ? 
-          <img 
-            src={`https://openweathermap.org/img/wn/${weather.daily.weather_icon}.png`}
-            alt={weather.daily.weather_description}
-            className="w-8 h-8 inline-block"
-          /> : <CloudOutlined />;
+        if (!weather || !weather.daily) return '🌤️';
+        
+        const condition = weather.daily.weather_condition?.toLowerCase();
+        if (condition?.includes('rain')) return '🌧️';
+        if (condition?.includes('cloud')) return '☁️';
+        if (weather.daily.temp_max > 32) return '☀️';
+        return '🌤️';
       };
 
       return (
-        <div 
-          className={`bloc-calendar-page ${isToday ? 'today' : ''}`}
-          onClick={() => handleDateClick(date)}
+        <div
+          className={`page-content flex flex-col h-full rounded-3xl overflow-hidden border-4 border-yellow-300 shadow-2xl bg-[#fffbe8]`}
+          style={{ minHeight: 480 }}
         >
-          <div className={`page-content ${isToday ? 'bg-yellow-50' : 'bg-white'} border shadow-sm h-full flex flex-col rounded-lg`}>
-            {/* Header ngày với thông tin thời tiết - thêm rounded-t-lg và giảm padding */}
-            <div className={`flex flex-col items-center justify-center p-3 border-b bg-gradient-to-b ${getWeatherBackground()} text-white rounded-t-lg`}>
-              <div className="text-xs uppercase tracking-wide">{monthYear}</div>
-              <div className="text-4xl font-bold mb-1">{dayNumber}</div>
-              <div className="text-sm font-medium capitalize">{weekdayName}</div>
-              
-              {/* Hiển thị thông tin thời tiết cơ bản nếu có */}
-              {weather && weather.daily && (
-                <Tooltip title="Xem chi tiết thời tiết">
-                  <div 
-                    className="weather-preview mt-2 flex items-center bg-white/20 px-3 py-1 rounded-full cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      showWeatherDetails(date);
-                    }}
-                  >
-                    {getWeatherIcon()}
-                    <Text className="text-white font-medium ml-1">
-                      {Math.round(weather.daily.temp_max)}°
-                      <span className="text-white/70 text-xs ml-1">
-                        {Math.round(weather.daily.temp_min)}°
-                      </span>
-                      {weather.daily.pop > 30 && (
-                        <span className="ml-2 text-xs">
-                          💧 {weather.daily.pop}%
-                        </span>
-                      )}
-                    </Text>
+          {/* Header bloc đỏ */}
+          <div className="p-4 text-center bg-gradient-to-b from-red-600 to-red-400 border-b-4 border-yellow-300">
+            <div className="text-7xl font-extrabold text-white drop-shadow-lg mb-1" style={{fontFamily: 'Arial Rounded MT Bold, Quicksand, sans-serif'}}>{dayNumber}</div>
+            <div className="text-lg font-semibold text-yellow-100 mb-1 tracking-wide" style={{letterSpacing: 1}}>{formatVN(date, 'EEEE, dd/MM/yyyy')}</div>
+            <div className="text-base text-yellow-200">Âm lịch: <span className="font-bold">{lunarDayStr}</span></div>
+          </div>
+          {/* Thời tiết */}
+          <div className="p-3 bg-yellow-50 border-b border-yellow-200">
+            {weather && weather.daily ? (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-2">{getWeatherIcon()}</span>
+                  <div>
+                    <div className="font-semibold text-yellow-900">
+                      {weather.daily.temp_min}°C - {weather.daily.temp_max}°C
+                    </div>
+                    <div className="text-yellow-700">{weather.daily.weather_condition}</div>
                   </div>
-                </Tooltip>
-              )}
-            </div>
-
-            {/* Nội dung sự kiện của ngày */}
-            <div className="flex-1 p-3 overflow-y-auto">
-              {events.length === 0 ? (
-                <div className="text-center text-gray-500 py-6">
-                  Không có hoạt động
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {farmActivities.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-blue-800 mb-1">Hoạt động canh tác:</h3>
-                      {farmActivities.map((event, index) => (
-                        <div 
-                          key={`farm-${index}`} 
-                          className="text-xs p-1.5 mb-1 rounded bg-blue-50 border border-blue-100 text-blue-900 hover:bg-blue-100 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEventClick(event);
-                          }}
-                        >
-                          <span className="mr-1">{event.extendedProps.icon}</span>
-                          {event.title}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {laborRequests.length > 0 && (
-                    <div className="mt-2">
-                      <h3 className="text-sm font-medium text-pink-800 mb-1">Yêu cầu nhân công:</h3>
-                      {laborRequests.map((event, index) => (
-                        <div 
-                          key={`labor-${index}`} 
-                          className="text-xs p-1.5 mb-1 rounded bg-pink-50 border border-pink-100 text-pink-900 hover:bg-pink-100 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEventClick(event);
-                          }}
-                        >
-                          <span className="mr-1">{event.extendedProps.icon}</span>
-                          {event.title}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {/* Footer - giảm padding */}
-            <div className="p-1.5 border-t text-xs text-center text-gray-600 bg-gray-50 rounded-b-lg">
-              {isToday ? '📌 Hôm nay' : (
-                weather && weather.daily ? (
-                  <span className="flex items-center justify-center">
-                    <span className="mr-1">💡</span> 
-                    {weather.daily.weather_condition === 'Rain' ? 'Có mưa, chuẩn bị dụng cụ che chắn' : 
-                     weather.daily.temp_max > 32 ? 'Nắng nóng, nhớ bổ sung nước cho cây' : 
-                     'Kiểm tra thời tiết trước khi làm việc ngoài trời'}
-                  </span>
-                ) : '💡 Tip: Kiểm tra thời tiết trước khi làm việc ngoài trời'
-              )}
-            </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); showWeatherDetails(date); }}
+                  className="text-red-600 hover:text-red-800 text-xs underline"
+                >
+                  Chi tiết
+                </button>
+              </div>
+            ) : (
+              <div className="text-sm text-yellow-700 flex items-center"><span className="mr-2">🌤️</span>Không có dữ liệu thời tiết</div>
+            )}
+          </div>
+          {/* Nội dung sự kiện của ngày */}
+          <div className="flex-1 p-4 overflow-y-auto">
+            {events.length === 0 ? (
+              <div className="text-center text-gray-400 py-6">
+                <div className="text-4xl mb-2">📅</div>
+                Không có hoạt động
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {farmActivities.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-red-700 mb-1 flex items-center">🌱 Hoạt động canh tác:</h3>
+                    {farmActivities.map((event, index) => (
+                      <div key={`farm-${index}`} className="text-xs p-2 mb-1 rounded bg-red-50 border border-red-100 text-red-900 hover:bg-red-100 cursor-pointer transition-all hover:scale-105" onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}>
+                        <span className="mr-1">{event.extendedProps.icon}</span>{event.title}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {laborRequests.length > 0 && (
+                  <div className="mt-2">
+                    <h3 className="text-sm font-medium text-green-800 mb-1 flex items-center">👥 Yêu cầu nhân công:</h3>
+                    {laborRequests.map((event, index) => (
+                      <div key={`labor-${index}`} className="text-xs p-2 mb-1 rounded bg-green-50 border border-green-100 text-green-900 hover:bg-green-100 cursor-pointer transition-all hover:scale-105" onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}>
+                        <span className="mr-1">{event.extendedProps.icon}</span>{event.title}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* Footer bloc */}
+          <div className="p-2 border-t-2 border-yellow-300 text-xs text-center text-yellow-700 bg-yellow-50 font-medium">
+            {isToday ? (
+              <span className="flex items-center justify-center text-red-600 font-semibold">📌 Hôm nay</span>
+            ) : (
+              weather && weather.daily ? (
+                <span className="flex items-center justify-center"><span className="mr-1">💡</span>{weather.daily.weather_condition === 'Rain' ? 'Có mưa, chuẩn bị dụng cụ che chắn' : weather.daily.temp_max > 32 ? 'Nắng nóng, nhớ bổ sung nước cho cây' : 'Kiểm tra thời tiết trước khi làm việc ngoài trời'}</span>
+              ) : '💡 Tip: Kiểm tra thời tiết trước khi làm việc ngoài trời'
+            )}
           </div>
         </div>
       );
@@ -543,71 +502,32 @@ const BlocCalendar = forwardRef<BlocCalendarHandle, BlocCalendarProps>(
     };
 
     return (
-      <div className="bloc-calendar-container bg-white rounded-lg shadow-md p-4 w-full">
-        <div className="flex flex-col mb-4 space-y-3">
-          {/* Hàng 1: Controls chính */}
-          <div className="flex justify-between items-center">
-            <button 
-              className={`px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 
-                          flex items-center gap-1 transition-all ${
-                            currentPage <= 0 ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-              onClick={handlePrevPage}
-              disabled={currentPage <= 0}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Trước
-            </button>
-            <h3 className="text-lg font-semibold text-gray-700">
-              {pages.length > 0 && currentPage < pages.length 
-                ? formatVN(pages[currentPage], 'MMMM yyyy')
-                : 'Lịch bloc'}
-            </h3>
-            <button 
-              className={`px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 
-                          flex items-center gap-1 transition-all ${
-                            currentPage >= pages.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-              onClick={handleNextPage}
-              disabled={currentPage >= pages.length - 1}
-            >
-              Sau
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+      <div className="bloc-calendar calendar-container animate-fadeIn">
+        {/* Controls ở giữa, dễ thao tác */}
+        <div className="flex flex-col items-center mb-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <button className="px-4 py-2 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 text-base font-bold transition-all duration-200 hover:scale-105 border-2 border-yellow-300" onClick={goToToday}>📅 Hôm nay</button>
+            <h3 className="text-2xl font-bold text-red-700 tracking-wide" style={{fontFamily: 'Quicksand, Arial Rounded MT Bold, sans-serif'}}>{pages.length > 0 && currentPage < pages.length ? formatVN(pages[currentPage], 'MMMM yyyy') : 'Lịch bloc'}</h3>
           </div>
-          
-          {/* Hàng 2: DatePicker và nút Hôm nay */}
-          <div className="flex justify-between items-center">
-            <div className="datepicker-container" style={{ width: '180px' }}>
-              <DatePicker
-                selected={pages[currentPage]}
-                onChange={handleDateSelect}
-                dateFormat="dd/MM/yyyy"
-                className="px-3 py-1 border border-gray-300 rounded w-full text-sm"
-                placeholderText="Chọn ngày..."
-              />
-            </div>
-            <button 
-              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-              onClick={goToToday}
-            >
-              Hôm nay
-            </button>
+          <div className="datepicker-container" style={{ width: '200px' }}>
+            <DatePicker selected={pages[currentPage]} onChange={handleDateSelect} dateFormat="dd/MM/yyyy" className="px-4 py-2 border-2 border-yellow-300 rounded-lg w-full text-base focus:ring-2 focus:ring-red-400 focus:border-red-400" placeholderText="Chọn ngày..." />
+          </div>
+          <div className="flex items-center gap-6 mt-2">
+            <button className={`w-12 h-12 bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl font-bold border-2 border-yellow-300 transition-all duration-200 ${currentPage <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700 hover:scale-110'}`} onClick={handlePrevPage} disabled={currentPage <= 0}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+            <span className="text-base text-red-700 font-semibold">Trang {currentPage + 1} / {pages.length}</span>
+            <button className={`w-12 h-12 bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl font-bold border-2 border-yellow-300 transition-all duration-200 ${currentPage >= pages.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700 hover:scale-110'}`} onClick={handleNextPage} disabled={currentPage >= pages.length - 1}> <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
           </div>
         </div>
 
-        <div className="relative mx-auto calendar-wrapper" style={{ height: '450px', maxWidth: '350px' }}>
+        {/* Khôi phục hiệu ứng lật trang như lịch bloc thật */}
+        <div className="relative mx-auto calendar-wrapper" style={{ height: '500px', maxWidth: '400px' }}>
           {pages.length > 0 ? (
             <FlipPage
               ref={flipPageRef}
               className="bloc-calendar"
               orientation="vertical"
-              width={350}
-              height={450}
+              width={400}
+              height={500}
               uncutPages={false}
               animationDuration={400}
               showSwipeHint={false}
@@ -618,7 +538,7 @@ const BlocCalendar = forwardRef<BlocCalendarHandle, BlocCalendarProps>(
               maxAngle={25}
             >
               {pages.map((date, index) => (
-                <div key={index} className="calendar-page">
+                <div key={index} className="calendar-page bloc-calendar-page">
                   {renderPageContent(date)}
                 </div>
               ))}
@@ -636,52 +556,6 @@ const BlocCalendar = forwardRef<BlocCalendarHandle, BlocCalendarProps>(
         
         {/* Hiển thị modal thời tiết chi tiết */}
         {renderWeatherModal()}
-
-        {/* Giữ lại styles cũ và thêm styles mới */}
-        <style>{`
-          .calendar-wrapper {
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-radius: 8px;
-          }
-          
-          .calendar-page {
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            transform-origin: top center;
-          }
-          
-          .page-content {
-            border-radius: 8px;
-            overflow: hidden;
-            height: 100%;
-            transition: all 0.3s;
-          }
-          
-          .bloc-calendar-page.today .page-content {
-            box-shadow: 0 0 0 2px #f59e0b;
-          }
-          
-          .weather-preview {
-            transition: all 0.2s;
-            backdrop-filter: blur(8px);
-            background-color: rgba(255,255,255,0.2);
-          }
-          
-          .weather-preview:hover {
-            background-color: rgba(255,255,255,0.3);
-            transform: scale(1.05);
-          }
-          
-          /* Cải thiện hiệu ứng cho các sự kiện */
-          .text-center .text-xs.p-1\.5 {
-            transition: all 0.2s;
-          }
-          .text-center .text-xs.p-1\.5:hover {
-            transform: translateX(3px);
-          }
-        `}</style>
       </div>
     );
   }

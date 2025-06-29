@@ -216,6 +216,15 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
       category: 'labor'
     },
     {
+      title: 'Quản lý thông tin',
+      icon: <SettingOutlined />,
+      children: [
+        { title: 'Thông tin hộ sản xuất', path: '/household' },
+        { title: 'Thông tin người dùng', path: '/profile' },
+      ],
+      category: 'management'
+    },
+    {
       title: 'Thời tiết',
       icon: <CloudOutlined />,
       children: [
@@ -353,7 +362,7 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
   }, {} as Record<string, MenuItem[]>);
 
   // Thứ tự hiển thị các category
-  const categoryOrder = ['general', 'farming', 'supply', 'market', 'labor', 'support', 'other'];
+  const categoryOrder = ['general', 'farming', 'supply', 'market', 'labor', 'management', 'support', 'other'];
 
   useEffect(() => {
     const handleResize = () => {
@@ -454,6 +463,7 @@ export default function SideNavigation({ userType, onToggle }: SideNavigationPro
                   {category === 'supply' && 'Vật tư'}
                   {category === 'market' && 'Thị trường'}
                   {category === 'labor' && 'Lao động'}
+                  {category === 'management' && 'Quản lý'}
                   {category === 'support' && 'Hỗ trợ'}
                   {category === 'other' && 'Khác'}
                 </div>

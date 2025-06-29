@@ -6,6 +6,14 @@ export const getCurrentHousehold = async () => {
   return response.data;
 };
 
+// Cập nhật thông tin household
+export const updateHousehold = async (householdId: number, data: any) => {
+  const response = await axiosInstance.put(`/labor/farm_households/${householdId}`, {
+    household: data
+  });
+  return response.data;
+};
+
 // Lấy danh sách thành viên trong hộ
 export const getHouseholdWorkers = async (householdId?: number) => {
   const url = householdId 
@@ -16,10 +24,9 @@ export const getHouseholdWorkers = async (householdId?: number) => {
 };
 
 // Thêm người lao động vào hộ
-export const addWorkerToHousehold = async (workerId: number, relationship: string = 'member') => {
-  const response = await axiosInstance.post("/labor/household_workers", {
-    worker_id: workerId,
-    relationship
+export const addWorkerToHousehold = async (householdId: number, data: any) => {
+  const response = await axiosInstance.post(`/labor/farm_households/${householdId}/household_workers`, {
+    worker: data
   });
   return response.data;
 };
@@ -34,9 +41,15 @@ export const bulkAddWorkersToHousehold = async (workerIds: number[], relationshi
 };
 
 // Xóa người lao động khỏi hộ
-export const removeWorkerFromHousehold = async (workerId: number, reason?: string) => {
-  const response = await axiosInstance.delete(`/labor/household_workers/${workerId}/remove`, {
-    params: { reason }
+export const removeWorker = async (workerId: number) => {
+  const response = await axiosInstance.delete(`/labor/household_workers/${workerId}`);
+  return response.data;
+};
+
+// Cập nhật trạng thái worker
+export const updateWorkerStatus = async (workerId: number, isActive: boolean) => {
+  const response = await axiosInstance.patch(`/labor/household_workers/${workerId}/update_status`, {
+    is_active: isActive
   });
   return response.data;
 };

@@ -79,6 +79,9 @@ import InventoryPage from './pages/Farming/InventoryPage';
 import HarvestStatisticsPage from './pages/Farming/HarvestStatisticsPage';
 import MaterialDetailPage from './pages/Farming/MaterialDetailPage';
 
+import HouseholdManagement from './pages/Management/HouseholdManagement';
+import UserProfile from './pages/Management/UserProfile';
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path={routes.index} element={<MainLayout />}>
@@ -178,6 +181,10 @@ const router = createBrowserRouter(
 
       {/* Weather Routes */}
       <Route path="/climate" element={<WeatherDashboardPage />} />
+      
+      {/* Management Routes */}
+      <Route path="/household" element={<HouseholdManagement />} />
+      <Route path="/profile" element={<UserProfile />} />
     </Route>
   )
 );

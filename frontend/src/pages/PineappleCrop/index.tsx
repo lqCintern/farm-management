@@ -20,6 +20,7 @@ import fieldService from '@/services/farming/fieldService';
 import { PineappleStage } from '@/services/farming/pineappleActivityTemplateService';
 import Field from '@/services/farming/fieldService';
 import { formatDate } from '@/utils/dateUtils';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 const { Option } = Select;
 const { Search } = Input;
@@ -98,6 +99,12 @@ export default function PineappleCrops() {
   const [stats, setStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const breadcrumbItems = [
+    { label: "Trang chủ", path: "/" },
+    { label: "Các mùa vụ" },
+    { label: "Vụ dứa" }
+  ];
 
   useEffect(() => {
     fetchCrops();
@@ -361,53 +368,58 @@ export default function PineappleCrops() {
 
   return (
     <div className="space-y-4">
+      <Breadcrumb items={breadcrumbItems} />
       {/* Thống kê */}
-      {stats && (
-        <Card>
-          <Title level={4}>Thống kê vụ trồng dứa</Title>
-          <Divider />
-          <Row gutter={16}>
-            <Col span={6}>
+      <Card className="rounded-3xl shadow-2xl bg-gradient-to-br from-yellow-50 via-white to-green-50 mb-6 animate-fadeIn border-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6">
+          <div>
+            <Title level={3} className="!mb-1 !font-bold text-green-700 drop-shadow-sm">Thống kê vụ trồng dứa</Title>
+            <Text className="text-gray-500">Tổng quan các mùa vụ dứa trên hệ thống</Text>
+          </div>
+          <Row gutter={24} className="flex-1">
+            <Col span={6} className="min-w-[120px]">
               <Statistic 
-                title="Tổng số vụ dứa" 
-                value={stats.total_crops || 0} 
+                title={<span className="font-semibold text-gray-700">🍍 Tổng số vụ</span>} 
+                value={stats?.total_crops || 0} 
                 loading={statsLoading}
+                valueStyle={{ color: '#3f8600', fontWeight: 700, fontSize: 28 }}
               />
             </Col>
-            <Col span={6}>
+            <Col span={6} className="min-w-[120px]">
               <Statistic 
-                title="Đang hoạt động" 
-                value={stats.active_crops || 0} 
+                title={<span className="font-semibold text-gray-700">🌱 Đang hoạt động</span>} 
+                value={stats?.active_crops || 0} 
                 loading={statsLoading}
-                valueStyle={{ color: '#3f8600' }}
+                valueStyle={{ color: '#3f8600', fontWeight: 700, fontSize: 28 }}
               />
             </Col>
-            <Col span={6}>
+            <Col span={6} className="min-w-[120px]">
               <Statistic 
-                title="Đã thu hoạch" 
-                value={stats.harvested_crops || 0} 
+                title={<span className="font-semibold text-gray-700">🏆 Đã thu hoạch</span>} 
+                value={stats?.harvested_crops || 0} 
                 loading={statsLoading}
-                valueStyle={{ color: '#0050b3' }}
+                valueStyle={{ color: '#0050b3', fontWeight: 700, fontSize: 28 }}
               />
             </Col>
-            <Col span={6}>
+            <Col span={6} className="min-w-[120px]">
               <Statistic 
-                title="Sắp thu hoạch" 
-                value={stats.upcoming_harvests || 0} 
+                title={<span className="font-semibold text-gray-700">⏳ Sắp thu hoạch</span>} 
+                value={stats?.upcoming_harvests || 0} 
                 loading={statsLoading}
-                valueStyle={{ color: '#fa8c16' }}
+                valueStyle={{ color: '#fa8c16', fontWeight: 700, fontSize: 28 }}
               />
             </Col>
           </Row>
-        </Card>
-      )}
+        </div>
+      </Card>
 
-      <Card>
-        <div className="flex justify-between items-center mb-4">
-          <Title level={4}>Danh sách vụ trồng dứa</Title>
+      <Card className="rounded-3xl shadow-xl bg-white animate-fadeIn border-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 p-6 pb-0">
+          <Title level={3} className="!mb-0 !font-bold text-green-700 drop-shadow-sm">Danh sách vụ trồng dứa</Title>
           <Button 
             type="primary" 
             icon={<PlusOutlined />}
+            className="rounded-full font-semibold shadow-md bg-gradient-to-r from-green-500 to-lime-400 border-0 hover:from-green-600 hover:to-lime-500 text-white px-6 py-2 text-base"
             onClick={() => navigate('/pineapple/new')}
           >
             Thêm vụ mới
@@ -415,7 +427,7 @@ export default function PineappleCrops() {
         </div>
 
         {/* Bộ lọc */}
-        <div className="mb-4 p-4 border rounded bg-gray-50">
+        <div className="mb-6 p-4 border-0 rounded-2xl bg-gradient-to-r from-yellow-50 via-white to-green-50 shadow-sm animate-fadeIn">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
               <Text strong>Vụ mùa</Text>
@@ -488,14 +500,16 @@ export default function PineappleCrops() {
             <div className="ml-auto">
               <Space>
                 <Button 
-                  icon={<ReloadOutlined />}
+                  icon={<ReloadOutlined />} 
+                  className="rounded-full border-yellow-200 bg-white hover:bg-yellow-50 shadow"
                   onClick={resetFilters}
                 >
                   Đặt lại
                 </Button>
                 <Button 
                   type="primary" 
-                  icon={<FilterOutlined />}
+                  icon={<FilterOutlined />} 
+                  className="rounded-full font-semibold shadow-md bg-gradient-to-r from-green-500 to-lime-400 border-0 hover:from-green-600 hover:to-lime-500 text-white px-6"
                   onClick={fetchCrops}
                 >
                   Lọc
@@ -518,6 +532,8 @@ export default function PineappleCrops() {
             showSizeChanger: false
           }}
           locale={{ emptyText: "Không có vụ dứa nào" }}
+          className="rounded-2xl shadow bg-white animate-fadeIn border border-gray-100"
+          rowClassName={() => "hover:bg-green-50 transition-all duration-200"}
         />
       </Card>
     </div>

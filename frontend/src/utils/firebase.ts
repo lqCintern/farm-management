@@ -7,6 +7,8 @@ import {
   onValue,
   limitToLast,
   get,
+  onChildAdded,
+  off,
 } from "firebase/database";
 
 // Cấu hình Firebase - Sử dụng cho client side
@@ -25,10 +27,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-// Lắng nghe tin nhắn từ một cuộc trò chuyện
+// Debounce function để tránh cập nhật quá nhiều lần
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
+// Lắng nghe tin nhắn từ một cuộc trò chuyện với tối ưu hóa
 export const listenToMessages = (
   conversationId: number,
-  callback: (messages: any[]) => void
+  callback: (messages: any[], isInitialLoad?: boolean) => void,
+  onNewMessage?: (message: any) => void
 ) => {
   if (!conversationId) {
     console.error("No conversation ID provided");
@@ -36,7 +51,7 @@ export const listenToMessages = (
   }
 
   console.log(
-    `Setting up Firebase Realtime Database listener for conversation ${conversationId}`
+    `Setting up optimized Firebase Realtime Database listener for conversation ${conversationId}`
   );
 
   // Tham chiếu đến đường dẫn messages trong Realtime Database
@@ -49,12 +64,21 @@ export const listenToMessages = (
     limitToLast(50)
   );
 
-  // Thiết lập listener
-  const unsubscribe = onValue(
+  let isInitialLoad = true;
+  let lastMessageTimestamp = 0;
+  let unsubscribeFunctions: (() => void)[] = [];
+
+  // Debounced callback để tránh cập nhật quá nhiều lần
+  const debouncedCallback = debounce((messages: any[], isInitial: boolean) => {
+    callback(messages, isInitial);
+  }, 100);
+
+  // Listener cho lần load đầu tiên
+  const initialUnsubscribe = onValue(
     messagesQuery,
     (snapshot) => {
       if (snapshot.exists()) {
-        console.log("Firebase data received:", snapshot.val());
+        console.log("Initial Firebase data received:", snapshot.val());
 
         // Chuyển đổi dữ liệu từ object thành array
         const messagesObj = snapshot.val();
@@ -74,13 +98,25 @@ export const listenToMessages = (
           a.created_at.localeCompare(b.created_at)
         );
 
-        console.log(`Parsed ${sortedMessages.length} messages from Firebase`);
+        // Cập nhật timestamp của tin nhắn cuối cùng
+        if (sortedMessages.length > 0) {
+          lastMessageTimestamp = Math.max(
+            ...sortedMessages.map(msg => new Date(msg.created_at).getTime())
+          );
+        }
+
+        console.log(`Parsed ${sortedMessages.length} messages from Firebase (initial load)`);
 
         // Gọi callback với dữ liệu đã được xử lý
-        callback(sortedMessages);
+        debouncedCallback(sortedMessages, true);
+        isInitialLoad = false;
+
+        // Sau khi load xong, thiết lập listener cho tin nhắn mới
+        setupNewMessageListener();
       } else {
         console.log("No messages found for conversation:", conversationId);
-        callback([]);
+        debouncedCallback([], true);
+        isInitialLoad = false;
       }
     },
     (error) => {
@@ -88,10 +124,69 @@ export const listenToMessages = (
     }
   );
 
+  unsubscribeFunctions.push(initialUnsubscribe);
+
+  // Hàm thiết lập listener cho tin nhắn mới
+  const setupNewMessageListener = () => {
+    // Tạo query cho tin nhắn mới hơn timestamp cuối cùng
+    const newMessagesQuery = query(
+      messagesRef,
+      orderByChild("created_at"),
+      limitToLast(10) // Chỉ lấy 10 tin nhắn mới nhất để tránh spam
+    );
+
+    const newMessageUnsubscribe = onValue(
+      newMessagesQuery,
+      (snapshot) => {
+        if (snapshot.exists() && !isInitialLoad) {
+          const messagesObj = snapshot.val();
+          const newMessages = Object.keys(messagesObj || {}).map((key) => ({
+            id: key,
+            ...messagesObj[key],
+            user_id: parseInt(messagesObj[key].user_id),
+            created_at: new Date(
+              messagesObj[key].created_at * 1000
+            ).toISOString(),
+          }));
+
+          // Lọc chỉ những tin nhắn mới hơn timestamp cuối cùng
+          const actualNewMessages = newMessages.filter(
+            msg => new Date(msg.created_at).getTime() > lastMessageTimestamp
+          );
+
+          if (actualNewMessages.length > 0) {
+            console.log(`Received ${actualNewMessages.length} new messages`);
+            
+            // Cập nhật timestamp cuối cùng
+            lastMessageTimestamp = Math.max(
+              ...actualNewMessages.map(msg => new Date(msg.created_at).getTime())
+            );
+
+            // Gọi callback cho từng tin nhắn mới
+            actualNewMessages.forEach(msg => {
+              if (onNewMessage) {
+                onNewMessage(msg);
+              }
+            });
+
+            // Gọi callback tổng hợp với tất cả tin nhắn
+            debouncedCallback(newMessages, false);
+          }
+        }
+      },
+      (error) => {
+        console.error("Error listening to new Firebase messages:", error);
+      }
+    );
+
+    unsubscribeFunctions.push(newMessageUnsubscribe);
+  };
+
   // Trả về hàm để hủy đăng ký lắng nghe
   return () => {
-    console.log("Unsubscribing from Firebase listener");
-    unsubscribe();
+    console.log("Unsubscribing from Firebase listeners");
+    unsubscribeFunctions.forEach(unsubscribe => unsubscribe());
+    unsubscribeFunctions = [];
   };
 };
 

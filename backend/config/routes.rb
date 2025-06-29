@@ -88,6 +88,9 @@ Rails.application.routes.draw do
           resources :product_orders, only: [ :index, :show, :create, :update ]
 
           resources :conversations do
+            collection do
+              get :available_users
+            end
             member do
               get :messages
               post :messages, to: "conversations#add_message"

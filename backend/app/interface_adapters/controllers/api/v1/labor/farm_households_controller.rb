@@ -69,15 +69,20 @@ module Controllers::Api
         end
 
         def require_household_owner
-          household = Services::CleanArch.labor_farm_household_repository.find(@household_id)
-
-          unless household && household.owner_id == current_user.id
+          result = Services::CleanArch.labor_farm_household_repository.find(@household_id)
+          
+          unless result[:success] && result[:household] && result[:household].owner_id == current_user.id
             render_error_response([ "Bạn không có quyền thực hiện thao tác này" ], :forbidden)
           end
         end
 
         def household_params
-          params.require(:household).permit(:name, :description, :province, :district, :ward, :address)
+          # Xử lý cả 2 format params có thể có
+          if params[:farm_household] && params[:farm_household][:household]
+            params.require(:farm_household).require(:household).permit(:name, :description, :province, :district, :ward, :address)
+          else
+            params.require(:household).permit(:name, :description, :province, :district, :ward, :address)
+          end
         end
       end
     end
