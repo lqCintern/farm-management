@@ -20,6 +20,7 @@ export interface ProductOrderParams {
   quantity: number;
   price: number;
   note?: string;
+  total_weight?: number | string;
 }
 
 export const getProductOrders = async (params?: { status?: string }) => {

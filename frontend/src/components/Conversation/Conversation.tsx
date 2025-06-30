@@ -13,7 +13,7 @@ import ScheduleHarvestModal from "./ScheduleHarvestModal";
 import TransactionConfirmModal from "./TransactionConfirmModal";
 import UserVerification from "./UserVerification";
 import { getActiveHarvest } from "@/services/marketplace/harvestService";
-import { checkAcceptedOrderExists } from "@/services/marketplace/productOrderService";
+import { checkAcceptedOrderExists, getProductOrders, ProductOrder } from "@/services/marketplace/productOrderService";
 import {
   sendMessage,
   sendPaymentMessage,
@@ -59,6 +59,7 @@ const Conversation: React.FC<ConversationProps> = ({
   const [pendingAction, setPendingAction] = useState<'schedule' | 'payment' | null>(null);
   const [currentHarvest, setCurrentHarvest] = useState<any>(null);
   const [hasAcceptedOrderState, setHasAcceptedOrderState] = useState(false);
+  const [latestOrder, setLatestOrder] = useState<ProductOrder | null>(null);
   const navigate = useNavigate();
 
   const getCurrentUserId = () => {
@@ -100,6 +101,32 @@ const Conversation: React.FC<ConversationProps> = ({
   useEffect(() => {
     checkAcceptedOrder();
   }, [checkAcceptedOrder]);
+
+  // Lấy order mới nhất liên quan đến conversation
+  useEffect(() => {
+    const fetchLatestOrder = async () => {
+      try {
+        const productListingId = conversation.product_listing.id;
+        let params: any = { product_listing_id: productListingId, per_page: 10 };
+        if (userRole === 'trader') {
+          params.status = undefined; // lấy tất cả trạng thái
+        }
+        // Gọi API lấy tất cả order liên quan product_listing
+        const response = await getProductOrders(params) as { orders: ProductOrder[] };
+        let orders: ProductOrder[] = response.orders || [];
+        // Nếu là trader, chỉ lấy order của mình
+        if (userRole === 'trader') {
+          orders = orders.filter(o => o.buyer_id === currentUserId);
+        }
+        // Sắp xếp mới nhất
+        orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setLatestOrder(orders[0] || null);
+      } catch (err) {
+        setLatestOrder(null);
+      }
+    };
+    if (conversation && userRole) fetchLatestOrder();
+  }, [conversation, userRole, currentUserId]);
 
   const handleSendMessage = async (messageText: string, image?: File) => {
     try {
@@ -269,6 +296,24 @@ const Conversation: React.FC<ConversationProps> = ({
         </div>
       </div>
 
+      {/* Banner order mới nhất */}
+      {latestOrder && (
+        <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border-b border-blue-200 animate-fade-in-up">
+          <span className="text-xl">📦</span>
+          <div className="flex-1">
+            <span className="font-medium text-blue-900">Đơn hàng mới nhất:</span>
+            <span className="ml-2 text-blue-800">{conversation.product_listing.title}</span>
+            <span className="ml-2 text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 border border-blue-300">{latestOrder.status}</span>
+          </div>
+          <button
+            className="text-blue-600 hover:text-blue-800 underline text-sm font-semibold transition-colors duration-150"
+            onClick={() => window.open(`/orders/${latestOrder.id}`, '_blank')}
+          >
+            Xem chi tiết đơn hàng
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-gray-400">
@@ -303,6 +348,7 @@ const Conversation: React.FC<ConversationProps> = ({
               : conversation.sender.user_id
           }
           productListing={conversation.product_listing}
+          order={latestOrder}
           onSuccess={() => {
             setShowScheduleModal(false);
           }}

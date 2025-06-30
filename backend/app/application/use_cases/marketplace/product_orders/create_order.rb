@@ -24,6 +24,12 @@ module UseCases::Marketplace
         # Cho phép thương lái tạo nhiều đơn hàng trên 1 sản phẩm
         # Không kiểm tra đơn hàng đã tồn tại nữa
 
+        # Debug logging
+        Rails.logger.info "=== CREATE ORDER DEBUG ==="
+        Rails.logger.info "Attributes received: #{attributes.inspect}"
+        Rails.logger.info "total_weight in attributes: #{attributes[:total_weight]}"
+        Rails.logger.info "total_weight class: #{attributes[:total_weight].class}"
+
         # Tạo đơn hàng entity
         order_entity = Entities::Marketplace::ProductOrder.new(
           buyer_id: user_id,
@@ -31,8 +37,13 @@ module UseCases::Marketplace
           quantity: attributes[:quantity],
           price: attributes[:price],
           note: attributes[:note],
-          status: :pending
+          status: :pending,
+          total_weight: attributes[:total_weight]
         )
+
+        Rails.logger.info "Entity created:"
+        Rails.logger.info "  total_weight: #{order_entity.total_weight}"
+        Rails.logger.info "  total_weight class: #{order_entity.total_weight.class}"
 
         # Lưu order
         order = @repository.create(order_entity)
@@ -75,9 +86,24 @@ module UseCases::Marketplace
         message_content += " Giá đề xuất: #{order.price}/kg" if order.price.present?
         message_content += " Ghi chú: #{order.note}" if order.note.present?
 
-        conversation.messages.create(
-          user_id: user.user_id,
-          content: message_content
+        # Thêm link đến đơn hàng (sử dụng route marketplace orders)
+        message_content += "\\n\\n📋 Xem chi tiết đơn hàng: /orders/#{order.id}"
+
+        # Sử dụng Firebase message service thay vì ActiveRecord
+        @conversation_service.send_message(
+          conversation.id,
+          user.user_id,
+          message_content,
+          "order",
+          {
+            order_info: {
+              order_id: order.id,
+              quantity: order.quantity,
+              price: order.price,
+              status: order.status,
+              product_title: order.product_listing.title
+            }
+          }
         )
       end
     end

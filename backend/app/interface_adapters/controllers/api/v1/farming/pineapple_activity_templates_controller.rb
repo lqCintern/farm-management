@@ -3,14 +3,12 @@ module Controllers::Api
     module Farming
       class PineappleActivityTemplatesController < BaseController
         def index
+          # Format filter params
+          filter_params = ::Formatters::Farming::PineappleActivityTemplateFormatter.format_filter_params(params)
+
           result = Services::CleanArch.farming_list_pineapple_activity_templates.execute(
             current_user.user_id,
-            {
-              stage: params[:stage],
-              activity_type: params[:activity_type],
-              is_required: params[:is_required],
-              season_specific: params[:season_specific]
-            }
+            filter_params
           )
 
           render json: ::Presenters::Farming::PineappleActivityTemplatePresenter.collection_as_json(result[:templates]), status: :ok
@@ -20,22 +18,25 @@ module Controllers::Api
           result = Services::CleanArch.farming_get_pineapple_activity_template.execute(params[:id])
 
           if result[:success]
-            render json: { data: ::Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template]) }, status: :ok
+            render json: { data: ::Presenters::Farming::PineappleActivityTemplatePresenter.new(result[:template]).as_json }, status: :ok
           else
             render json: { error: result[:error] }, status: :not_found
           end
         end
 
         def create
-          result = Services::CleanArch.farming_create_pineapple_activity_template.execute(
-            template_params.to_h,
+          # Format input params
+          create_params = ::Formatters::Farming::PineappleActivityTemplateFormatter.format_create_params(
+            template_params,
             current_user.user_id
           )
 
+          result = Services::CleanArch.farming_create_pineapple_activity_template.execute(create_params)
+
           if result[:success]
             render json: {
-              message: "Đã tạo mẫu hoạt động thành công",
-              data: ::Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
+              message: "Template đã được tạo thành công",
+              data: ::Presenters::Farming::PineappleActivityTemplatePresenter.new(result[:template]).as_json
             }, status: :created
           else
             render json: { errors: result[:errors] }, status: :unprocessable_entity
@@ -43,30 +44,29 @@ module Controllers::Api
         end
 
         def update
+          # Format input params
+          update_params = ::Formatters::Farming::PineappleActivityTemplateFormatter.format_update_params(template_params)
+
           result = Services::CleanArch.farming_update_pineapple_activity_template.execute(
             params[:id],
-            template_params.to_h,
-            current_user.user_id
+            update_params
           )
 
           if result[:success]
             render json: {
-              message: "Đã cập nhật mẫu hoạt động thành công",
-              data: ::Presenters::Farming::PineappleActivityTemplatePresenter.as_json(result[:template])
+              message: "Template đã được cập nhật thành công",
+              data: ::Presenters::Farming::PineappleActivityTemplatePresenter.new(result[:template]).as_json
             }, status: :ok
           else
-            render json: { errors: result[:error] || result[:errors] }, status: :unprocessable_entity
+            render json: { errors: result[:errors] }, status: :unprocessable_entity
           end
         end
 
         def destroy
-          result = Services::CleanArch.farming_delete_pineapple_activity_template.execute(
-            params[:id],
-            current_user.user_id
-          )
+          result = Services::CleanArch.farming_delete_pineapple_activity_template.execute(params[:id])
 
           if result[:success]
-            render json: { message: "Đã xóa mẫu hoạt động thành công" }, status: :ok
+            render json: { message: "Template đã được xóa thành công" }, status: :ok
           else
             render json: { error: result[:error] }, status: :unprocessable_entity
           end
@@ -118,13 +118,8 @@ module Controllers::Api
 
         private
 
-        # Cập nhật phương thức template_params để cho phép vật tư
         def template_params
-          params.require(:template).permit(
-            :name, :description, :activity_type, :stage,
-            :day_offset, :duration_days, :season_specific, :is_required,
-            materials: {}
-          )
+          params.require(:template).permit(:name, :description, :activity_type, :stage, :duration_days)
         end
       end
     end

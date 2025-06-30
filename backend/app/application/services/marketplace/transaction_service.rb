@@ -33,8 +33,8 @@ module Services::Marketplace
           user_id: source.product_listing.user_id,
           crop_id: source.product_listing.crop_animal_id,
           product_order_id: source.id,
-          quantity: source.quantity,
-          amount: source.price * source.quantity,
+          quantity: source.total_weight || source.quantity,
+          amount: source.total_amount || (source.price * (source.total_weight || source.quantity)),
           sale_date: Time.current
         )
       else
@@ -67,17 +67,18 @@ module Services::Marketplace
     end
 
     def create_order_transaction(order)
-      total_amount = order.price * order.quantity
+      total_amount = order.total_amount || (order.price * (order.total_weight || order.quantity))
       seller_id = order.product_listing.user_id
       buyer_name = order.buyer&.fullname || "Thương lái"
       product_type = order.product_listing.product_type
+      quantity = order.total_weight || order.quantity
 
       # Ghi nhận doanh thu cho người bán
       ::Marketplace::Transaction.create(
         user_id: seller_id,
         transaction_type: 1, # income
         amount: total_amount,
-        description: "Bán #{order.quantity} #{product_type} cho #{buyer_name}",
+        description: "Bán #{quantity} #{product_type} cho #{buyer_name}",
         date: Time.current
       )
 

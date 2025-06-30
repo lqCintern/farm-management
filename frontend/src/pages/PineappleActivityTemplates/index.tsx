@@ -134,7 +134,12 @@ export default function PineappleActivityTemplates() {
         if (template.id) {
           try {
             const statsResponse = await templateMaterialService.getTemplateMaterialStats(template.id);
-            stats[template.id] = statsResponse.stats;
+            if (statsResponse.success) {
+              stats[template.id] = statsResponse.statistics;
+            } else {
+              console.error(`Failed to fetch stats for template ${template.id}:`, statsResponse);
+              stats[template.id] = { total_materials: 0, total_estimated_cost: 0 };
+            }
           } catch (error) {
             console.error(`Error fetching stats for template ${template.id}:`, error);
             stats[template.id] = { total_materials: 0, total_estimated_cost: 0 };

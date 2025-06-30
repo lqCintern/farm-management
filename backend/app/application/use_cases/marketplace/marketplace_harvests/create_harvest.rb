@@ -46,18 +46,16 @@ module UseCases::Marketplace
       end
 
       def create_from_order(order)
-        # Lấy location ưu tiên theo thứ tự: field name -> location_text -> "Chưa xác định"
         field_name = order.product_listing&.pineapple_crop&.field&.name rescue nil
         location_text = order.product_listing&.location_text rescue nil
         location = field_name.presence || location_text.presence || "Chưa xác định"
-
-        # Lấy title từ product_listing entity
         product_title = order.product_listing&.title || "Sản phẩm"
 
+        # Sử dụng khối lượng (kg) thay vì số quả
         harvest_attributes = {
           scheduled_date: order.created_at,
-          actual_quantity: order.quantity,
-          estimated_quantity: order.quantity,
+          actual_quantity: order.total_weight, # kg
+          estimated_quantity: order.total_weight, # kg
           notes: "Thu hoạch tự động từ đơn hàng ##{order.id} - #{product_title}",
           status: "completed",
           trader_id: order.buyer_id,
@@ -66,10 +64,7 @@ module UseCases::Marketplace
           location: location
         }
 
-        # Create entity
         harvest_entity = Entities::Marketplace::MarketplaceHarvest.new(harvest_attributes)
-
-        # Save via repository
         result = @repository.create(harvest_entity)
 
         if result

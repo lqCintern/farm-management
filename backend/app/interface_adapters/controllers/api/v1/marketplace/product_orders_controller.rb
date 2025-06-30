@@ -42,13 +42,12 @@ module Controllers::Api
         # POST /api/v1/marketplace/product_orders
         def create
           permitted_params = params.require(:product_order).permit(
-            :product_listing_id, :quantity, :price, :note
+            :product_listing_id, :quantity, :price, :note, :total_weight
           )
 
-          # Sửa lỗi ở đây: Thêm current_user.user_id làm tham số thứ hai
           result = Services::CleanArch.marketplace_create_order.execute(
-            permitted_params.to_h,  # Tham số thứ nhất: attributes
-            current_user.user_id    # Tham số thứ hai: user_id
+            permitted_params.to_h,
+            current_user.user_id
           )
 
           if result[:success]

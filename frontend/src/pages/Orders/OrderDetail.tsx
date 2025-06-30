@@ -371,8 +371,8 @@ const OrderDetail: React.FC = () => {
               <Divider />
               
               <Descriptions column={1}>
-                <Descriptions.Item label="Số lượng đặt mua">
-                  {order.quantity} kg
+                <Descriptions.Item label="Sản lượng đặt mua">
+                  {order.total_weight || order.quantity} kg
                 </Descriptions.Item>
                 <Descriptions.Item label="Giá đề xuất">
                   {formatCurrency(Number(order.price))}/kg
@@ -560,6 +560,7 @@ const OrderDetail: React.FC = () => {
           productListingId={order.product_listing.id}
           traderId={order.buyer.user_id}
           productListing={order.product_listing}
+          order={order}
           onSuccess={() => {
             message.success('Đã lên lịch thu hoạch thành công!');
             setScheduleModalVisible(false);
@@ -598,7 +599,7 @@ const OrderDetail: React.FC = () => {
           <div className="mb-4 p-3 bg-blue-50 rounded-md">
             <p className="font-medium text-blue-700 mb-1">Thông tin đơn hàng:</p>
             <p className="text-sm">Sản phẩm: {order?.product_listing?.title}</p>
-            <p className="text-sm">Số lượng đặt: {order?.quantity} kg</p>
+            <p className="text-sm">Sản lượng đặt: {order?.total_weight || order?.quantity} kg</p>
             <p className="text-sm">Người mua: {order?.buyer?.name}</p>
           </div>
 

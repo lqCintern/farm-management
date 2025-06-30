@@ -171,6 +171,12 @@ export const useCreateForm = () => {
         averageSize = (formValues.min_size + formValues.max_size) / 2;
       }
 
+      // Tính toán total_weight từ quantity và average_size
+      let totalWeight = null;
+      if (formValues.quantity && averageSize) {
+        totalWeight = (formValues.quantity * averageSize) / 1000; // Chuyển đổi gram thành kg
+      }
+
       // Chỉ giữ lại các field mà backend chấp nhận
       const filteredData = {
         title: formValues.title,
@@ -178,7 +184,7 @@ export const useCreateForm = () => {
         status: formValues.status,
         product_type: formValues.product_type,
         quantity: formValues.quantity,
-        total_weight: formValues.total_weight,
+        total_weight: totalWeight, // Sử dụng giá trị đã tính toán
         average_size: averageSize, // Sử dụng giá trị đã tính
         price_expectation: formValues.price_expectation,
         province: formValues.province,
@@ -244,6 +250,12 @@ export const useCreateForm = () => {
         averageSize = (formValues.min_size + formValues.max_size) / 2;
       }
 
+      // Tính toán total_weight từ quantity và average_size
+      let totalWeight = null;
+      if (formValues.quantity && averageSize) {
+        totalWeight = (formValues.quantity * averageSize) / 1000; // Chuyển đổi gram thành kg
+      }
+
       // Chỉ giữ lại các field mà backend chấp nhận
       const filteredData = {
         title: formValues.title || "Bản nháp",
@@ -251,7 +263,7 @@ export const useCreateForm = () => {
         status: 0, // Draft status
         product_type: formValues.product_type,
         quantity: formValues.quantity,
-        total_weight: formValues.total_weight,
+        total_weight: totalWeight, // Sử dụng giá trị đã tính toán
         average_size: averageSize,
         price_expectation: formValues.price_expectation,
         province: formValues.province,

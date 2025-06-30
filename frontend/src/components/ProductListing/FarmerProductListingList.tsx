@@ -201,7 +201,7 @@ interface FarmerProductCardProps {
     quantity: number;
     price_expectation: number;
     harvest_start_date: string;
-    orders?: { buyer: { fullname: string }; quantity?: number; price?: number }[];
+    orders?: { buyer: { fullname: string }; quantity?: number; total_weight?: number; price?: number }[];
     harvests?: { id: number; scheduled_date: string; location: string; status?: string }[];
     view_count?: number;
     message_count?: number;
@@ -309,10 +309,10 @@ function FarmerProductCard({ listing, status, onStatusChange }: FarmerProductCar
                   <span className="text-gray-600">Người đặt: </span>
                   <span className="font-medium">{listing.orders?.[0]?.buyer?.fullname || "Chưa xác định"}</span>
                 </p>
-                {listing.orders?.[0]?.quantity && (
+                {listing.orders?.[0]?.total_weight || listing.orders?.[0]?.quantity && (
                   <p className="mb-1">
-                    <span className="text-gray-600">Số lượng: </span>
-                    <span className="font-medium">{listing.orders[0].quantity} kg</span>
+                    <span className="text-gray-600">Sản lượng: </span>
+                    <span className="font-medium">{listing.orders[0].total_weight || listing.orders[0].quantity} kg</span>
                   </p>
                 )}
                 {listing.orders?.[0]?.price && (

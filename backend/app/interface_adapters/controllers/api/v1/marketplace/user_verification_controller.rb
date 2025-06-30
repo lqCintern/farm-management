@@ -19,7 +19,7 @@ module Controllers::Api
               completed_purchases: Models::Marketplace::ProductOrder.where(buyer_id: user.user_id, status: "completed").count,
               total_purchase_value: Models::Marketplace::ProductOrder.joins(:product_listing)
                                      .where(buyer_id: user.user_id, status: "completed")
-                                     .sum("product_listings.price_expectation * product_orders.quantity")
+                                     .sum("product_listings.price_expectation * COALESCE(product_orders.total_weight, product_orders.quantity)")
             }
           else
             # Với vai trò nông dân/nhà cung cấp
@@ -33,7 +33,7 @@ module Controllers::Api
               total_sales: orders.where(status: "completed").count,
               total_sale_value: orders.joins(:product_listing)
                                 .where(status: "completed")
-                                .sum("product_listings.price_expectation * product_orders.quantity")
+                                .sum("product_listings.price_expectation * COALESCE(product_orders.total_weight, product_orders.quantity)")
             }
           end
 

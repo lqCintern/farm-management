@@ -47,7 +47,8 @@ module Entities
       end
 
       def active?
-        @status == :active || @status == "active"
+        # Sản phẩm active bao gồm cả active và sold (cho phép đặt hàng mới)
+        @status == :active || @status == "active" || @status == :sold || @status == "sold"
       end
 
       def sold?

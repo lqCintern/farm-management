@@ -15,18 +15,7 @@ module Controllers::Api
           
           render json: {
             success: true,
-            data: materials.map do |tam|
-              {
-                id: tam.id,
-                material_id: tam.farm_material_id,
-                material_name: tam.farm_material.name,
-                quantity: tam.quantity,
-                unit: tam.farm_material.unit,
-                category: tam.farm_material.category,
-                created_at: tam.created_at,
-                updated_at: tam.updated_at
-              }
-            end
+            data: ::Formatters::Farming::TemplateActivityMaterialFormatter.format_collection_response(materials)
           }, status: :ok
         end
 
@@ -38,8 +27,11 @@ module Controllers::Api
             return
           end
 
+          # Format input params
+          create_params = ::Formatters::Farming::TemplateActivityMaterialFormatter.format_create_params(template_material_params)
+
           farm_material = Models::Farming::FarmMaterial.where(user_id: current_user.user_id)
-                                                      .find_by(id: template_material_params[:material_id])
+                                                      .find_by(id: create_params[:material_id])
           
           unless farm_material
             render json: { error: "Không tìm thấy vật tư" }, status: :not_found
@@ -48,7 +40,7 @@ module Controllers::Api
 
           # Kiểm tra vật tư đã tồn tại trong template chưa
           existing_material = @template.template_activity_materials
-                                      .find_by(farm_material_id: template_material_params[:material_id])
+                                      .find_by(farm_material_id: create_params[:material_id])
           
           if existing_material
             render json: { error: "Vật tư đã có trong template" }, status: :unprocessable_entity
@@ -57,29 +49,17 @@ module Controllers::Api
 
           template_material = @template.template_activity_materials.build(
             farm_material: farm_material,
-            quantity: template_material_params[:quantity]
+            quantity: create_params[:quantity]
           )
 
           if template_material.save
-            render json: {
-              success: true,
-              message: "Đã thêm vật tư vào template",
-              data: {
-                id: template_material.id,
-                material_id: template_material.farm_material_id,
-                material_name: template_material.farm_material.name,
-                quantity: template_material.quantity,
-                unit: template_material.farm_material.unit,
-                category: template_material.farm_material.category,
-                created_at: template_material.created_at,
-                updated_at: template_material.updated_at
-              }
-            }, status: :created
+            result = { success: true, template_material: template_material }
+            response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_create_response(result)
+            render json: response_data, status: :created
           else
-            render json: { 
-              error: "Không thể thêm vật tư",
-              errors: template_material.errors.full_messages 
-            }, status: :unprocessable_entity
+            result = { success: false, errors: template_material.errors.full_messages }
+            response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_create_response(result)
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
@@ -96,16 +76,7 @@ module Controllers::Api
 
           render json: {
             success: true,
-            data: {
-              id: template_material.id,
-              material_id: template_material.farm_material_id,
-              material_name: template_material.farm_material.name,
-              quantity: template_material.quantity,
-              unit: template_material.farm_material.unit,
-              category: template_material.farm_material.category,
-              created_at: template_material.created_at,
-              updated_at: template_material.updated_at
-            }
+            data: ::Formatters::Farming::TemplateActivityMaterialFormatter.format_template_material_response(template_material)
           }, status: :ok
         end
 
@@ -117,6 +88,9 @@ module Controllers::Api
             return
           end
 
+          # Format input params
+          update_params = ::Formatters::Farming::TemplateActivityMaterialFormatter.format_update_params(template_material_params)
+
           template_material = @template.template_activity_materials.find_by(id: params[:id])
           
           unless template_material
@@ -124,24 +98,14 @@ module Controllers::Api
             return
           end
 
-          if template_material.update(quantity: template_material_params[:quantity])
-            render json: {
-              success: true,
-              message: "Đã cập nhật vật tư trong template",
-              data: {
-                id: template_material.id,
-                material_id: template_material.farm_material_id,
-                material_name: template_material.farm_material.name,
-                quantity: template_material.quantity,
-                unit: template_material.farm_material.unit,
-                category: template_material.farm_material.category
-              }
-            }, status: :ok
+          if template_material.update(quantity: update_params[:quantity])
+            result = { success: true, template_material: template_material }
+            response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_update_response(result)
+            render json: response_data, status: :ok
           else
-            render json: { 
-              error: "Không thể cập nhật vật tư",
-              errors: template_material.errors.full_messages 
-            }, status: :unprocessable_entity
+            result = { success: false, errors: template_material.errors.full_messages }
+            response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_update_response(result)
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
@@ -181,15 +145,17 @@ module Controllers::Api
             return
           end
 
-          materials_data = batch_materials_params[:materials]
+          # Format batch params
+          materials_data = ::Formatters::Farming::TemplateActivityMaterialFormatter.format_batch_create_params(batch_materials_params)
           
-          unless materials_data.is_a?(Array)
-            render json: { error: "Dữ liệu materials phải là array" }, status: :bad_request
+          unless materials_data.is_a?(Array) && materials_data.any?
+            render json: { error: "Dữ liệu materials phải là array và không được rỗng" }, status: :bad_request
             return
           end
 
           success_count = 0
           errors = []
+          created_materials = []
 
           ActiveRecord::Base.transaction do
             materials_data.each do |material_data|
@@ -217,27 +183,26 @@ module Controllers::Api
 
               if template_material.save
                 success_count += 1
+                created_materials << template_material
               else
-                errors << "Không thể thêm #{farm_material.name}: #{template_material.errors.full_messages.join(', ')}"
+                errors << "Không thể thêm vật tư #{farm_material.name}: #{template_material.errors.full_messages.join(', ')}"
               end
-            end
-
-            if errors.any?
-              raise ActiveRecord::Rollback
             end
           end
 
-          if errors.any?
-            render json: { 
-              error: "Có lỗi khi thêm vật tư",
-              errors: errors,
-              success_count: success_count
-            }, status: :unprocessable_entity
+          result = {
+            success: success_count > 0,
+            success_count: success_count,
+            template_materials: created_materials,
+            errors: errors
+          }
+
+          response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_batch_create_response(result)
+          
+          if result[:success]
+            render json: response_data, status: :created
           else
-            render json: {
-              success: true,
-              message: "Đã thêm #{success_count} vật tư vào template"
-            }, status: :created
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
@@ -245,30 +210,27 @@ module Controllers::Api
         def statistics
           stats = @template_material_service.get_materials_statistics(current_user.user_id)
           
-          render json: {
-            success: true,
-            stats: stats
-          }, status: :ok
+          result = { success: true, statistics: stats }
+          response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_statistics_response(result)
+          render json: response_data, status: :ok
         end
 
         # GET /api/v1/farming/pineapple_activity_templates/:template_id/materials/feasibility
         def feasibility
           feasibility_result = @template_material_service.check_feasibility(current_user.user_id)
           
-          render json: {
-            success: true,
-            feasibility: feasibility_result
-          }, status: :ok
+          result = { success: true, feasibility: feasibility_result }
+          response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_feasibility_response(result)
+          render json: response_data, status: :ok
         end
 
         # GET /api/v1/farming/pineapple_activity_templates/:template_id/materials/inventory_comparison
         def inventory_comparison
           comparison = @template_material_service.compare_with_inventory(current_user.user_id)
           
-          render json: {
-            success: true,
-            comparison: comparison
-          }, status: :ok
+          result = { success: true, comparison: comparison }
+          response_data = ::Presenters::Farming::TemplateActivityMaterialPresenter.format_inventory_comparison_response(result)
+          render json: response_data, status: :ok
         end
 
         private
@@ -291,10 +253,8 @@ module Controllers::Api
           # Handle both parameter names that frontend might send
           if params[:template_material].present?
             params.require(:template_material).permit(:material_id, :quantity)
-          elsif params[:material].present?
-            params.require(:material).permit(:material_id, :quantity)
           else
-            raise ActionController::ParameterMissing.new("template_material or material")
+            params.require(:material).permit(:material_id, :quantity)
           end
         end
 

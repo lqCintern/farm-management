@@ -27,7 +27,7 @@ module Models::Marketplace
       hidden: 3
     }
 
-    scope :published, -> { active }
+    scope :published, -> { where(status: [1, 2]) }  # Include both active and sold products
 
     # Các scope khác giữ nguyên
     scope :by_product_type, ->(type) { where(product_type: type) if type.present? }

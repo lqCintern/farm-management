@@ -39,18 +39,29 @@ module Repositories
       end
 
       def create(entity)
+        Rails.logger.info "=== REPOSITORY CREATE DEBUG ==="
+        Rails.logger.info "Entity total_weight: #{entity.total_weight}"
+        Rails.logger.info "Entity total_weight class: #{entity.total_weight.class}"
+        
         record = ::Models::Marketplace::ProductOrder.new(
           product_listing_id: entity.product_listing_id,
           buyer_id: entity.buyer_id,
           quantity: entity.quantity,
           price: entity.price,
           note: entity.note,
-          status: entity.status || "pending"
+          status: entity.status || "pending",
+          total_weight: entity.total_weight
         )
 
+        Rails.logger.info "Record total_weight before save: #{record.total_weight}"
+        Rails.logger.info "Record attributes: #{record.attributes}"
+
         if record.save
+          Rails.logger.info "Record saved successfully"
+          Rails.logger.info "Record total_weight after save: #{record.total_weight}"
           map_to_entity(record)
         else
+          Rails.logger.error("FAILED TO SAVE PRODUCT ORDER: #{record.errors.full_messages.join(', ')} | ATTRS: #{record.attributes}")
           nil
         end
       end
@@ -143,6 +154,7 @@ module Repositories
           note: record.note,
           status: record.status,
           rejection_reason: record.rejection_reason,
+          total_weight: record.total_weight,
           created_at: record.created_at,
           updated_at: record.updated_at,
           product_listing: map_product_listing(record.product_listing),

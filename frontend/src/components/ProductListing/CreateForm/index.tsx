@@ -51,6 +51,17 @@ export function CreateProductListingForm() {
     };
   }, [previewUrls]);
 
+  // Tính tổng sản lượng dựa trên số lượng và kích thước trung bình
+  const calculateTotalWeight = () => {
+    const { quantity, min_size, max_size } = formValues;
+    if (!quantity || !min_size || !max_size) return null;
+    
+    const avgSize = (min_size + max_size) / 2;
+    return (quantity * avgSize) / 1000; // Chuyển đổi gram thành kg
+  };
+
+  const totalWeight = calculateTotalWeight();
+
   function formatHarvestEndDate(harvest_end_date: string) {
     throw new Error("Function not implemented.");
   }
@@ -183,7 +194,11 @@ export function CreateProductListingForm() {
             <div className="mb-3">
               <div className="text-sm font-medium mb-1">Số lượng</div>
               <div className="text-sm">
-                {formValues.quantity ? `${formValues.quantity} kg` : "Chưa có thông tin"}
+                {totalWeight 
+                  ? `${totalWeight.toLocaleString()} kg (${formValues.quantity} trái)` 
+                  : formValues.quantity 
+                    ? `${formValues.quantity} trái` 
+                    : "Chưa có thông tin"}
               </div>
             </div>
             

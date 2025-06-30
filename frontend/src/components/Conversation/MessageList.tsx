@@ -20,6 +20,7 @@ interface Message {
   type?: string; // Loại tin nhắn
   payment_info?: any; // Thông tin thanh toán
   metadata?: any; // Metadata khác
+  order_info?: any; // Thông tin đơn hàng
 }
 
 interface Props {
@@ -57,16 +58,19 @@ const MessageList: React.FC<Props> = ({
     // Nếu là tin nhắn hình ảnh
     if (message.image_url || message.type === 'image') {
       return (
-        <div>
-          <p>{content}</p>
-          {message.image_url && (
-            <img 
-              src={message.image_url} 
-              alt="Message image" 
-              className="mt-2 rounded-md max-w-[200px] max-h-[200px] object-cover cursor-pointer"
-              onClick={() => window.open(message.image_url, '_blank')} 
-            />
-          )}
+        <div className="image-message flex items-start gap-2">
+          <span className="text-2xl">🖼️</span>
+          <div>
+            <p className="font-medium text-gray-700">{content}</p>
+            {message.image_url && (
+              <img 
+                src={message.image_url} 
+                alt="Message image" 
+                className="mt-2 rounded-lg max-w-[260px] max-h-[260px] object-cover cursor-pointer shadow-md transition-transform duration-200 hover:scale-105"
+                onClick={() => window.open(message.image_url, '_blank')} 
+              />
+            )}
+          </div>
         </div>
       );
     }
@@ -74,26 +78,55 @@ const MessageList: React.FC<Props> = ({
     // Nếu là tin nhắn thanh toán
     if (message.type === 'payment' && message.payment_info) {
       return (
-        <div className="payment-message">
-          <p>{content}</p>
-          <div className="mt-2 text-xs bg-white bg-opacity-20 p-2 rounded">
-            <div>Số tiền: {message.payment_info.amount?.toLocaleString('vi-VN')} đ</div>
-            <div>Ngày: {new Date(message.payment_info.date).toLocaleDateString('vi-VN')}</div>
+        <div className="payment-message flex items-start gap-2">
+          <span className="text-2xl">��</span>
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-lg shadow-sm w-full transition-all duration-200 hover:shadow-lg">
+            <p className="font-medium text-yellow-800">{content}</p>
+            <div className="mt-2 text-xs">
+              <div>Số tiền: <span className="font-semibold">{message.payment_info.amount?.toLocaleString('vi-VN')} đ</span></div>
+              <div>Ngày: {new Date(message.payment_info.date).toLocaleDateString('vi-VN')}</div>
+            </div>
+            {message.image_url && (
+              <img 
+                src={message.image_url} 
+                alt="Payment proof" 
+                className="mt-2 rounded-md max-w-[200px] max-h-[200px] object-cover cursor-pointer border border-yellow-300 hover:scale-105 transition-transform duration-200"
+                onClick={() => window.open(message.image_url, '_blank')} 
+              />
+            )}
           </div>
-          {message.image_url && (
-            <img 
-              src={message.image_url} 
-              alt="Payment proof" 
-              className="mt-2 rounded-md max-w-[200px] max-h-[200px] object-cover cursor-pointer"
-              onClick={() => window.open(message.image_url, '_blank')} 
-            />
-          )}
+        </div>
+      );
+    }
+    
+    // Nếu là tin nhắn đơn hàng
+    if (message.type === 'order' && message.order_info) {
+      return (
+        <div className="order-message flex items-start gap-2">
+          <span className="text-2xl">📦</span>
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg shadow-sm w-full transition-all duration-200 hover:shadow-lg">
+            <p className="font-medium text-blue-800">{content}</p>
+            <div className="mt-2 text-xs">
+              <div className="font-medium text-blue-800">Sản phẩm: <span className="font-semibold">{message.order_info.product_title}</span></div>
+              <div>Sản lượng: <span className="font-semibold">{message.order_info.total_weight || message.order_info.quantity} kg</span></div>
+              {message.order_info.price && (
+                <div>Giá: <span className="font-semibold">{message.order_info.price.toLocaleString('vi-VN')} đ/kg</span></div>
+              )}
+              <div>Trạng thái: <span className="capitalize font-semibold">{message.order_info.status}</span></div>
+              <button 
+                className="mt-2 text-blue-600 hover:text-blue-800 underline text-xs font-semibold transition-colors duration-150"
+                onClick={() => window.open(`/orders/${message.order_info.order_id}`, '_blank')}
+              >
+                Xem chi tiết đơn hàng →
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
     
     // Tin nhắn thông thường
-    return <p>{content}</p>;
+    return <p className="text-base text-gray-800">{content}</p>;
   };
 
   // Hàm xử lý nội dung tin nhắn
@@ -318,7 +351,10 @@ const MessageList: React.FC<Props> = ({
                   className={`flex ${isSent ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`rounded-lg px-4 py-2 max-w-[70%] break-words
+                    className={`rounded-lg px-4 py-2 max-w-[70%] break-words message-bubble animate-fade-in-up
+                      ${message.type === 'order' ? 'order-message' : ''}
+                      ${message.type === 'payment' ? 'payment-message' : ''}
+                      ${message.type === 'image' || message.image_url ? 'image-message' : ''}
                       ${
                         messageIndex === 0
                           ? isSent
@@ -331,6 +367,7 @@ const MessageList: React.FC<Props> = ({
                           ? "bg-green-500 text-white"
                           : "bg-white border border-gray-200"
                       }`}
+                    style={{ transition: 'box-shadow 0.2s, transform 0.2s' }}
                   >
                     {/* Sử dụng hàm renderMessageContent để xử lý nội dung tin nhắn */}
                     {renderMessageContent(message)}

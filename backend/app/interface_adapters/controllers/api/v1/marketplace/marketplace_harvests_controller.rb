@@ -107,10 +107,17 @@ module Controllers::Api
 
         # POST /api/v1/marketplace/harvests/:id/payment_proof
         def upload_payment_proof
+          # Prepare additional payment parameters
+          additional_params = {
+            final_price: params[:final_price],
+            payment_date: params[:payment_date]
+          }
+
           result = Services::CleanArch.marketplace_process_payment.execute(
             params[:id],
-            params[:payment_proof],
-            current_user.user_id
+            params[:image],  # Frontend sends 'image' not 'payment_proof'
+            current_user.user_id,
+            additional_params
           )
 
           if result[:success]

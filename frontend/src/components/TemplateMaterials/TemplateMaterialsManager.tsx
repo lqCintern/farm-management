@@ -73,7 +73,11 @@ export default function TemplateMaterialsManager({
   const fetchStats = async () => {
     try {
       const response = await templateMaterialService.getTemplateMaterialStats(templateId);
-      setStats(response.stats);
+      if (response.success) {
+        setStats(response.statistics);
+      } else {
+        console.error('Failed to fetch stats:', response);
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
     }

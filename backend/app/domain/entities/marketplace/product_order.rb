@@ -3,7 +3,7 @@ module Entities
     class ProductOrder
       attr_reader :id, :product_listing_id, :buyer_id, :quantity, :price,
                   :note, :status, :rejection_reason, :created_at, :updated_at,
-                  :product_listing, :buyer
+                  :product_listing, :buyer, :total_weight
 
       def initialize(attributes = {})
         @id = attributes[:id]
@@ -18,11 +18,12 @@ module Entities
         @updated_at = attributes[:updated_at]
         @product_listing = attributes[:product_listing]
         @buyer = attributes[:buyer]
+        @total_weight = attributes[:total_weight]
       end
 
       # Domain logic
       def total_amount
-        price && quantity ? price * quantity : 0
+        price && total_weight ? price * total_weight : 0
       end
 
       def pending?

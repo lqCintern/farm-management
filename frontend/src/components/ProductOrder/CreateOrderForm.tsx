@@ -18,11 +18,33 @@ const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [quantity, setQuantity] = useState(form.getFieldValue('quantity') || 0);
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
+      const avgSize = parseFloat(productListing.average_size || '0');
+      const qty = values.quantity || 0;
+      const totalWeight = +(qty * avgSize / 1000);
+
+      // Validate trước khi gửi
+      if (!avgSize || !qty || isNaN(totalWeight) || totalWeight <= 0) {
+        message.error('Vui lòng nhập số lượng và kích thước trung bình hợp lệ!');
+        setLoading(false);
+        return;
+      }
+
+      // Log debug giá trị gửi lên
+      console.log('Gửi order:', {
+        product_listing_id: productListing.id,
+        quantity: values.quantity,
+        price: values.price,
+        note: values.note,
+        total_weight: totalWeight,
+        avgSize,
+        qty
+      });
 
       const response = await createProductOrder({
         product_order: {
@@ -30,13 +52,12 @@ const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
           quantity: values.quantity,
           price: values.price,
           note: values.note,
+          total_weight: totalWeight
         },
       }) as { conversation_id?: string };
-
       message.success('Đã gửi đơn đặt hàng thành công!');
-      
       if (response.conversation_id) {
-        navigate(`/chat/${response.conversation_id}`);
+        navigate(`/chat`);
       } else {
         onClose();
       }
@@ -72,27 +93,41 @@ const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
           <p className="font-medium">Thông tin sản phẩm:</p>
           <p>Loại: {productListing.product_type}</p>
           <p>Giá đề xuất: {formatCurrency(productListing.price_expectation)}/kg</p>
-          <p>Số lượng hiện có: {productListing.quantity} kg</p>
+          <p>Số lượng hiện có: {productListing.quantity} quả</p>
+          <p>Size trung bình: {productListing.average_size} g/quả</p>
         </div>
 
         <Form.Item
           name="quantity"
-          label="Số lượng muốn mua (kg)"
+          label="Số lượng muốn mua (quả)"
           rules={[
             { required: true, message: 'Vui lòng nhập số lượng' },
             {
               type: 'number',
               min: 1,
               max: productListing.quantity,
-              message: `Số lượng phải từ 1 đến ${productListing.quantity} kg`,
+              message: `Số lượng phải từ 1 đến ${productListing.quantity} quả`,
             },
           ]}
           initialValue={Math.min(productListing.quantity, 100)}
         >
-          <InputNumber 
-            style={{ width: '100%' }} 
-            addonAfter="kg" 
-            placeholder="Nhập số lượng" 
+          <InputNumber
+            style={{ width: '100%' }}
+            addonAfter="quả"
+            placeholder="Nhập số lượng"
+            value={quantity}
+            onChange={(val) => {
+              setQuantity(val || 0);
+              form.setFieldsValue({ quantity: val });
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item label="Tổng khối lượng ước tính (kg)">
+          <Input
+            value={((quantity || 0) * parseFloat(productListing.average_size || '0') / 1000).toFixed(2)}
+            readOnly
+            addonAfter="kg"
           />
         </Form.Item>
 
@@ -105,7 +140,7 @@ const CreateOrderForm: React.FC<CreateOrderFormProps> = ({
           <InputNumber
             style={{ width: '100%' }}
             formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+            parser={(value) => value!.replace(/\$\s?|,/g, '')}
             addonAfter="đ/kg"
             placeholder="Nhập giá đề xuất"
           />

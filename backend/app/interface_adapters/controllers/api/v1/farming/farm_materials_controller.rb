@@ -5,12 +5,12 @@ module Controllers::Api
         include PaginationHelper
 
         def index
+          # Format filter params
+          filter_params = ::Formatters::Farming::FarmMaterialFormatter.format_filter_params(params)
+
           result = Services::CleanArch.farming_list_farm_materials.execute(
             current_user.user_id,
-            {
-              name: params[:name],
-              category: params[:category]
-            }
+            filter_params
           )
 
           # Phân trang kết quả
@@ -38,15 +38,21 @@ module Controllers::Api
         end
 
         def create
+          # Format input params
+          create_params = ::Formatters::Farming::FarmMaterialFormatter.format_create_params(
+            material_params,
+            current_user.user_id
+          )
+
           result = Services::CleanArch.farming_create_farm_material.execute(
-            material_params.to_h,
+            create_params,
             current_user.user_id
           )
 
           if result[:success]
             render json: {
               message: "Vật tư đã được tạo thành công",
-              material: ::Presenters::Farming::FarmMaterialPresenter.as_json(result[:farm_material])
+              material: ::Presenters::Farming::FarmMaterialPresenter.new(result[:farm_material]).as_json
             }, status: :created
           else
             render json: { errors: result[:errors] }, status: :unprocessable_entity
@@ -54,16 +60,19 @@ module Controllers::Api
         end
 
         def update
+          # Format input params
+          update_params = ::Formatters::Farming::FarmMaterialFormatter.format_update_params(material_params)
+
           result = Services::CleanArch.farming_update_farm_material.execute(
             params[:id],
-            material_params.to_h,
+            update_params,
             current_user.user_id
           )
 
           if result[:success]
             render json: {
               message: "Vật tư đã được cập nhật thành công",
-              material: ::Presenters::Farming::FarmMaterialPresenter.as_json(result[:farm_material])
+              material: ::Presenters::Farming::FarmMaterialPresenter.new(result[:farm_material]).as_json
             }, status: :ok
           else
             render json: { errors: result[:error] || result[:errors] }, status: :unprocessable_entity
@@ -84,15 +93,13 @@ module Controllers::Api
         end
 
         def statistics
+          # Format statistics params
+          stats_params = ::Formatters::Farming::FarmMaterialFormatter.format_statistics_params(params)
+
           # Lấy thống kê vật tư với bộ lọc
           result = Services::CleanArch.farming_farm_material_repository.get_statistics(
             current_user.user_id,
-            {
-              start_date: params[:start_date],
-              end_date: params[:end_date],
-              field_id: params[:field_id],
-              crop_id: params[:crop_id]
-            }
+            stats_params
           )
           
           if result[:success]

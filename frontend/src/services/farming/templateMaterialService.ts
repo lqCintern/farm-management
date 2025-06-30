@@ -41,22 +41,37 @@ export interface TemplateMaterialsResponse {
   };
 }
 
+// Interface cho statistics response mới
+export interface TemplateMaterialStatsResponse {
+  success: boolean;
+  statistics: TemplateMaterialStats;
+}
+
 // Interface cho statistics
 export interface TemplateMaterialStats {
   total_materials: number;
   total_quantity: number;
-  by_category: Record<string, number>;
-  cost_estimate: number;
-  feasibility?: {
+  by_category: Record<string, {
+    count: number;
+    total_quantity: number;
+    materials: Array<{
+      id: number;
+      material_name: string;
+      quantity: number;
+      unit: string;
+    }>;
+  }>;
+  cost_estimate: string | number;
+  feasibility: {
     feasible: boolean;
     insufficient_materials: Array<{
       material_name: string;
-      required?: number;
-      available?: number;
-      unit?: string;
+      required: number;
+      available: string | number;
+      unit: string;
       reason: string;
     }>;
-    total_cost: number;
+    total_cost: string | number;
     materials_count: number;
   };
 }
@@ -120,16 +135,16 @@ const templateMaterialService = {
     return response.data;
   },
 
-  // Lấy thống kê materials của template
-  getTemplateMaterialStats: async (templateId: number): Promise<{ status: string; stats: TemplateMaterialStats }> => {
+  // Lấy thống kê materials của template - Cập nhật cho response mới
+  getTemplateMaterialStats: async (templateId: number): Promise<TemplateMaterialStatsResponse> => {
     const response = await axiosInstance.get(`/farming/pineapple_activity_templates/${templateId}/materials/statistics`);
-    return response.data as { status: string; stats: TemplateMaterialStats };
+    return response.data as TemplateMaterialStatsResponse;
   },
 
   // Kiểm tra tính khả thi của template
-  checkTemplateFeasibility: async (templateId: number): Promise<{ status: string; feasibility: TemplateMaterialStats['feasibility'] }> => {
+  checkTemplateFeasibility: async (templateId: number): Promise<{ success: boolean; feasibility: TemplateMaterialStats['feasibility'] }> => {
     const response = await axiosInstance.get(`/farming/pineapple_activity_templates/${templateId}/materials/feasibility`);
-    return response.data as { status: string; feasibility: TemplateMaterialStats['feasibility'] };
+    return response.data as { success: boolean; feasibility: TemplateMaterialStats['feasibility'] };
   },
 
   // So sánh với inventory

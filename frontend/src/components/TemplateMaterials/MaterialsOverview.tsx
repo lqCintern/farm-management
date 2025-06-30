@@ -37,6 +37,13 @@ interface TemplateMaterialSummary {
     quantity: number;
     unit: string;
   }>;
+  insufficient_materials?: Array<{
+    material_name: string;
+    required: number;
+    available: string | number;
+    unit: string;
+    reason: string;
+  }>;
 }
 
 // Các activity_type bắt buộc vật tư (phải đồng bộ với backend)
@@ -74,9 +81,16 @@ export default function MaterialsOverview({
 
       for (const templateId of templateIds) {
         try {
-          // Chỉ gọi 1 API duy nhất để lấy tất cả thông tin
+          // Gọi API với cấu trúc response mới
           const response = await templateMaterialService.getTemplateMaterialStats(templateId);
-          const stats = response.stats;
+          
+          // Kiểm tra success
+          if (!response.success) {
+            console.error(`API call failed for template ${templateId}:`, response);
+            continue;
+          }
+
+          const stats = response.statistics;
 
           // Debug log để kiểm tra giá trị
           console.log(`Template ${templateId} stats:`, stats);
@@ -85,12 +99,12 @@ export default function MaterialsOverview({
           console.log(`Template ${templateId} feasible:`, stats.feasibility?.feasible);
           console.log(`Template ${templateId} insufficient_materials:`, stats.feasibility?.insufficient_materials);
 
-          // Xử lý cost_estimate có thể là null/undefined
+          // Xử lý cost_estimate có thể là string hoặc number
           const costEstimate = stats.cost_estimate !== null && stats.cost_estimate !== undefined 
             ? Number(stats.cost_estimate) 
             : 0;
 
-          // Lấy thông tin materials từ stats.by_category nếu có
+          // Lấy thông tin materials từ stats.by_category
           const materials: Array<{id: number; material_name: string; quantity: number; unit: string}> = [];
           if (stats.by_category) {
             Object.values(stats.by_category).forEach((categoryData: any) => {
@@ -108,7 +122,8 @@ export default function MaterialsOverview({
             is_feasible: stats.feasibility?.feasible || false,
             missing_materials_count: stats.feasibility?.insufficient_materials?.length || 0,
             insufficient_materials_count: stats.feasibility?.insufficient_materials?.length || 0,
-            materials: materials
+            materials: materials,
+            insufficient_materials: stats.feasibility?.insufficient_materials || []
           };
 
           console.log(`Template ${templateId} summary:`, summary);
@@ -363,7 +378,7 @@ export default function MaterialsOverview({
           );
         }
         
-        // Hiển thị danh sách vật tư thiếu với link
+        // Hiển thị danh sách vật tư thiếu với thông tin chi tiết
         return (
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
@@ -382,25 +397,24 @@ export default function MaterialsOverview({
               >
                 {record.insufficient_materials_count} vật tư không đủ
               </Tag>
-              {record.materials && record.materials.length > 0 && (
+              {record.insufficient_materials && record.insufficient_materials.length > 0 && (
                 <div className="space-y-1">
-                  {record.materials.slice(0, 3).map((material, index) => (
+                  {record.insufficient_materials.slice(0, 3).map((material, index) => (
                     <div key={index} className="flex items-center gap-1 text-xs">
                       <div className="w-1 h-1 bg-red-500 rounded-full"></div>
-                      <Tooltip title={`Xem chi tiết ${material.material_name} trong kho`}>
-                        <Link 
-                          to={`/farmer/inventory/${material.id}`} 
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                          target="_blank"
-                        >
+                      <Tooltip title={`Cần: ${material.required} ${material.unit}, Có: ${material.available} ${material.unit}`}>
+                        <span className="text-red-600 font-medium">
                           {material.material_name}
-                        </Link>
+                        </span>
                       </Tooltip>
+                      <Text className="text-gray-500">
+                        ({material.required} &gt; {material.available} {material.unit})
+                      </Text>
                     </div>
                   ))}
-                  {record.materials.length > 3 && (
+                  {record.insufficient_materials.length > 3 && (
                     <div className="text-xs text-gray-400">
-                      +{record.materials.length - 3} vật tư khác
+                      +{record.insufficient_materials.length - 3} vật tư khác
                     </div>
                   )}
                 </div>

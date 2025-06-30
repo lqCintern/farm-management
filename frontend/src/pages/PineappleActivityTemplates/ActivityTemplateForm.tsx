@@ -91,7 +91,11 @@ export default function ActivityTemplateForm({
   useEffect(() => {
     if ((activeTab === 'materials') && templateId) {
       templateMaterialService.getTemplateMaterialStats(templateId).then(res => {
-        setMaterialsStats(res.stats);
+        if (res.success) {
+          setMaterialsStats(res.statistics);
+        } else {
+          console.error('Failed to fetch materials stats:', res);
+        }
       });
     }
   }, [activeTab, templateId]);

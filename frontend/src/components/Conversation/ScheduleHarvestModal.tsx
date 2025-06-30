@@ -10,6 +10,7 @@ interface ScheduleHarvestModalProps {
   productListingId: number;
   traderId: number;
   productListing?: any; // Thêm prop để nhận thông tin sản phẩm
+  order?: any; // Thêm prop để nhận thông tin đơn hàng
   onSuccess: () => void;
 }
 
@@ -19,17 +20,20 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
   productListingId,
   traderId,
   productListing,
+  order,
   onSuccess,
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   
-  // Tự động điền thông tin từ product_listing khi modal mở
+  // Tự động điền thông tin từ order hoặc product_listing khi modal mở
   useEffect(() => {
-    if (visible && productListing) {
-      const fieldName = productListing.pineapple_crop?.field?.name || 'Chưa xác định';
-      const estimatedQuantity = productListing.quantity || 0;
-      const estimatedPrice = productListing.price_expectation || 0;
+    if (visible) {
+      const fieldName = productListing?.pineapple_crop?.field?.name || 'Chưa xác định';
+      
+      // Ưu tiên sử dụng thông tin từ order nếu có
+      const estimatedQuantity = order?.total_weight || productListing?.quantity || 0;
+      const estimatedPrice = order?.price || productListing?.price_expectation || 0;
       
       form.setFieldsValue({
         location: fieldName,
@@ -38,7 +42,7 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
         scheduled_date: defaultDate()
       });
     }
-  }, [visible, productListing, form]);
+  }, [visible, productListing, order, form]);
   
   const handleSubmit = async () => {
     try {
@@ -53,6 +57,7 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
         },
         product_listing_id: productListingId,
         trader_id: traderId,
+        product_order_id: order?.id, // Thêm product_order_id nếu có order
       };
       
       await createMarketplaceHarvest(data);
@@ -97,8 +102,12 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
           description={
             <div className="text-sm">
               <p><strong>Sản phẩm:</strong> {productListing.title}</p>
-              <p><strong>Số lượng:</strong> {productListing.quantity} kg</p>
-              <p><strong>Giá mong muốn:</strong> {Number(productListing.price_expectation).toLocaleString('vi-VN')} ₫/kg</p>
+              {order?.total_weight ? (
+                <p><strong>Sản lượng:</strong> {order.total_weight} kg</p>
+              ) : (
+                <p><strong>Sản lượng:</strong> {productListing.quantity} kg</p>
+              )}
+              <p><strong>Giá mong muốn:</strong> {Number(order?.price || productListing.price_expectation).toLocaleString('vi-VN')} ₫/kg</p>
               {productListing.pineapple_crop?.field?.name && (
                 <p><strong>Địa điểm:</strong> {productListing.pineapple_crop.field.name}</p>
               )}
@@ -138,7 +147,7 @@ const ScheduleHarvestModal: React.FC<ScheduleHarvestModalProps> = ({
         
         <Form.Item
           name="estimated_quantity"
-          label="Số lượng dự kiến (kg)"
+          label="Sản lượng dự kiến (kg)"
         >
           <InputNumber className="w-full" min={0} placeholder="VD: 100" />
         </Form.Item>

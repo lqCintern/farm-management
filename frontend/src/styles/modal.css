@@ -24,3 +24,42 @@
   max-height: 90vh;
   overflow-y: auto;
 }
+
+/* Animation fade-in-up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Style cho các block tin nhắn đặc biệt */
+.order-message {
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+  border-left: 4px solid #3b82f6;
+}
+.payment-message {
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.08);
+  border-left: 4px solid #fbbf24;
+}
+.image-message {
+  box-shadow: 0 2px 8px rgba(156, 163, 175, 0.08);
+  border-left: 4px solid #9ca3af;
+}
+
+.message-bubble {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.message-bubble:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  transform: translateY(-2px) scale(1.02);
+}

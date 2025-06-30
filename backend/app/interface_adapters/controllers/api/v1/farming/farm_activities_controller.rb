@@ -5,15 +5,12 @@ module Controllers::Api
         include PaginationHelper
 
         def index
+          # Format filter params
+          filter_params = ::Formatters::Farming::FarmActivityFormatter.format_filter_params(params)
+
           result = Services::CleanArch.farming_list_farm_activities.execute(
             current_user.user_id,
-            {
-              start_date: params[:start_date],
-              end_date: params[:end_date],
-              activity_type: params[:activity_type],
-              crop_animal_id: params[:crop_animal_id],
-              status: params[:status]
-            }
+            filter_params
           )
 
           # Phân trang kết quả
@@ -27,37 +24,45 @@ module Controllers::Api
           result = Services::CleanArch.farming_get_farm_activity.execute(params[:id], current_user.user_id)
 
           if result[:success]
-            render json: { data: ::Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity]) }, status: :ok
+            render json: { data: ::Presenters::Farming::FarmActivityPresenter.new(result[:farm_activity]).as_json }, status: :ok
           else
             render json: { error: result[:error] }, status: :not_found
           end
         end
 
         def create
+          # Format input params
+          create_params = ::Formatters::Farming::FarmActivityFormatter.format_create_params(
+            farm_activity_params,
+            current_user.user_id
+          )
+
           # Kiểm tra xem có muốn tạo labor request tự động không
           if params[:auto_create_labor] == "true"
             result = Services::CleanArch.farming_create_activity_with_labor.execute(
-              farm_activity_params,
+              create_params,
               current_user.user_id
             )
           else
-            result = Services::CleanArch.farming_create_farm_activity.execute(farm_activity_params, current_user.user_id)
+            result = Services::CleanArch.farming_create_farm_activity.execute(create_params, current_user.user_id)
           end
 
+          response_data = ::Presenters::Farming::FarmActivityPresenter.format_response(result.merge(action: "created"))
+
           if result[:success]
-            render json: {
-              message: "Đã tạo hoạt động thành công",
-              activity: ::Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
-            }, status: :created
+            render json: response_data, status: :created
           else
-            render json: { errors: result[:errors] }, status: :unprocessable_entity
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
         def update
+          # Format input params
+          update_params = ::Formatters::Farming::FarmActivityFormatter.format_update_params(farm_activity_params)
+
           result = Services::CleanArch.farming_update_farm_activity.execute(
             params[:id],
-            farm_activity_params.to_h,
+            update_params,
             current_user.user_id
           )
 
@@ -65,12 +70,10 @@ module Controllers::Api
             # Đồng bộ labor request status nếu có
             Services::CleanArch.farming_sync_labor_request_status.execute(params[:id])
             
-            render json: {
-              message: "Lịch chăm sóc đã được cập nhật thành công",
-              data: ::Presenters::Farming::FarmActivityPresenter.as_json(result[:farm_activity])
-            }, status: :ok
+            response_data = ::Presenters::Farming::FarmActivityPresenter.format_response(result.merge(action: "updated"))
+            render json: response_data, status: :ok
           else
-            render json: { errors: result[:error] || result[:errors] }, status: :unprocessable_entity
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
@@ -88,9 +91,12 @@ module Controllers::Api
         end
 
         def complete
+          # Format completion params
+          formatted_completion_params = ::Formatters::Farming::FarmActivityFormatter.format_completion_params(completion_params)
+
           result = Services::CleanArch.farming_complete_farm_activity.execute(
             params[:id],
-            completion_params,
+            formatted_completion_params,
             current_user.user_id
           )
 
@@ -98,17 +104,7 @@ module Controllers::Api
             # Đồng bộ labor request status nếu có
             Services::CleanArch.farming_sync_labor_request_status.execute(params[:id])
             
-            response_data = {
-              success: true,
-              message: "Hoạt động đã hoàn thành",
-              suggestion: result[:suggestion]
-            }
-            
-            # Thêm thông báo về việc tự động chuyển giai đoạn nếu có
-            if result[:stage_advance_message].present?
-              response_data[:stage_advance_message] = result[:stage_advance_message]
-            end
-
+            response_data = ::Presenters::Farming::FarmActivityPresenter.format_completion_response(result)
             render json: response_data, status: :ok
           else
             render json: { success: false, error: result[:error] }, status: :unprocessable_entity
@@ -116,15 +112,19 @@ module Controllers::Api
         end
 
         def statistics
+          # Format statistics params
+          stats_params = ::Formatters::Farming::FarmActivityFormatter.format_statistics_params(params)
+
           result = Services::CleanArch.farming_get_farm_activity_stats.execute(
             current_user.user_id,
-            params[:period] || "month",
-            params[:year].present? ? params[:year].to_i : Date.today.year,
-            params[:month].present? ? params[:month].to_i : Date.today.month,
-            params[:quarter].present? ? params[:quarter].to_i : ((Date.today.month - 1) / 3 + 1)
+            stats_params[:period],
+            stats_params[:year],
+            stats_params[:month],
+            stats_params[:quarter]
           )
 
-          render json: { statistics: result[:statistics] }, status: :ok
+          response_data = ::Presenters::Farming::FarmActivityPresenter.format_statistics_response(result)
+          render json: response_data, status: :ok
         end
 
         def history_by_field

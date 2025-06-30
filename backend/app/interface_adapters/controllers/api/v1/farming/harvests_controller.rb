@@ -3,19 +3,17 @@ module Controllers::Api
     module Farming
       class HarvestsController < BaseController
         def index
+          # Format filter params
+          filter_params = ::Formatters::Farming::HarvestFormatter.format_filter_params(params)
+
           result = Services::CleanArch.farming_list_harvests.execute(
             current_user.user_id,
-            {
-              start_date: params[:start_date],
-              end_date: params[:end_date],
-              crop_id: params[:crop_id],
-              field_id: params[:field_id]
-            }
+            filter_params
           )
 
           render json: {
             message: "Harvests retrieved successfully",
-            data: ::Farming::HarvestPresenter.collection_as_json(result[:harvests])
+            data: ::Presenters::Farming::HarvestPresenter.collection_as_json(result[:harvests])
           }
         end
 
@@ -25,7 +23,7 @@ module Controllers::Api
           if result[:success]
             render json: {
               message: "Harvest retrieved successfully",
-              data: ::Farming::HarvestPresenter.as_json(result[:harvest])
+              data: ::Presenters::Farming::HarvestPresenter.new(result[:harvest]).as_json
             }
           else
             render json: { error: result[:error] }, status: :not_found
@@ -33,35 +31,42 @@ module Controllers::Api
         end
 
         def create
-          result = Services::CleanArch.farming_create_harvest.execute(
-            harvest_params.to_h,
+          # Format input params
+          create_params = ::Formatters::Farming::HarvestFormatter.format_create_params(
+            harvest_params,
             current_user.user_id
           )
 
+          result = Services::CleanArch.farming_create_harvest.execute(
+            create_params,
+            current_user.user_id
+          )
+
+          response_data = ::Presenters::Farming::HarvestPresenter.format_response(result.merge(action: "created"))
+
           if result[:success]
-            render json: {
-              message: "Harvest created successfully",
-              data: ::Farming::HarvestPresenter.as_json(result[:harvest])
-            }, status: :created
+            render json: response_data, status: :created
           else
-            render json: { errors: result[:errors] }, status: :unprocessable_entity
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
         def update
+          # Format input params
+          update_params = ::Formatters::Farming::HarvestFormatter.format_update_params(harvest_params)
+
           result = Services::CleanArch.farming_update_harvest.execute(
             params[:id],
-            harvest_params.to_h,
+            update_params,
             current_user.user_id
           )
 
+          response_data = ::Presenters::Farming::HarvestPresenter.format_response(result.merge(action: "updated"))
+
           if result[:success]
-            render json: {
-              message: "Harvest updated successfully",
-              data: ::Farming::HarvestPresenter.as_json(result[:harvest])
-            }
+            render json: response_data
           else
-            render json: { errors: result[:errors] || [ result[:error] ] }, status: :unprocessable_entity
+            render json: response_data, status: :unprocessable_entity
           end
         end
 
@@ -88,7 +93,7 @@ module Controllers::Api
 
           render json: {
             message: "Harvests for crop retrieved successfully",
-            data: ::Farming::HarvestPresenter.collection_as_json(result[:harvests])
+            data: ::Presenters::Farming::HarvestPresenter.collection_as_json(result[:harvests])
           }
         end
 
@@ -100,31 +105,19 @@ module Controllers::Api
 
           render json: {
             message: "Harvests for field retrieved successfully",
-            data: ::Farming::HarvestPresenter.collection_as_json(result[:harvests])
+            data: ::Presenters::Farming::HarvestPresenter.collection_as_json(result[:harvests])
           }
         end
 
         def stats
           result = Services::CleanArch.farming_get_harvest_stats.execute(current_user.user_id)
 
+          response_data = ::Presenters::Farming::HarvestPresenter.format_statistics_response(result)
+
           if result[:success]
-            render json: {
-              message: "Harvest statistics retrieved successfully",
-              data: {
-                monthly: result[:monthly],
-                by_crop: result[:by_crop],
-                by_field: result[:by_field],
-                total_quantity: result[:total_quantity],
-                harvest_count: result[:harvest_count],
-                farming_harvests: result[:farming_harvests],
-                marketplace_harvests: result[:marketplace_harvests],
-                total_revenue: result[:total_revenue],
-                farming_details: result[:farming_details],
-                marketplace_details: result[:marketplace_details]
-              }
-            }
+            render json: response_data
           else
-            render json: { error: "Không thể lấy thống kê thu hoạch" }, status: :internal_server_error
+            render json: response_data, status: :internal_server_error
           end
         end
 
