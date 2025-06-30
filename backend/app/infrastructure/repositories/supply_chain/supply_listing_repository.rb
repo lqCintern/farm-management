@@ -59,7 +59,8 @@ module Repositories
           status: entity.status || "draft",
           user_id: entity.user_id,
           pending_quantity: entity.pending_quantity || 0,
-          sold_quantity: entity.sold_quantity || 0
+          sold_quantity: entity.sold_quantity || 0,
+          last_updated: entity.last_updated || Time.current
         )
 
         if record.save
@@ -198,6 +199,7 @@ module Repositories
           view_count: record.view_count,
           created_at: record.created_at,
           updated_at: record.updated_at,
+          last_updated: record.last_updated,
           user_id: record.user.user_id,
           pending_quantity: record.pending_quantity || 0,
           sold_quantity: record.sold_quantity || 0,
